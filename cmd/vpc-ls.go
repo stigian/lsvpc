@@ -21,6 +21,18 @@ type Subnet struct {
 	AvailabilityZone   string
 	AvailabilityZoneId string
 	RawSubnet          *ec2.Subnet
+	EC2s               map[string]EC2
+}
+
+type EC2 struct {
+	Id        string
+	Type      string
+	SubnetId  string
+	VpcId     string
+	State     string
+	PublicIP  string
+	PrivateIP string
+	RawEc2    *ec2.Instance
 }
 
 func getVpcs(svc *ec2.EC2) (map[string]VPC, error) {
@@ -69,6 +81,22 @@ func getSubnets(svc *ec2.EC2) ([]*ec2.Subnet, error) {
 	return subnets, nil
 }
 
+func getInstances(svc *ec2.EC2) ([]*ec2.Reservation, error) {
+	instances := []*ec2.Reservation{}
+	err := svc.DescribeInstancesPages(
+		&ec2.DescribeInstancesInput{},
+		func(page *ec2.DescribeInstancesOutput, lastPage bool) bool {
+			instances = append(instances, page.Reservations...)
+			return !lastPage
+		},
+	)
+	if err != nil {
+		return []*ec2.Reservation{}, fmt.Errorf("failed: %v", err.Error())
+	}
+
+	return instances, nil
+}
+
 func mapSubnets(vpcs map[string]VPC, subnets []*ec2.Subnet) {
 	for _, v := range subnets {
 		vpcs[*v.VpcId].Subnets[*v.SubnetId] = Subnet{
@@ -77,6 +105,24 @@ func mapSubnets(vpcs map[string]VPC, subnets []*ec2.Subnet) {
 			AvailabilityZone:   *v.AvailabilityZone,
 			AvailabilityZoneId: *v.AvailabilityZoneId,
 			RawSubnet:          v,
+			EC2s:               make(map[string]EC2),
+		}
+	}
+}
+
+func mapInstances(vpcs map[string]VPC, reservations []*ec2.Reservation) {
+	for _, reservation := range reservations {
+		for _, instance := range reservation.Instances {
+			vpcs[*instance.VpcId].Subnets[*instance.SubnetId].EC2s[*instance.InstanceId] = EC2{
+				Id:        *instance.InstanceId,
+				Type:      *instance.InstanceType,
+				SubnetId:  *instance.SubnetId,
+				VpcId:     *instance.VpcId,
+				State:     *instance.State.Name,
+				PublicIP:  *instance.PublicIpAddress,
+				PrivateIP: *instance.PrivateIpAddress,
+				RawEc2:    instance,
+			}
 		}
 	}
 }
@@ -96,8 +142,10 @@ func main() {
 	}
 
 	subnets, _ := getSubnets(svc)
-
 	mapSubnets(vpcs, subnets)
+	instances, _ := getInstances(svc)
+	mapInstances(vpcs, instances)
+
 	for _, v := range vpcs {
 		if v.IsDefault {
 			fmt.Printf("(default) ")
@@ -106,6 +154,16 @@ func main() {
 		for _, w := range v.Subnets {
 			fmt.Printf("    ")
 			fmt.Printf("%v %v --- %v\n", w.Id, w.AvailabilityZone, w.CidrBlock)
+			for _, x := range w.EC2s {
+				fmt.Printf("        ")
+				fmt.Printf(
+					"%v --- %v --- %v / %v\n",
+					x.Id,
+					x.State,
+					x.PublicIP,
+					x.PrivateIP,
+				)
+			}
 		}
 	}
 }
