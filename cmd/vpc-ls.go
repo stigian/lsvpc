@@ -10,31 +10,31 @@ import (
 )
 
 type VPC struct {
-	Id        string
+	Id        *string
 	IsDefault bool
-	CidrBlock string
+	CidrBlock *string
 	RawVPC    *ec2.Vpc
 	Subnets   map[string]Subnet
 }
 
 type Subnet struct {
-	Id                 string
-	CidrBlock          string
-	AvailabilityZone   string
-	AvailabilityZoneId string
+	Id                 *string
+	CidrBlock          *string
+	AvailabilityZone   *string
+	AvailabilityZoneId *string
 	Public             bool
 	RawSubnet          *ec2.Subnet
 	EC2s               map[string]EC2
 }
 
 type EC2 struct {
-	Id         string
-	Type       string
-	SubnetId   string
-	VpcId      string
-	State      string
-	PublicIP   string
-	PrivateIP  string
+	Id         *string
+	Type       *string
+	SubnetId   *string
+	VpcId      *string
+	State      *string
+	PublicIP   *string
+	PrivateIP  *string
 	Volumes    map[string]Volume
 	Interfaces []NetworkInterface
 	RawEc2     *ec2.Instance
@@ -72,9 +72,9 @@ func getVpcs(svc *ec2.EC2) (map[string]VPC, error) {
 	vpcs := map[string]VPC{}
 	for _, v := range vpclist {
 		vpc := VPC{
-			Id:        *v.VpcId,
+			Id:        v.VpcId,
 			IsDefault: *v.IsDefault,
-			CidrBlock: *v.CidrBlock,
+			CidrBlock: v.CidrBlock,
 			RawVPC:    v,
 			Subnets:   make(map[string]Subnet),
 		}
@@ -145,13 +145,18 @@ func getNetworkInterfaces(svc *ec2.EC2) ([]*ec2.NetworkInterface, error) {
 
 func mapSubnets(vpcs map[string]VPC, subnets []*ec2.Subnet) {
 	for _, v := range subnets {
-		isPublic := *v.MapCustomerOwnedIpOnLaunch || *v.MapPublicIpOnLaunch
+		isPublic := false
+		if v.MapCustomerOwnedIpOnLaunch != nil {
+			isPublic = *v.MapCustomerOwnedIpOnLaunch || *v.MapPublicIpOnLaunch
+		} else {
+			isPublic = *v.MapPublicIpOnLaunch
+		}
 
 		vpcs[*v.VpcId].Subnets[*v.SubnetId] = Subnet{
-			Id:                 *v.SubnetId,
-			CidrBlock:          *v.CidrBlock,
-			AvailabilityZone:   *v.AvailabilityZone,
-			AvailabilityZoneId: *v.AvailabilityZoneId,
+			Id:                 v.SubnetId,
+			CidrBlock:          v.CidrBlock,
+			AvailabilityZone:   v.AvailabilityZone,
+			AvailabilityZoneId: v.AvailabilityZoneId,
 			RawSubnet:          v,
 			Public:             isPublic,
 			EC2s:               make(map[string]EC2),
@@ -182,17 +187,19 @@ func mapInstances(vpcs map[string]VPC, reservations []*ec2.Reservation) {
 				}
 			}
 
-			vpcs[*instance.VpcId].Subnets[*instance.SubnetId].EC2s[*instance.InstanceId] = EC2{
-				Id:         *instance.InstanceId,
-				Type:       *instance.InstanceType,
-				SubnetId:   *instance.SubnetId,
-				VpcId:      *instance.VpcId,
-				State:      *instance.State.Name,
-				PublicIP:   *instance.PublicIpAddress,
-				PrivateIP:  *instance.PrivateIpAddress,
-				Volumes:    volumes,
-				Interfaces: networkInterfaces,
-				RawEc2:     instance,
+			if *instance.State.Name != "terminated" {
+				vpcs[*instance.VpcId].Subnets[*instance.SubnetId].EC2s[*instance.InstanceId] = EC2{
+					Id:         instance.InstanceId,
+					Type:       instance.InstanceType,
+					SubnetId:   instance.SubnetId,
+					VpcId:      instance.VpcId,
+					State:      instance.State.Name,
+					PublicIP:   instance.PublicIpAddress,
+					PrivateIP:  instance.PrivateIpAddress,
+					Volumes:    volumes,
+					Interfaces: networkInterfaces,
+					RawEc2:     instance,
+				}
 			}
 		}
 	}
@@ -250,33 +257,44 @@ func indent(num int) string {
 }
 
 func printVPCs(vpcs map[string]VPC) {
-	for _, v := range vpcs {
-		if v.IsDefault {
+	for _, vpc := range vpcs {
+		if vpc.IsDefault {
 			fmt.Printf("(default) ")
 		}
-		fmt.Printf("%v --- %v\n", v.Id, v.CidrBlock)
-		for _, w := range v.Subnets {
+		fmt.Printf(
+			"%v --- %v\n",
+			aws.StringValue(vpc.Id),
+			aws.StringValue(vpc.CidrBlock),
+		)
+		for _, subnet := range vpc.Subnets {
 			public := "Private"
-			if w.Public {
+			if subnet.Public {
 				public = "Public"
 			}
-			fmt.Printf("%s%v %v --- %v - %v\n", indent(4), w.Id, w.AvailabilityZone, w.CidrBlock, public)
-			for _, x := range w.EC2s {
+			fmt.Printf(
+				"%s%v -- %v -- %v -- %v\n",
+				indent(4),
+				aws.StringValue(subnet.Id),
+				aws.StringValue(subnet.AvailabilityZone),
+				aws.StringValue(subnet.CidrBlock),
+				public,
+			)
+			for _, instance := range subnet.EC2s {
 				fmt.Printf(
-					"%s%v --- %v --- %v / %v\n",
+					"%s%s -- %v -- %v -- %v\n",
 					indent(8),
-					x.Id,
-					x.State,
-					x.PublicIP,
-					x.PrivateIP,
+					aws.StringValue(instance.Id),
+					aws.StringValue(instance.State),
+					aws.StringValue(instance.PublicIP),
+					aws.StringValue(instance.PrivateIP),
 				)
 
-				for _, y := range x.Interfaces {
-					fmt.Printf("%s%v %v %v %v\n", indent(12), y.Id, y.MAC, y.PrivateIp, y.DNS)
+				for _, volume := range instance.Interfaces {
+					fmt.Printf("%s%v -- %v -- %v -- %v\n", indent(12), volume.Id, volume.MAC, volume.PrivateIp, volume.DNS)
 				}
 
-				for _, y := range x.Volumes {
-					fmt.Printf("%s%v -- %v -- %v -- %v GiB\n", indent(12), y.Id, y.VolumeType, y.DeviceName, y.Size)
+				for _, volume := range instance.Volumes {
+					fmt.Printf("%s%v -- %v -- %v -- %v GiB\n", indent(12), volume.Id, volume.VolumeType, volume.DeviceName, volume.Size)
 				}
 			}
 		}
