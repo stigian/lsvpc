@@ -20,6 +20,7 @@ type Subnet struct {
 	CidrBlock          string
 	AvailabilityZone   string
 	AvailabilityZoneId string
+	Public             bool
 	RawSubnet          *ec2.Subnet
 	EC2s               map[string]EC2
 }
@@ -99,14 +100,18 @@ func getInstances(svc *ec2.EC2) ([]*ec2.Reservation, error) {
 
 func mapSubnets(vpcs map[string]VPC, subnets []*ec2.Subnet) {
 	for _, v := range subnets {
+		isPublic := *v.MapCustomerOwnedIpOnLaunch || *v.MapPublicIpOnLaunch
+
 		vpcs[*v.VpcId].Subnets[*v.SubnetId] = Subnet{
 			Id:                 *v.SubnetId,
 			CidrBlock:          *v.CidrBlock,
 			AvailabilityZone:   *v.AvailabilityZone,
 			AvailabilityZoneId: *v.AvailabilityZoneId,
 			RawSubnet:          v,
+			Public:             isPublic,
 			EC2s:               make(map[string]EC2),
 		}
+
 	}
 }
 
@@ -152,8 +157,12 @@ func main() {
 		}
 		fmt.Printf("%v --- %v\n", v.Id, v.CidrBlock)
 		for _, w := range v.Subnets {
+			public := "Private"
+			if w.Public {
+				public = "Public"
+			}
 			fmt.Printf("    ")
-			fmt.Printf("%v %v --- %v\n", w.Id, w.AvailabilityZone, w.CidrBlock)
+			fmt.Printf("%v %v --- %v - %v\n", w.Id, w.AvailabilityZone, w.CidrBlock, public)
 			for _, x := range w.EC2s {
 				fmt.Printf("        ")
 				fmt.Printf(
