@@ -34,6 +34,7 @@ type Subnet struct {
 	RouteTable         *RouteTable
 	EC2s               map[string]EC2
 	NatGateways        map[string]NatGateway
+	TGWs               map[string]TGWAttachment
 }
 
 type EC2 struct {
@@ -79,9 +80,10 @@ type RouteTable struct {
 	RawRoute *ec2.RouteTable
 }
 
-type InternetGateway struct {
-	Id                 *string
-	RawInternetGateway *ec2.InternetGateway
+type TGWAttachment struct {
+	AttachmentId     *string
+	TransitGatewayId *string
+	RawAttachment    *ec2.TransitGatewayVpcAttachment
 }
 
 func getVpcs(svc *ec2.EC2) (map[string]VPC, error) {
@@ -228,6 +230,33 @@ func getEgressOnlyInternetGateways(svc *ec2.EC2) ([]*ec2.EgressOnlyInternetGatew
 	return EOIGWs, nil
 }
 
+func getVPNGateways(svc *ec2.EC2) ([]*ec2.VpnGateway, error) {
+	out, err := svc.DescribeVpnGateways(&ec2.DescribeVpnGatewaysInput{})
+
+	if err != nil {
+		return []*ec2.VpnGateway{}, nil
+	}
+
+	return out.VpnGateways, nil
+}
+
+func getTransitGatewayVpcAttachments(svc *ec2.EC2) ([]*ec2.TransitGatewayVpcAttachment, error) {
+	TGWatt := []*ec2.TransitGatewayVpcAttachment{}
+
+	err := svc.DescribeTransitGatewayVpcAttachmentsPages(
+		&ec2.DescribeTransitGatewayVpcAttachmentsInput{},
+		func(page *ec2.DescribeTransitGatewayVpcAttachmentsOutput, lastPage bool) bool {
+			TGWatt = append(TGWatt, page.TransitGatewayVpcAttachments...)
+			return !lastPage
+		},
+	)
+
+	if err != nil {
+		return []*ec2.TransitGatewayVpcAttachment{}, err
+	}
+	return TGWatt, nil
+}
+
 func mapSubnets(vpcs map[string]VPC, subnets []*ec2.Subnet) {
 	for _, v := range subnets {
 		isPublic := aws.BoolValue(v.MapCustomerOwnedIpOnLaunch) || aws.BoolValue(v.MapPublicIpOnLaunch)
@@ -241,6 +270,7 @@ func mapSubnets(vpcs map[string]VPC, subnets []*ec2.Subnet) {
 			Public:             isPublic,
 			EC2s:               make(map[string]EC2),
 			NatGateways:        make(map[string]NatGateway),
+			TGWs:               make(map[string]TGWAttachment),
 		}
 
 	}
@@ -387,12 +417,51 @@ func mapRouteTables(vpcs map[string]VPC, routeTables []*ec2.RouteTable) {
 
 func mapInternetGateways(vpcs map[string]VPC, internetGateways []*ec2.InternetGateway) {
 	for _, igw := range internetGateways {
-		fmt.Printf("%#v\n", igw)
 		for _, attachment := range igw.Attachments {
 			if vpcId := aws.StringValue(attachment.VpcId); vpcId != "" {
 				vpc := vpcs[vpcId]
 				vpc.Gateways = append(vpc.Gateways, aws.StringValue(igw.InternetGatewayId))
 				vpcs[vpcId] = vpc
+			}
+		}
+	}
+}
+
+func mapEgressOnlyInternetGateways(vpcs map[string]VPC, EOIGWs []*ec2.EgressOnlyInternetGateway) {
+	for _, eoigw := range EOIGWs {
+		for _, attach := range eoigw.Attachments {
+			if aws.StringValue(attach.State) == "attached" {
+				vpc := vpcs[*attach.VpcId]
+				vpc.Gateways = append(vpc.Gateways, aws.StringValue(eoigw.EgressOnlyInternetGatewayId))
+				vpcs[*attach.VpcId] = vpc
+			}
+		}
+	}
+}
+
+func mapVPNGateways(vpcs map[string]VPC, VPNGateways []*ec2.VpnGateway) {
+	for _, vpgw := range VPNGateways {
+		for _, attach := range vpgw.VpcAttachments {
+			if aws.StringValue(attach.State) == "attached" {
+				vpc := vpcs[*attach.VpcId]
+				vpc.Gateways = append(vpc.Gateways, aws.StringValue(vpgw.VpnGatewayId))
+				vpcs[*attach.VpcId] = vpc
+			}
+		}
+	}
+}
+
+func mapTransitGatewayVpcAttachments(vpcs map[string]VPC, TransitGatewayVpcAttachments []*ec2.TransitGatewayVpcAttachment) {
+	for _, tgwatt := range TransitGatewayVpcAttachments {
+		if vpcId := aws.StringValue(tgwatt.VpcId); vpcId != "" {
+			for _, subnet := range tgwatt.SubnetIds {
+				if subnetId := aws.StringValue(subnet); subnetId != "" {
+					vpcs[vpcId].Subnets[subnetId].TGWs[*tgwatt.TransitGatewayAttachmentId] = TGWAttachment{
+						AttachmentId:     tgwatt.TransitGatewayAttachmentId,
+						TransitGatewayId: tgwatt.TransitGatewayId,
+						RawAttachment:    tgwatt,
+					}
+				}
 			}
 		}
 	}
@@ -467,6 +536,13 @@ func printVPCs(vpcs map[string]VPC) {
 	for _, vpc := range vpcs {
 
 		// Print VPC
+		fmt.Printf(
+			"%v%v%v ",
+			string(colorGreen),
+			aws.StringValue(vpc.Id),
+			string(colorReset),
+		)
+
 		if vpc.IsDefault {
 			fmt.Printf(
 				"%v(default)%v ",
@@ -474,11 +550,9 @@ func printVPCs(vpcs map[string]VPC) {
 				string(colorReset),
 			)
 		}
+
 		fmt.Printf(
-			"%v%v%v %v %v-- ",
-			string(colorGreen),
-			aws.StringValue(vpc.Id),
-			string(colorReset),
+			"%v %v -- ",
 			aws.StringValue(vpc.CidrBlock),
 			aws.StringValue(vpc.IPv6CidrBlock),
 		)
@@ -571,6 +645,20 @@ func printVPCs(vpcs map[string]VPC) {
 				)
 			}
 
+			//Print Transit Gateway Attachments
+			for _, tgw := range subnet.TGWs {
+				fmt.Printf(
+					"%s%v%v%v ---> %v%v%v\n",
+					indent(8),
+					string(colorCyan),
+					aws.StringValue(tgw.AttachmentId),
+					string(colorReset),
+					string(colorYellow),
+					aws.StringValue(tgw.TransitGatewayId),
+					string(colorReset),
+				)
+			}
+
 			fmt.Printf("\n")
 		}
 	}
@@ -589,7 +677,6 @@ func populateVPC(region string) (map[string]VPC, error) {
 	svc := ec2.New(sess)
 
 	vpcs, err := getVpcs(svc)
-	fmt.Printf("%#v\n", vpcs)
 	if err != nil {
 		return map[string]VPC{}, fmt.Errorf("failed to populate VPCs: %v", err.Error())
 	}
@@ -624,6 +711,24 @@ func populateVPC(region string) (map[string]VPC, error) {
 		return map[string]VPC{}, fmt.Errorf("failed to populate VPCs: %v", err.Error())
 	}
 	mapInternetGateways(vpcs, internetGateways)
+
+	egressOnlyInternetGateways, err := getEgressOnlyInternetGateways(svc)
+	if err != nil {
+		return map[string]VPC{}, fmt.Errorf("failed to populate VPCs: %v", err.Error())
+	}
+	mapEgressOnlyInternetGateways(vpcs, egressOnlyInternetGateways)
+
+	VPNGateways, err := getVPNGateways(svc)
+	if err != nil {
+		return map[string]VPC{}, fmt.Errorf("failed to populate VPCs: %v", err.Error())
+	}
+	mapVPNGateways(vpcs, VPNGateways)
+
+	transitGatewayVpcAttachments, err := getTransitGatewayVpcAttachments(svc)
+	if err != nil {
+		return map[string]VPC{}, fmt.Errorf("failed to populate VPCs: %v", err.Error())
+	}
+	mapTransitGatewayVpcAttachments(vpcs, transitGatewayVpcAttachments)
 
 	return vpcs, nil
 }
