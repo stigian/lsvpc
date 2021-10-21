@@ -3,11 +3,16 @@ package main
 import (
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 )
+
+type RegionData struct {
+	VPCs map[string]VPC
+}
 
 type VPC struct {
 	Id        *string
@@ -171,12 +176,7 @@ func getRouteTables(svc *ec2.EC2) ([]*ec2.RouteTable, error) {
 
 func mapSubnets(vpcs map[string]VPC, subnets []*ec2.Subnet) {
 	for _, v := range subnets {
-		isPublic := false
-		if v.MapCustomerOwnedIpOnLaunch != nil {
-			isPublic = *v.MapCustomerOwnedIpOnLaunch || *v.MapPublicIpOnLaunch
-		} else {
-			isPublic = *v.MapPublicIpOnLaunch
-		}
+		isPublic := aws.BoolValue(v.MapCustomerOwnedIpOnLaunch) || aws.BoolValue(v.MapPublicIpOnLaunch)
 
 		vpcs[*v.VpcId].Subnets[*v.SubnetId] = Subnet{
 			Id:                 v.SubnetId,
@@ -497,10 +497,13 @@ func printVPCs(vpcs map[string]VPC) {
 	}
 }
 
-func main() {
+func populateVPC(region string) (map[string]VPC, error) {
 	sess := session.Must(session.NewSessionWithOptions(
 		session.Options{
 			SharedConfigState: session.SharedConfigEnable,
+			Config: aws.Config{
+				Region: aws.String(region),
+			},
 		},
 	))
 
@@ -508,21 +511,82 @@ func main() {
 
 	vpcs, err := getVpcs(svc)
 	if err != nil {
-		fmt.Printf("failed to get vpcs: %v", err.Error())
+		return map[string]VPC{}, fmt.Errorf("failed to populate VPCs: %v", err.Error())
 	}
 
-	subnets, _ := getSubnets(svc)
+	subnets, err := getSubnets(svc)
+	if err != nil {
+		return map[string]VPC{}, fmt.Errorf("failed to populate VPCs: %v", err.Error())
+	}
 	mapSubnets(vpcs, subnets)
-	instances, _ := getInstances(svc)
+	instances, err := getInstances(svc)
+	if err != nil {
+		return map[string]VPC{}, fmt.Errorf("failed to populate VPCs: %v", err.Error())
+	}
 	mapInstances(vpcs, instances)
 	err = instantiateVolumes(svc, vpcs)
 	if err != nil {
-		fmt.Printf("failed to instantiate volumes")
+		return map[string]VPC{}, fmt.Errorf("failed to populate VPCs: %v", err.Error())
 	}
-	natGateways, _ := getNatGatways(svc)
+	natGateways, err := getNatGatways(svc)
+	if err != nil {
+		return map[string]VPC{}, fmt.Errorf("failed to populate VPCs: %v", err.Error())
+	}
 	mapNatGateways(vpcs, natGateways)
-	routeTables, _ := getRouteTables(svc)
+	routeTables, err := getRouteTables(svc)
+	if err != nil {
+		return map[string]VPC{}, fmt.Errorf("failed to populate VPCs: %v", err.Error())
+	}
 	mapRouteTables(vpcs, routeTables)
 
-	printVPCs(vpcs)
+	return vpcs, nil
+}
+
+func getRegions(sess *session.Session) []string {
+	svc := ec2.New(sess)
+	regions := []string{}
+	res, err := svc.DescribeRegions(&ec2.DescribeRegionsInput{})
+	if err != nil {
+		panic("Could not get regions")
+	}
+
+	for _, region := range res.Regions {
+		regions = append(regions, aws.StringValue(region.RegionName))
+	}
+
+	return regions
+}
+
+func getRegionData(fullData map[string]RegionData, region string, wg *sync.WaitGroup) {
+	defer wg.Done()
+	vpcs, err := populateVPC(region)
+	if err != nil {
+		return
+	}
+	fullData[region] = RegionData{
+		VPCs: vpcs,
+	}
+}
+
+func main() {
+	var wg sync.WaitGroup
+	sess := session.Must(session.NewSessionWithOptions(session.Options{
+		SharedConfigState: session.SharedConfigEnable,
+	}))
+
+	regions := getRegions(sess)
+
+	fullData := make(map[string]RegionData)
+
+	for _, region := range regions {
+		wg.Add(1)
+		go getRegionData(fullData, region, &wg)
+	}
+
+	wg.Wait()
+
+	for region, vpcs := range fullData {
+		fmt.Printf("===%v===\n", region)
+		printVPCs(vpcs.VPCs)
+	}
 }
