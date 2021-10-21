@@ -24,7 +24,9 @@ type Subnet struct {
 	AvailabilityZoneId *string
 	Public             bool
 	RawSubnet          *ec2.Subnet
+	RouteTable         *RouteTable
 	EC2s               map[string]EC2
+	NatGateways        map[string]NatGateway
 }
 
 type EC2 struct {
@@ -54,6 +56,20 @@ type Volume struct {
 	Size       int64
 	VolumeType string
 	RawVolume  *ec2.Volume
+}
+type NatGateway struct {
+	Id            *string
+	PrivateIP     *string
+	PublicIP      *string
+	State         *string
+	Type          *string
+	RawNatGateway *ec2.NatGateway
+}
+
+type RouteTable struct {
+	Id       *string
+	Default  *string
+	RawRoute *ec2.RouteTable
 }
 
 func getVpcs(svc *ec2.EC2) (map[string]VPC, error) {
@@ -118,29 +134,39 @@ func getInstances(svc *ec2.EC2) ([]*ec2.Reservation, error) {
 	return instances, nil
 }
 
-func getNetworkInterfaces(svc *ec2.EC2) ([]*ec2.NetworkInterface, error) {
-	networkInterfaces := []*ec2.NetworkInterface{}
-	err := svc.DescribeNetworkInterfacesPages(
-		&ec2.DescribeNetworkInterfacesInput{
-			Filters: []*ec2.Filter{
-				{
-					Name: aws.String("status"),
-					Values: []*string{
-						aws.String("in-use"),
-					},
-				},
-			},
-		},
-		func(page *ec2.DescribeNetworkInterfacesOutput, lastPage bool) bool {
-			networkInterfaces = append(networkInterfaces, page.NetworkInterfaces...)
+func getNatGatways(svc *ec2.EC2) ([]*ec2.NatGateway, error) {
+	natGateways := []*ec2.NatGateway{}
+
+	err := svc.DescribeNatGatewaysPages(
+		&ec2.DescribeNatGatewaysInput{},
+		func(page *ec2.DescribeNatGatewaysOutput, lastPage bool) bool {
+			natGateways = append(natGateways, page.NatGateways...)
 			return !lastPage
 		},
 	)
 	if err != nil {
-		return []*ec2.NetworkInterface{}, err
+		return []*ec2.NatGateway{}, err
 	}
 
-	return networkInterfaces, nil
+	return natGateways, nil
+}
+
+func getRouteTables(svc *ec2.EC2) ([]*ec2.RouteTable, error) {
+	routeTables := []*ec2.RouteTable{}
+
+	err := svc.DescribeRouteTablesPages(
+		&ec2.DescribeRouteTablesInput{},
+		func(page *ec2.DescribeRouteTablesOutput, lastPage bool) bool {
+			routeTables = append(routeTables, page.RouteTables...)
+			return !lastPage
+		},
+	)
+
+	if err != nil {
+		return []*ec2.RouteTable{}, err
+	}
+
+	return routeTables, nil
 }
 
 func mapSubnets(vpcs map[string]VPC, subnets []*ec2.Subnet) {
@@ -160,6 +186,7 @@ func mapSubnets(vpcs map[string]VPC, subnets []*ec2.Subnet) {
 			RawSubnet:          v,
 			Public:             isPublic,
 			EC2s:               make(map[string]EC2),
+			NatGateways:        make(map[string]NatGateway),
 		}
 
 	}
@@ -201,6 +228,105 @@ func mapInstances(vpcs map[string]VPC, reservations []*ec2.Reservation) {
 					RawEc2:     instance,
 				}
 			}
+		}
+	}
+}
+
+func mapNatGateways(vpcs map[string]VPC, natGateways []*ec2.NatGateway) {
+	for _, gateway := range natGateways {
+		vpcs[*gateway.VpcId].Subnets[*gateway.SubnetId].NatGateways[*gateway.NatGatewayId] = NatGateway{
+			Id:            gateway.NatGatewayId,
+			PrivateIP:     gateway.NatGatewayAddresses[0].PrivateIp,
+			PublicIP:      gateway.NatGatewayAddresses[0].PublicIp,
+			State:         gateway.State,
+			Type:          gateway.ConnectivityType,
+			RawNatGateway: gateway,
+		}
+	}
+}
+
+func getDefaultRoute(rtb *ec2.RouteTable) string {
+	for _, route := range rtb.Routes {
+		if aws.StringValue(route.DestinationCidrBlock) == "0.0.0.0/0" ||
+			aws.StringValue(route.DestinationIpv6CidrBlock) == "::/0" {
+
+			if dest := aws.StringValue(route.CarrierGatewayId); dest != "" {
+				return dest
+			}
+			if dest := aws.StringValue(route.EgressOnlyInternetGatewayId); dest != "" {
+				return dest
+			}
+			if dest := aws.StringValue(route.GatewayId); dest != "" {
+				return dest
+			}
+			if dest := aws.StringValue(route.InstanceId); dest != "" {
+				return dest
+			}
+			if dest := aws.StringValue(route.LocalGatewayId); dest != "" {
+				return dest
+			}
+			if dest := aws.StringValue(route.NatGatewayId); dest != "" {
+				return dest
+			}
+			if dest := aws.StringValue(route.NetworkInterfaceId); dest != "" {
+				return dest
+			}
+			if dest := aws.StringValue(route.TransitGatewayId); dest != "" {
+				return dest
+			}
+			if dest := aws.StringValue(route.VpcPeeringConnectionId); dest != "" {
+				return dest
+			}
+		}
+	}
+	return "" //no default route found, which doesn't necessarily mean an error
+}
+
+func mapRouteTables(vpcs map[string]VPC, routeTables []*ec2.RouteTable) {
+	// AWS doesn't actually have explicit queryable associations of route
+	// tables to subnets. if no other route tables say they are associated
+	// with a subnet, then that subnet is assumed to be on the default route table.
+	// You can't determine this by looking at the subnets themselves, you
+	// have to instead look at all route tables and pick out the ones
+	// that say they are associated with particular subnets, and the
+	// default route table doesn't even say which subnets they are
+	// associated with.
+
+	// first pass, associate the default route with everything
+	for _, routeTable := range routeTables {
+		for _, association := range routeTable.Associations {
+			if association.Main != nil && *association.Main {
+				for subnet_id := range vpcs[*routeTable.VpcId].Subnets {
+					subnet := vpcs[*routeTable.VpcId].Subnets[subnet_id]
+					defaultRoute := getDefaultRoute(routeTable)
+					subnet.RouteTable = &RouteTable{
+						Id:       routeTable.RouteTableId,
+						Default:  &defaultRoute,
+						RawRoute: routeTable,
+					}
+					vpcs[*routeTable.VpcId].Subnets[subnet_id] = subnet
+				}
+			}
+		}
+	}
+
+	// second pass, look at each route table's associations and assign them
+	// to their explicitly mentioned subnet
+	for _, routeTable := range routeTables {
+		for _, association := range routeTable.Associations {
+			//default route doesn't have subnet ids and will cause a nil dereference
+			if aws.StringValue(association.AssociationState.State) != "associated" ||
+				aws.BoolValue(association.Main) {
+				continue
+			}
+			subnet := vpcs[*routeTable.VpcId].Subnets[*association.SubnetId]
+			defaultRoute := getDefaultRoute(routeTable)
+			subnet.RouteTable = &RouteTable{
+				Id:       routeTable.RouteTableId,
+				Default:  &defaultRoute,
+				RawRoute: routeTable,
+			}
+			vpcs[*routeTable.VpcId].Subnets[*association.SubnetId] = subnet
 		}
 	}
 }
@@ -256,47 +382,100 @@ func indent(num int) string {
 	return sb.String()
 }
 
+const (
+	colorReset  = "\033[0m"
+	colorRed    = "\033[31m"
+	colorGreen  = "\033[32m"
+	colorYellow = "\033[33m"
+	colorBlue   = "\033[34m"
+	colorPurple = "\033[35m"
+	colorCyan   = "\033[36m"
+	colorWhite  = "\033[37m"
+)
+
 func printVPCs(vpcs map[string]VPC) {
 	for _, vpc := range vpcs {
+
+		// Print VPC
 		if vpc.IsDefault {
-			fmt.Printf("(default) ")
+			fmt.Printf(
+				"%v(default)%v ",
+				string(colorYellow),
+				string(colorReset),
+			)
 		}
 		fmt.Printf(
-			"%v --- %v\n",
+			"%v%v%v --- %v\n",
+			string(colorGreen),
 			aws.StringValue(vpc.Id),
+			string(colorReset),
 			aws.StringValue(vpc.CidrBlock),
 		)
+
+		// Print Subnets
 		for _, subnet := range vpc.Subnets {
+
+			// Print Subnet Info
 			public := "Private"
 			if subnet.Public {
 				public = "Public"
 			}
 			fmt.Printf(
-				"%s%v -- %v -- %v -- %v\n",
+				"%s%v%v%v  %v  %v %v-->%v%v %v\n",
 				indent(4),
+				string(colorBlue),
 				aws.StringValue(subnet.Id),
+				string(colorReset),
 				aws.StringValue(subnet.AvailabilityZone),
 				aws.StringValue(subnet.CidrBlock),
+				string(colorYellow),
+				aws.StringValue(subnet.RouteTable.Default),
+				string(colorReset),
 				public,
 			)
+
+			// Print EC2 Instance
 			for _, instance := range subnet.EC2s {
+
+				// Print Instance Info
 				fmt.Printf(
-					"%s%s -- %v -- %v -- %v\n",
+					"%s%v%s%v -- %v -- %v -- %v\n",
 					indent(8),
+					string(colorCyan),
 					aws.StringValue(instance.Id),
+					string(colorReset),
 					aws.StringValue(instance.State),
 					aws.StringValue(instance.PublicIP),
 					aws.StringValue(instance.PrivateIP),
 				)
 
+				// Print Instance Interfaces
 				for _, volume := range instance.Interfaces {
-					fmt.Printf("%s%v -- %v -- %v -- %v\n", indent(12), volume.Id, volume.MAC, volume.PrivateIp, volume.DNS)
+					fmt.Printf("%s%v  %v  %v  %v\n", indent(12), volume.Id, volume.MAC, volume.PrivateIp, volume.DNS)
 				}
 
+				// Print Instance Volumes
 				for _, volume := range instance.Volumes {
-					fmt.Printf("%s%v -- %v -- %v -- %v GiB\n", indent(12), volume.Id, volume.VolumeType, volume.DeviceName, volume.Size)
+					fmt.Printf("%s%v  %v  %v  %v GiB\n", indent(12), volume.Id, volume.VolumeType, volume.DeviceName, volume.Size)
 				}
 			}
+
+			//Print Nat Gateways
+			for _, natGateway := range subnet.NatGateways {
+				fmt.Printf(
+					"%s%v%v%v  %v  %v  %v  %v\n",
+					indent(8),
+					string(colorCyan),
+					aws.StringValue(natGateway.Id),
+					string(colorReset),
+					aws.StringValue(natGateway.Type),
+					aws.StringValue(natGateway.State),
+					aws.StringValue(natGateway.PublicIP),
+					aws.StringValue(natGateway.PrivateIP),
+				)
+			}
+
+			fmt.Printf("\n")
 		}
 	}
 }
@@ -323,6 +502,10 @@ func main() {
 	if err != nil {
 		fmt.Printf("failed to instantiate volumes")
 	}
+	natGateways, _ := getNatGatways(svc)
+	mapNatGateways(vpcs, natGateways)
+	routeTables, _ := getRouteTables(svc)
+	mapRouteTables(vpcs, routeTables)
 
 	printVPCs(vpcs)
 }
