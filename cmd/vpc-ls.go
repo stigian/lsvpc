@@ -15,12 +15,13 @@ type RegionData struct {
 }
 
 type VPC struct {
-	Id        *string
-	IsDefault bool
-	CidrBlock *string
-	RawVPC    *ec2.Vpc
-	Gateways  []string
-	Subnets   map[string]Subnet
+	Id            *string
+	IsDefault     bool
+	CidrBlock     *string
+	IPv6CidrBlock *string
+	RawVPC        *ec2.Vpc
+	Gateways      []string
+	Subnets       map[string]Subnet
 }
 
 type Subnet struct {
@@ -96,14 +97,26 @@ func getVpcs(svc *ec2.EC2) (map[string]VPC, error) {
 	if err != nil {
 		return map[string]VPC{}, fmt.Errorf("failed to get vpcs: %v", err.Error())
 	}
-	vpcs := map[string]VPC{}
+	vpcs := make(map[string]VPC)
+
 	for _, v := range vpclist {
+
+		var v6cidr *string
+		if v.Ipv6CidrBlockAssociationSet != nil {
+			for _, assoc := range v.Ipv6CidrBlockAssociationSet {
+				if aws.StringValue(assoc.Ipv6CidrBlockState.State) == "associated" {
+					v6cidr = assoc.Ipv6CidrBlock
+				}
+			}
+		}
+
 		vpc := VPC{
-			Id:        v.VpcId,
-			IsDefault: *v.IsDefault,
-			CidrBlock: v.CidrBlock,
-			RawVPC:    v,
-			Subnets:   make(map[string]Subnet),
+			Id:            v.VpcId,
+			IsDefault:     aws.BoolValue(v.IsDefault),
+			CidrBlock:     v.CidrBlock,
+			IPv6CidrBlock: v6cidr,
+			RawVPC:        v,
+			Subnets:       make(map[string]Subnet),
 		}
 		vpcs[*v.VpcId] = vpc
 	}
@@ -195,6 +208,24 @@ func getInternetGateways(svc *ec2.EC2) ([]*ec2.InternetGateway, error) {
 	}
 
 	return internetGateways, nil
+}
+
+func getEgressOnlyInternetGateways(svc *ec2.EC2) ([]*ec2.EgressOnlyInternetGateway, error) {
+	EOIGWs := []*ec2.EgressOnlyInternetGateway{}
+
+	err := svc.DescribeEgressOnlyInternetGatewaysPages(
+		&ec2.DescribeEgressOnlyInternetGatewaysInput{},
+		func(page *ec2.DescribeEgressOnlyInternetGatewaysOutput, lastPage bool) bool {
+			EOIGWs = append(EOIGWs, page.EgressOnlyInternetGateways...)
+			return !lastPage
+		},
+	)
+
+	if err != nil {
+		return []*ec2.EgressOnlyInternetGateway{}, err
+	}
+
+	return EOIGWs, nil
 }
 
 func mapSubnets(vpcs map[string]VPC, subnets []*ec2.Subnet) {
@@ -444,11 +475,12 @@ func printVPCs(vpcs map[string]VPC) {
 			)
 		}
 		fmt.Printf(
-			"%v%v%v %v: ",
+			"%v%v%v %v %v-- ",
 			string(colorGreen),
 			aws.StringValue(vpc.Id),
 			string(colorReset),
 			aws.StringValue(vpc.CidrBlock),
+			aws.StringValue(vpc.IPv6CidrBlock),
 		)
 		// Print gateways set to VPC
 		for _, gateway := range vpc.Gateways {
@@ -557,6 +589,7 @@ func populateVPC(region string) (map[string]VPC, error) {
 	svc := ec2.New(sess)
 
 	vpcs, err := getVpcs(svc)
+	fmt.Printf("%#v\n", vpcs)
 	if err != nil {
 		return map[string]VPC{}, fmt.Errorf("failed to populate VPCs: %v", err.Error())
 	}
