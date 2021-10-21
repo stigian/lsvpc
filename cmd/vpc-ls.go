@@ -43,18 +43,18 @@ type EC2 struct {
 }
 
 type NetworkInterface struct {
-	Id                  string
-	PrivateIp           string
-	MAC                 string
-	DNS                 string
+	Id                  *string
+	PrivateIp           *string
+	MAC                 *string
+	DNS                 *string
 	RawNetworkInterface *ec2.InstanceNetworkInterface
 }
 
 type Volume struct {
-	Id         string
-	DeviceName string
-	Size       int64
-	VolumeType string
+	Id         *string
+	DeviceName *string
+	Size       *int64
+	VolumeType *string
 	RawVolume  *ec2.Volume
 }
 type NatGateway struct {
@@ -198,10 +198,10 @@ func mapInstances(vpcs map[string]VPC, reservations []*ec2.Reservation) {
 			networkInterfaces := []NetworkInterface{}
 			for _, networkInterface := range instance.NetworkInterfaces {
 				networkInterfaces = append(networkInterfaces, NetworkInterface{
-					Id:                  *networkInterface.NetworkInterfaceId,
-					PrivateIp:           *networkInterface.PrivateIpAddress,
-					MAC:                 *networkInterface.MacAddress,
-					DNS:                 *networkInterface.PrivateDnsName,
+					Id:                  networkInterface.NetworkInterfaceId,
+					PrivateIp:           networkInterface.PrivateIpAddress,
+					MAC:                 networkInterface.MacAddress,
+					DNS:                 networkInterface.PrivateDnsName,
 					RawNetworkInterface: networkInterface,
 				})
 			}
@@ -209,8 +209,8 @@ func mapInstances(vpcs map[string]VPC, reservations []*ec2.Reservation) {
 			volumes := make(map[string]Volume)
 			for _, volume := range instance.BlockDeviceMappings {
 				volumes[*volume.Ebs.VolumeId] = Volume{
-					Id:         *volume.Ebs.VolumeId,
-					DeviceName: *volume.DeviceName,
+					Id:         volume.Ebs.VolumeId,
+					DeviceName: volume.DeviceName,
 				}
 			}
 
@@ -332,6 +332,9 @@ func mapRouteTables(vpcs map[string]VPC, routeTables []*ec2.RouteTable) {
 }
 
 func getVolume(svc *ec2.EC2, volumeId string) (*ec2.Volume, error) {
+	if volumeId == "" {
+		return &ec2.Volume{}, fmt.Errorf("getVolume handed an empty string")
+	}
 	out, err := svc.DescribeVolumes(&ec2.DescribeVolumesInput{
 		VolumeIds: []*string{
 			aws.String(volumeId),
@@ -354,15 +357,15 @@ func instantiateVolumes(svc *ec2.EC2, vpcs map[string]VPC) error {
 		for sk, s := range v.Subnets {
 			for ik, i := range s.EC2s {
 				for volk, vol := range i.Volumes {
-					volume, err := getVolume(svc, vol.Id)
+					volume, err := getVolume(svc, aws.StringValue(vol.Id))
 					if err != nil {
 						return err
 					}
 					vpcs[vk].Subnets[sk].EC2s[ik].Volumes[volk] = Volume{
 						Id:         vol.Id,
 						DeviceName: vol.DeviceName,
-						Size:       *volume.Size,
-						VolumeType: *volume.VolumeType,
+						Size:       volume.Size,
+						VolumeType: volume.VolumeType,
 						RawVolume:  volume,
 					}
 				}
@@ -449,14 +452,28 @@ func printVPCs(vpcs map[string]VPC) {
 					aws.StringValue(instance.PrivateIP),
 				)
 
-				// Print Instance Interfaces
-				for _, volume := range instance.Interfaces {
-					fmt.Printf("%s%v  %v  %v  %v\n", indent(12), volume.Id, volume.MAC, volume.PrivateIp, volume.DNS)
+				// Print Instance Volumes
+				for _, iface := range instance.Interfaces {
+					fmt.Printf(
+						"%s%v  %v  %v  %v\n",
+						indent(12),
+						aws.StringValue(iface.Id),
+						aws.StringValue(iface.MAC),
+						aws.StringValue(iface.PrivateIp),
+						aws.StringValue(iface.DNS),
+					)
 				}
 
 				// Print Instance Volumes
 				for _, volume := range instance.Volumes {
-					fmt.Printf("%s%v  %v  %v  %v GiB\n", indent(12), volume.Id, volume.VolumeType, volume.DeviceName, volume.Size)
+					fmt.Printf(
+						"%s%v  %v  %v  %v GiB\n",
+						indent(12),
+						aws.StringValue(volume.Id),
+						aws.StringValue(volume.VolumeType),
+						aws.StringValue(volume.DeviceName),
+						aws.Int64Value(volume.Size),
+					)
 				}
 			}
 
