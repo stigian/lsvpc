@@ -1009,15 +1009,17 @@ func getRegions() []string {
 	return regions
 }
 
-func getRegionData(fullData map[string]RegionData, region string, wg *sync.WaitGroup) {
+func getRegionData(fullData map[string]RegionData, region string, wg *sync.WaitGroup, mu *sync.Mutex) {
 	defer wg.Done()
 	vpcs, err := populateVPC(region)
 	if err != nil {
 		return
 	}
+	mu.Lock()
 	fullData[region] = RegionData{
 		VPCs: vpcs,
 	}
+	mu.Unlock()
 }
 
 func allRegions() {
@@ -1026,10 +1028,11 @@ func allRegions() {
 	regions := getRegions()
 
 	fullData := make(map[string]RegionData)
+	mu := sync.Mutex{}
 
 	for _, region := range regions {
 		wg.Add(1)
-		go getRegionData(fullData, region, &wg)
+		go getRegionData(fullData, region, &wg, &mu)
 	}
 
 	wg.Wait()
@@ -1055,6 +1058,6 @@ func defaultRegion() {
 
 }
 func main() {
-	//allRegions()
-	defaultRegion()
+	allRegions()
+	//defaultRegion()
 }
