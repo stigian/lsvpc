@@ -22,6 +22,7 @@ type VPC struct {
 	RawVPC        *ec2.Vpc
 	Gateways      []string
 	Subnets       map[string]Subnet
+	Peers         map[string]VPCPeer
 }
 
 type Subnet struct {
@@ -35,6 +36,9 @@ type Subnet struct {
 	EC2s               map[string]EC2
 	NatGateways        map[string]NatGateway
 	TGWs               map[string]TGWAttachment
+	ENIs               map[string]NetworkInterface
+	InterfaceEndpoints map[string]InterfaceEndpoint
+	GatewayEndpoints   map[string]GatewayEndpoint
 }
 
 type EC2 struct {
@@ -46,8 +50,19 @@ type EC2 struct {
 	PublicIP   *string
 	PrivateIP  *string
 	Volumes    map[string]Volume
-	Interfaces []NetworkInterface
+	Interfaces []InstanceNetworkInterface
 	RawEc2     *ec2.Instance
+}
+
+type InstanceNetworkInterface struct {
+	Id                  *string
+	PrivateIp           *string
+	MAC                 *string
+	DNS                 *string
+	Type                *string
+	Description         *string
+	PublicIp            *string
+	RawNetworkInterface *ec2.InstanceNetworkInterface
 }
 
 type NetworkInterface struct {
@@ -55,7 +70,10 @@ type NetworkInterface struct {
 	PrivateIp           *string
 	MAC                 *string
 	DNS                 *string
-	RawNetworkInterface *ec2.InstanceNetworkInterface
+	Type                *string
+	Description         *string
+	PublicIp            *string
+	RawNetworkInterface *ec2.NetworkInterface
 }
 
 type Volume struct {
@@ -84,6 +102,31 @@ type TGWAttachment struct {
 	AttachmentId     *string
 	TransitGatewayId *string
 	RawAttachment    *ec2.TransitGatewayVpcAttachment
+}
+
+type VPCPeer struct {
+	Id        *string
+	Requester *string
+	Accepter  *string
+	RawPeer   *ec2.VpcPeeringConnection
+}
+
+type VPCEndpoint struct {
+	Id      *string
+	Type    *string
+	Service *string
+}
+
+type InterfaceEndpoint struct {
+	Id          *string
+	ServiceName *string
+	RawEndpoint *ec2.VpcEndpoint
+}
+
+type GatewayEndpoint struct {
+	Id          *string
+	ServiceName *string
+	RawEndpoint *ec2.VpcEndpoint
 }
 
 func getVpcs(svc *ec2.EC2) (map[string]VPC, error) {
@@ -119,6 +162,7 @@ func getVpcs(svc *ec2.EC2) (map[string]VPC, error) {
 			IPv6CidrBlock: v6cidr,
 			RawVPC:        v,
 			Subnets:       make(map[string]Subnet),
+			Peers:         make(map[string]VPCPeer),
 		}
 		vpcs[*v.VpcId] = vpc
 	}
@@ -257,6 +301,59 @@ func getTransitGatewayVpcAttachments(svc *ec2.EC2) ([]*ec2.TransitGatewayVpcAtta
 	return TGWatt, nil
 }
 
+func getVpcPeeringConnections(svc *ec2.EC2) ([]*ec2.VpcPeeringConnection, error) {
+	peers := []*ec2.VpcPeeringConnection{}
+
+	err := svc.DescribeVpcPeeringConnectionsPages(
+		&ec2.DescribeVpcPeeringConnectionsInput{},
+		func(page *ec2.DescribeVpcPeeringConnectionsOutput, lastPage bool) bool {
+			peers = append(peers, page.VpcPeeringConnections...)
+			return !lastPage
+		},
+	)
+	if err != nil {
+		return []*ec2.VpcPeeringConnection{}, err
+	}
+
+	return peers, nil
+}
+
+func getNetworkInterfaces(svc *ec2.EC2) ([]*ec2.NetworkInterface, error) {
+	ifaces := []*ec2.NetworkInterface{}
+
+	err := svc.DescribeNetworkInterfacesPages(
+		&ec2.DescribeNetworkInterfacesInput{},
+		func(page *ec2.DescribeNetworkInterfacesOutput, lastPage bool) bool {
+			ifaces = append(ifaces, page.NetworkInterfaces...)
+			return !lastPage
+		},
+	)
+
+	if err != nil {
+		return []*ec2.NetworkInterface{}, nil
+	}
+
+	return ifaces, nil
+}
+
+func getVpcEndpoints(svc *ec2.EC2) ([]*ec2.VpcEndpoint, error) {
+	endpoints := []*ec2.VpcEndpoint{}
+
+	err := svc.DescribeVpcEndpointsPages(
+		&ec2.DescribeVpcEndpointsInput{},
+		func(page *ec2.DescribeVpcEndpointsOutput, lastPage bool) bool {
+			endpoints = append(endpoints, page.VpcEndpoints...)
+			return !lastPage
+		},
+	)
+
+	if err != nil {
+		return []*ec2.VpcEndpoint{}, err
+	}
+	return endpoints, nil
+
+}
+
 func mapSubnets(vpcs map[string]VPC, subnets []*ec2.Subnet) {
 	for _, v := range subnets {
 		isPublic := aws.BoolValue(v.MapCustomerOwnedIpOnLaunch) || aws.BoolValue(v.MapPublicIpOnLaunch)
@@ -271,6 +368,8 @@ func mapSubnets(vpcs map[string]VPC, subnets []*ec2.Subnet) {
 			EC2s:               make(map[string]EC2),
 			NatGateways:        make(map[string]NatGateway),
 			TGWs:               make(map[string]TGWAttachment),
+			ENIs:               make(map[string]NetworkInterface),
+			InterfaceEndpoints: make(map[string]InterfaceEndpoint),
 		}
 
 	}
@@ -279,9 +378,9 @@ func mapSubnets(vpcs map[string]VPC, subnets []*ec2.Subnet) {
 func mapInstances(vpcs map[string]VPC, reservations []*ec2.Reservation) {
 	for _, reservation := range reservations {
 		for _, instance := range reservation.Instances {
-			networkInterfaces := []NetworkInterface{}
+			networkInterfaces := []InstanceNetworkInterface{}
 			for _, networkInterface := range instance.NetworkInterfaces {
-				networkInterfaces = append(networkInterfaces, NetworkInterface{
+				networkInterfaces = append(networkInterfaces, InstanceNetworkInterface{
 					Id:                  networkInterface.NetworkInterfaceId,
 					PrivateIp:           networkInterface.PrivateIpAddress,
 					MAC:                 networkInterface.MacAddress,
@@ -467,6 +566,82 @@ func mapTransitGatewayVpcAttachments(vpcs map[string]VPC, TransitGatewayVpcAttac
 	}
 }
 
+func mapVpcPeeringConnections(vpcs map[string]VPC, VpcPeeringConnections []*ec2.VpcPeeringConnection) {
+	for _, peer := range VpcPeeringConnections {
+		if requester := aws.StringValue(peer.RequesterVpcInfo.VpcId); requester != "" {
+			vpcs[requester].Peers[aws.StringValue(peer.VpcPeeringConnectionId)] = VPCPeer{
+				Id:        peer.VpcPeeringConnectionId,
+				Requester: peer.RequesterVpcInfo.VpcId,
+				Accepter:  peer.AccepterVpcInfo.VpcId,
+				RawPeer:   peer,
+			}
+		}
+		if accepter := aws.StringValue(peer.AccepterVpcInfo.VpcId); accepter != "" {
+			vpcs[accepter].Peers[aws.StringValue(peer.VpcPeeringConnectionId)] = VPCPeer{
+				Id:        peer.VpcPeeringConnectionId,
+				Requester: peer.RequesterVpcInfo.VpcId,
+				Accepter:  peer.AccepterVpcInfo.VpcId,
+				RawPeer:   peer,
+			}
+		}
+	}
+}
+
+func mapNetworkInterfaces(vpcs map[string]VPC, networkInterfaces []*ec2.NetworkInterface) {
+	for _, iface := range networkInterfaces {
+		if aws.StringValue(iface.Attachment.InstanceId) != "" {
+			continue //we handle instance interfaces elsewhere
+		}
+
+		if aws.StringValue(iface.InterfaceType) == "nat_gateway" {
+			continue //nat gateways are already adequately reported
+		}
+
+		var publicIp *string
+		if iface.Association != nil {
+			publicIp = iface.Association.PublicIp
+		}
+
+		description := iface.Description
+		vpcs[*iface.VpcId].Subnets[*iface.SubnetId].ENIs[*iface.NetworkInterfaceId] = NetworkInterface{
+			Id:                  iface.NetworkInterfaceId,
+			PrivateIp:           iface.PrivateIpAddress,
+			MAC:                 iface.MacAddress,
+			PublicIp:            publicIp,
+			Type:                iface.InterfaceType,
+			Description:         description,
+			RawNetworkInterface: iface,
+		}
+	}
+}
+
+func mapVpcEndpoints(vpcs map[string]VPC, vpcEndpoints []*ec2.VpcEndpoint) {
+	for _, endpoint := range vpcEndpoints {
+		if aws.StringValue(endpoint.VpcEndpointType) == "Interface" {
+			for _, subnet := range endpoint.SubnetIds {
+				vpcs[*endpoint.VpcId].Subnets[*subnet].InterfaceEndpoints[*endpoint.VpcEndpointId] = InterfaceEndpoint{
+					Id:          endpoint.VpcEndpointId,
+					ServiceName: endpoint.ServiceName,
+					RawEndpoint: endpoint,
+				}
+			}
+		}
+
+		if aws.StringValue(endpoint.VpcEndpointType) == "Gateway" {
+			for _, rtb := range endpoint.RouteTableIds {
+				for _, subnet := range vpcs[*endpoint.VpcId].Subnets {
+					if aws.StringValue(subnet.RouteTable.Id) == aws.StringValue(rtb) {
+						vpcs[*endpoint.VpcId].Subnets[*subnet.Id].GatewayEndpoints[*endpoint.VpcEndpointId] = GatewayEndpoint{
+							Id:          endpoint.VpcEndpointId,
+							ServiceName: endpoint.ServiceName,
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
 func getVolume(svc *ec2.EC2, volumeId string) (*ec2.Volume, error) {
 	if volumeId == "" {
 		return &ec2.Volume{}, fmt.Errorf("getVolume handed an empty string")
@@ -568,6 +743,32 @@ func printVPCs(vpcs map[string]VPC) {
 
 		fmt.Printf("\n")
 
+		// Print Peers
+		peersExist := false
+		for _, peer := range vpc.Peers {
+			direction := "-->"
+			vpcOperand := aws.StringValue(peer.Accepter)
+			if aws.StringValue(peer.Accepter) == aws.StringValue(vpc.Id) {
+				direction = "<--"
+				vpcOperand = aws.StringValue(peer.Requester)
+			}
+			fmt.Printf(
+				"%s%v%v%v %v %v%v%v\n",
+				indent(4),
+				string(colorCyan),
+				aws.StringValue(peer.Id),
+				string(colorReset),
+				direction,
+				string(colorGreen),
+				vpcOperand,
+				string(colorReset),
+			)
+			peersExist = true
+		}
+		if peersExist {
+			fmt.Println()
+		}
+
 		// Print Subnets
 		for _, subnet := range vpc.Subnets {
 
@@ -590,6 +791,45 @@ func printVPCs(vpcs map[string]VPC) {
 				public,
 			)
 
+			//Print Endpoints
+			for _, interfaceEndpoint := range subnet.InterfaceEndpoints {
+				fmt.Printf(
+					"%s%v%v%v interface--> %v\n",
+					indent(8),
+					string(colorCyan),
+					aws.StringValue(interfaceEndpoint.Id),
+					string(colorReset),
+					aws.StringValue(interfaceEndpoint.ServiceName),
+				)
+			}
+
+			for _, gatewayEndpoint := range subnet.GatewayEndpoints {
+				fmt.Printf(
+					"%s%v%v%v gateway--> %v\n",
+					indent(8),
+					string(colorCyan),
+					aws.StringValue(gatewayEndpoint.Id),
+					string(colorReset),
+					aws.StringValue(gatewayEndpoint.ServiceName),
+				)
+			}
+
+			// Print Interfaces
+			for _, iface := range subnet.ENIs {
+				fmt.Printf(
+					"%s%v%v%v %v %v %v %v %v : %v\n",
+					indent(8),
+					string(colorCyan),
+					aws.StringValue(iface.Id),
+					string(colorReset),
+					aws.StringValue(iface.Type),
+					aws.StringValue(iface.MAC),
+					aws.StringValue(iface.PublicIp),
+					aws.StringValue(iface.PrivateIp),
+					aws.StringValue(iface.DNS),
+					aws.StringValue(iface.Description),
+				)
+			}
 			// Print EC2 Instance
 			for _, instance := range subnet.EC2s {
 
@@ -729,6 +969,24 @@ func populateVPC(region string) (map[string]VPC, error) {
 		return map[string]VPC{}, fmt.Errorf("failed to populate VPCs: %v", err.Error())
 	}
 	mapTransitGatewayVpcAttachments(vpcs, transitGatewayVpcAttachments)
+
+	vpcPeeringConnections, err := getVpcPeeringConnections(svc)
+	if err != nil {
+		return map[string]VPC{}, fmt.Errorf("failed to populate VPCs: %v", err.Error())
+	}
+	mapVpcPeeringConnections(vpcs, vpcPeeringConnections)
+
+	networkInterfaces, err := getNetworkInterfaces(svc)
+	if err != nil {
+		return map[string]VPC{}, fmt.Errorf("failed to populate VPCs: %v", err.Error())
+	}
+	mapNetworkInterfaces(vpcs, networkInterfaces)
+
+	vpcEndpoints, err := getVpcEndpoints(svc)
+	if err != nil {
+		return map[string]VPC{}, fmt.Errorf("failed to populate VPCs: %v", err.Error())
+	}
+	mapVpcEndpoints(vpcs, vpcEndpoints)
 
 	return vpcs, nil
 }
