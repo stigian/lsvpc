@@ -19,6 +19,7 @@ type VPC struct {
 	IsDefault bool
 	CidrBlock *string
 	RawVPC    *ec2.Vpc
+	Gateways  []string
 	Subnets   map[string]Subnet
 }
 
@@ -75,6 +76,11 @@ type RouteTable struct {
 	Id       *string
 	Default  *string
 	RawRoute *ec2.RouteTable
+}
+
+type InternetGateway struct {
+	Id                 *string
+	RawInternetGateway *ec2.InternetGateway
 }
 
 func getVpcs(svc *ec2.EC2) (map[string]VPC, error) {
@@ -172,6 +178,23 @@ func getRouteTables(svc *ec2.EC2) ([]*ec2.RouteTable, error) {
 	}
 
 	return routeTables, nil
+}
+
+func getInternetGateways(svc *ec2.EC2) ([]*ec2.InternetGateway, error) {
+	internetGateways := []*ec2.InternetGateway{}
+
+	err := svc.DescribeInternetGatewaysPages(
+		&ec2.DescribeInternetGatewaysInput{},
+		func(page *ec2.DescribeInternetGatewaysOutput, lastPage bool) bool {
+			internetGateways = append(internetGateways, page.InternetGateways...)
+			return !lastPage
+		},
+	)
+	if err != nil {
+		return []*ec2.InternetGateway{}, err
+	}
+
+	return internetGateways, nil
 }
 
 func mapSubnets(vpcs map[string]VPC, subnets []*ec2.Subnet) {
@@ -331,6 +354,19 @@ func mapRouteTables(vpcs map[string]VPC, routeTables []*ec2.RouteTable) {
 	}
 }
 
+func mapInternetGateways(vpcs map[string]VPC, internetGateways []*ec2.InternetGateway) {
+	for _, igw := range internetGateways {
+		fmt.Printf("%#v\n", igw)
+		for _, attachment := range igw.Attachments {
+			if vpcId := aws.StringValue(attachment.VpcId); vpcId != "" {
+				vpc := vpcs[vpcId]
+				vpc.Gateways = append(vpc.Gateways, aws.StringValue(igw.InternetGatewayId))
+				vpcs[vpcId] = vpc
+			}
+		}
+	}
+}
+
 func getVolume(svc *ec2.EC2, volumeId string) (*ec2.Volume, error) {
 	if volumeId == "" {
 		return &ec2.Volume{}, fmt.Errorf("getVolume handed an empty string")
@@ -408,12 +444,23 @@ func printVPCs(vpcs map[string]VPC) {
 			)
 		}
 		fmt.Printf(
-			"%v%v%v --- %v\n",
+			"%v%v%v %v: ",
 			string(colorGreen),
 			aws.StringValue(vpc.Id),
 			string(colorReset),
 			aws.StringValue(vpc.CidrBlock),
 		)
+		// Print gateways set to VPC
+		for _, gateway := range vpc.Gateways {
+			fmt.Printf(
+				"%v%v%v ",
+				string(colorYellow),
+				gateway,
+				string(colorReset),
+			)
+		}
+
+		fmt.Printf("\n")
 
 		// Print Subnets
 		for _, subnet := range vpc.Subnets {
@@ -539,10 +586,19 @@ func populateVPC(region string) (map[string]VPC, error) {
 	}
 	mapRouteTables(vpcs, routeTables)
 
+	internetGateways, err := getInternetGateways(svc)
+	if err != nil {
+		return map[string]VPC{}, fmt.Errorf("failed to populate VPCs: %v", err.Error())
+	}
+	mapInternetGateways(vpcs, internetGateways)
+
 	return vpcs, nil
 }
 
-func getRegions(sess *session.Session) []string {
+func getRegions() []string {
+	sess := session.Must(session.NewSessionWithOptions(session.Options{
+		SharedConfigState: session.SharedConfigEnable,
+	}))
 	svc := ec2.New(sess)
 	regions := []string{}
 	res, err := svc.DescribeRegions(&ec2.DescribeRegionsInput{})
@@ -568,13 +624,10 @@ func getRegionData(fullData map[string]RegionData, region string, wg *sync.WaitG
 	}
 }
 
-func main() {
+func allRegions() {
 	var wg sync.WaitGroup
-	sess := session.Must(session.NewSessionWithOptions(session.Options{
-		SharedConfigState: session.SharedConfigEnable,
-	}))
 
-	regions := getRegions(sess)
+	regions := getRegions()
 
 	fullData := make(map[string]RegionData)
 
@@ -589,4 +642,23 @@ func main() {
 		fmt.Printf("===%v===\n", region)
 		printVPCs(vpcs.VPCs)
 	}
+
+}
+func defaultRegion() {
+	sess := session.Must(session.NewSessionWithOptions(session.Options{
+		SharedConfigState: session.SharedConfigEnable,
+	}))
+
+	currentRegion := aws.StringValue(sess.Config.Region)
+	vpcs, err := populateVPC(currentRegion)
+	if err != nil {
+		panic("populateVPC failed")
+	}
+
+	printVPCs(vpcs)
+
+}
+func main() {
+	//allRegions()
+	defaultRegion()
 }
