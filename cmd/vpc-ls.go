@@ -1,3 +1,5 @@
+// Copyright 2021 Travis James - reference license in top level of project
+
 package main
 
 import (
@@ -129,22 +131,46 @@ type GatewayEndpoint struct {
 	RawEndpoint *ec2.VpcEndpoint
 }
 
-func getVpcs(svc *ec2.EC2) (map[string]VPC, error) {
-	vpclist := []*ec2.Vpc{}
+type RecievedData struct {
+	wg                 sync.WaitGroup
+	mu                 sync.Mutex
+	Vpcs               []*ec2.Vpc
+	Subnets            []*ec2.Subnet
+	Instances          []*ec2.Reservation
+	NatGateways        []*ec2.NatGateway
+	RouteTables        []*ec2.RouteTable
+	InternetGateways   []*ec2.InternetGateway
+	EOInternetGateways []*ec2.EgressOnlyInternetGateway
+	VPNGateways        []*ec2.VpnGateway
+	TransitGateways    []*ec2.TransitGatewayVpcAttachment
+	PeeringConnections []*ec2.VpcPeeringConnection
+	NetworkInterfaces  []*ec2.NetworkInterface
+	VPCEndpoints       []*ec2.VpcEndpoint
+	Error              error
+}
+
+func getVpcs(svc *ec2.EC2, data *RecievedData) {
+	defer data.wg.Done()
+	vpcs := []*ec2.Vpc{}
 	err := svc.DescribeVpcsPages(
 		&ec2.DescribeVpcsInput{},
 		func(page *ec2.DescribeVpcsOutput, lastPage bool) bool {
-			vpclist = append(vpclist, page.Vpcs...)
+			vpcs = append(vpcs, page.Vpcs...)
 			return !lastPage
 		},
 	)
 
 	if err != nil {
-		return map[string]VPC{}, fmt.Errorf("failed to get vpcs: %v", err.Error())
+		data.mu.Lock()
+		data.Error = err
+		data.mu.Unlock()
 	}
-	vpcs := make(map[string]VPC)
+	data.Vpcs = vpcs
+}
 
-	for _, v := range vpclist {
+func mapVpcs(vpcs map[string]VPC, vpcData []*ec2.Vpc) {
+
+	for _, v := range vpcData {
 
 		var v6cidr *string
 		if v.Ipv6CidrBlockAssociationSet != nil {
@@ -155,7 +181,7 @@ func getVpcs(svc *ec2.EC2) (map[string]VPC, error) {
 			}
 		}
 
-		vpc := VPC{
+		vpcs[aws.StringValue(v.VpcId)] = VPC{
 			Id:            v.VpcId,
 			IsDefault:     aws.BoolValue(v.IsDefault),
 			CidrBlock:     v.CidrBlock,
@@ -164,14 +190,11 @@ func getVpcs(svc *ec2.EC2) (map[string]VPC, error) {
 			Subnets:       make(map[string]Subnet),
 			Peers:         make(map[string]VPCPeer),
 		}
-		vpcs[*v.VpcId] = vpc
 	}
-
-	return vpcs, nil
-
 }
 
-func getSubnets(svc *ec2.EC2) ([]*ec2.Subnet, error) {
+func getSubnets(svc *ec2.EC2, data *RecievedData) {
+	defer data.wg.Done()
 	subnets := []*ec2.Subnet{}
 	err := svc.DescribeSubnetsPages(
 		&ec2.DescribeSubnetsInput{},
@@ -182,13 +205,16 @@ func getSubnets(svc *ec2.EC2) ([]*ec2.Subnet, error) {
 	)
 
 	if err != nil {
-		return []*ec2.Subnet{}, fmt.Errorf("%v", err.Error())
+		data.mu.Lock()
+		data.Error = err
+		data.mu.Unlock()
 	}
 
-	return subnets, nil
+	data.Subnets = subnets
 }
 
-func getInstances(svc *ec2.EC2) ([]*ec2.Reservation, error) {
+func getInstances(svc *ec2.EC2, data *RecievedData) {
+	defer data.wg.Done()
 	instances := []*ec2.Reservation{}
 	err := svc.DescribeInstancesPages(
 		&ec2.DescribeInstancesInput{},
@@ -198,13 +224,16 @@ func getInstances(svc *ec2.EC2) ([]*ec2.Reservation, error) {
 		},
 	)
 	if err != nil {
-		return []*ec2.Reservation{}, fmt.Errorf("failed: %v", err.Error())
+		data.mu.Lock()
+		data.Error = err
+		data.mu.Unlock()
 	}
 
-	return instances, nil
+	data.Instances = instances
 }
 
-func getNatGatways(svc *ec2.EC2) ([]*ec2.NatGateway, error) {
+func getNatGatways(svc *ec2.EC2, data *RecievedData) {
+	defer data.wg.Done()
 	natGateways := []*ec2.NatGateway{}
 
 	err := svc.DescribeNatGatewaysPages(
@@ -215,13 +244,16 @@ func getNatGatways(svc *ec2.EC2) ([]*ec2.NatGateway, error) {
 		},
 	)
 	if err != nil {
-		return []*ec2.NatGateway{}, err
+		data.mu.Lock()
+		data.Error = err
+		data.mu.Unlock()
 	}
 
-	return natGateways, nil
+	data.NatGateways = natGateways
 }
 
-func getRouteTables(svc *ec2.EC2) ([]*ec2.RouteTable, error) {
+func getRouteTables(svc *ec2.EC2, data *RecievedData) {
+	defer data.wg.Done()
 	routeTables := []*ec2.RouteTable{}
 
 	err := svc.DescribeRouteTablesPages(
@@ -233,13 +265,16 @@ func getRouteTables(svc *ec2.EC2) ([]*ec2.RouteTable, error) {
 	)
 
 	if err != nil {
-		return []*ec2.RouteTable{}, err
+		data.mu.Lock()
+		data.Error = err
+		data.mu.Unlock()
 	}
 
-	return routeTables, nil
+	data.RouteTables = routeTables
 }
 
-func getInternetGateways(svc *ec2.EC2) ([]*ec2.InternetGateway, error) {
+func getInternetGateways(svc *ec2.EC2, data *RecievedData) {
+	defer data.wg.Done()
 	internetGateways := []*ec2.InternetGateway{}
 
 	err := svc.DescribeInternetGatewaysPages(
@@ -250,13 +285,16 @@ func getInternetGateways(svc *ec2.EC2) ([]*ec2.InternetGateway, error) {
 		},
 	)
 	if err != nil {
-		return []*ec2.InternetGateway{}, err
+		data.mu.Lock()
+		data.Error = err
+		data.mu.Unlock()
 	}
 
-	return internetGateways, nil
+	data.InternetGateways = internetGateways
 }
 
-func getEgressOnlyInternetGateways(svc *ec2.EC2) ([]*ec2.EgressOnlyInternetGateway, error) {
+func getEgressOnlyInternetGateways(svc *ec2.EC2, data *RecievedData) {
+	defer data.wg.Done()
 	EOIGWs := []*ec2.EgressOnlyInternetGateway{}
 
 	err := svc.DescribeEgressOnlyInternetGatewaysPages(
@@ -268,23 +306,29 @@ func getEgressOnlyInternetGateways(svc *ec2.EC2) ([]*ec2.EgressOnlyInternetGatew
 	)
 
 	if err != nil {
-		return []*ec2.EgressOnlyInternetGateway{}, err
+		data.mu.Lock()
+		data.Error = err
+		data.mu.Unlock()
 	}
 
-	return EOIGWs, nil
+	data.EOInternetGateways = EOIGWs
 }
 
-func getVPNGateways(svc *ec2.EC2) ([]*ec2.VpnGateway, error) {
+func getVPNGateways(svc *ec2.EC2, data *RecievedData) {
+	defer data.wg.Done()
 	out, err := svc.DescribeVpnGateways(&ec2.DescribeVpnGatewaysInput{})
 
 	if err != nil {
-		return []*ec2.VpnGateway{}, nil
+		data.mu.Lock()
+		data.Error = err
+		data.mu.Unlock()
 	}
 
-	return out.VpnGateways, nil
+	data.VPNGateways = out.VpnGateways
 }
 
-func getTransitGatewayVpcAttachments(svc *ec2.EC2) ([]*ec2.TransitGatewayVpcAttachment, error) {
+func getTransitGatewayVpcAttachments(svc *ec2.EC2, data *RecievedData) {
+	defer data.wg.Done()
 	TGWatt := []*ec2.TransitGatewayVpcAttachment{}
 
 	err := svc.DescribeTransitGatewayVpcAttachmentsPages(
@@ -296,12 +340,15 @@ func getTransitGatewayVpcAttachments(svc *ec2.EC2) ([]*ec2.TransitGatewayVpcAtta
 	)
 
 	if err != nil {
-		return []*ec2.TransitGatewayVpcAttachment{}, err
+		data.mu.Lock()
+		data.Error = err
+		data.mu.Unlock()
 	}
-	return TGWatt, nil
+	data.TransitGateways = TGWatt
 }
 
-func getVpcPeeringConnections(svc *ec2.EC2) ([]*ec2.VpcPeeringConnection, error) {
+func getVpcPeeringConnections(svc *ec2.EC2, data *RecievedData) {
+	defer data.wg.Done()
 	peers := []*ec2.VpcPeeringConnection{}
 
 	err := svc.DescribeVpcPeeringConnectionsPages(
@@ -312,13 +359,16 @@ func getVpcPeeringConnections(svc *ec2.EC2) ([]*ec2.VpcPeeringConnection, error)
 		},
 	)
 	if err != nil {
-		return []*ec2.VpcPeeringConnection{}, err
+		data.mu.Lock()
+		data.Error = err
+		data.mu.Unlock()
 	}
 
-	return peers, nil
+	data.PeeringConnections = peers
 }
 
-func getNetworkInterfaces(svc *ec2.EC2) ([]*ec2.NetworkInterface, error) {
+func getNetworkInterfaces(svc *ec2.EC2, data *RecievedData) {
+	defer data.wg.Done()
 	ifaces := []*ec2.NetworkInterface{}
 
 	err := svc.DescribeNetworkInterfacesPages(
@@ -330,13 +380,16 @@ func getNetworkInterfaces(svc *ec2.EC2) ([]*ec2.NetworkInterface, error) {
 	)
 
 	if err != nil {
-		return []*ec2.NetworkInterface{}, nil
+		data.mu.Lock()
+		data.Error = err
+		data.mu.Unlock()
 	}
 
-	return ifaces, nil
+	data.NetworkInterfaces = ifaces
 }
 
-func getVpcEndpoints(svc *ec2.EC2) ([]*ec2.VpcEndpoint, error) {
+func getVpcEndpoints(svc *ec2.EC2, data *RecievedData) {
+	defer data.wg.Done()
 	endpoints := []*ec2.VpcEndpoint{}
 
 	err := svc.DescribeVpcEndpointsPages(
@@ -348,10 +401,12 @@ func getVpcEndpoints(svc *ec2.EC2) ([]*ec2.VpcEndpoint, error) {
 	)
 
 	if err != nil {
-		return []*ec2.VpcEndpoint{}, err
+		data.mu.Lock()
+		data.Error = err
+		data.mu.Unlock()
 	}
-	return endpoints, nil
 
+	data.VPCEndpoints = endpoints
 }
 
 func mapSubnets(vpcs map[string]VPC, subnets []*ec2.Subnet) {
@@ -915,78 +970,41 @@ func populateVPC(region string) (map[string]VPC, error) {
 	))
 
 	svc := ec2.New(sess)
+	var data RecievedData
+	vpcs := make(map[string]VPC)
 
-	vpcs, err := getVpcs(svc)
-	if err != nil {
-		return map[string]VPC{}, fmt.Errorf("failed to populate VPCs: %v", err.Error())
-	}
+	data.wg.Add(12)
+	go getVpcs(svc, &data)
+	go getSubnets(svc, &data)
+	go getInstances(svc, &data)
+	go getNatGatways(svc, &data)
+	go getRouteTables(svc, &data)
+	go getInternetGateways(svc, &data)
+	go getEgressOnlyInternetGateways(svc, &data)
+	go getVPNGateways(svc, &data)
+	go getTransitGatewayVpcAttachments(svc, &data)
+	go getVpcPeeringConnections(svc, &data)
+	go getNetworkInterfaces(svc, &data)
+	go getVpcEndpoints(svc, &data)
 
-	subnets, err := getSubnets(svc)
-	if err != nil {
-		return map[string]VPC{}, fmt.Errorf("failed to populate VPCs: %v", err.Error())
-	}
-	mapSubnets(vpcs, subnets)
-	instances, err := getInstances(svc)
-	if err != nil {
-		return map[string]VPC{}, fmt.Errorf("failed to populate VPCs: %v", err.Error())
-	}
-	mapInstances(vpcs, instances)
-	err = instantiateVolumes(svc, vpcs)
-	if err != nil {
-		return map[string]VPC{}, fmt.Errorf("failed to populate VPCs: %v", err.Error())
-	}
-	natGateways, err := getNatGatways(svc)
-	if err != nil {
-		return map[string]VPC{}, fmt.Errorf("failed to populate VPCs: %v", err.Error())
-	}
-	mapNatGateways(vpcs, natGateways)
-	routeTables, err := getRouteTables(svc)
-	if err != nil {
-		return map[string]VPC{}, fmt.Errorf("failed to populate VPCs: %v", err.Error())
-	}
-	mapRouteTables(vpcs, routeTables)
+	data.wg.Wait()
 
-	internetGateways, err := getInternetGateways(svc)
+	mapVpcs(vpcs, data.Vpcs)
+	mapSubnets(vpcs, data.Subnets)
+	mapInstances(vpcs, data.Instances)
+	err := instantiateVolumes(svc, vpcs)
 	if err != nil {
 		return map[string]VPC{}, fmt.Errorf("failed to populate VPCs: %v", err.Error())
 	}
-	mapInternetGateways(vpcs, internetGateways)
-
-	egressOnlyInternetGateways, err := getEgressOnlyInternetGateways(svc)
-	if err != nil {
-		return map[string]VPC{}, fmt.Errorf("failed to populate VPCs: %v", err.Error())
-	}
-	mapEgressOnlyInternetGateways(vpcs, egressOnlyInternetGateways)
-
-	VPNGateways, err := getVPNGateways(svc)
-	if err != nil {
-		return map[string]VPC{}, fmt.Errorf("failed to populate VPCs: %v", err.Error())
-	}
-	mapVPNGateways(vpcs, VPNGateways)
-
-	transitGatewayVpcAttachments, err := getTransitGatewayVpcAttachments(svc)
-	if err != nil {
-		return map[string]VPC{}, fmt.Errorf("failed to populate VPCs: %v", err.Error())
-	}
-	mapTransitGatewayVpcAttachments(vpcs, transitGatewayVpcAttachments)
-
-	vpcPeeringConnections, err := getVpcPeeringConnections(svc)
-	if err != nil {
-		return map[string]VPC{}, fmt.Errorf("failed to populate VPCs: %v", err.Error())
-	}
-	mapVpcPeeringConnections(vpcs, vpcPeeringConnections)
-
-	networkInterfaces, err := getNetworkInterfaces(svc)
-	if err != nil {
-		return map[string]VPC{}, fmt.Errorf("failed to populate VPCs: %v", err.Error())
-	}
-	mapNetworkInterfaces(vpcs, networkInterfaces)
-
-	vpcEndpoints, err := getVpcEndpoints(svc)
-	if err != nil {
-		return map[string]VPC{}, fmt.Errorf("failed to populate VPCs: %v", err.Error())
-	}
-	mapVpcEndpoints(vpcs, vpcEndpoints)
+	mapNatGateways(vpcs, data.NatGateways)
+	mapRouteTables(vpcs, data.RouteTables)
+	mapInternetGateways(vpcs, data.InternetGateways)
+	mapEgressOnlyInternetGateways(vpcs, data.EOInternetGateways)
+	mapVPNGateways(vpcs, data.VPNGateways)
+	mapTransitGatewayVpcAttachments(vpcs, data.TransitGateways)
+	mapVpcPeeringConnections(vpcs, data.PeeringConnections)
+	mapNetworkInterfaces(vpcs, data.NetworkInterfaces)
+	mapVpcEndpoints(vpcs, data.VPCEndpoints)
 
 	return vpcs, nil
 }
@@ -1058,6 +1076,6 @@ func defaultRegion() {
 
 }
 func main() {
-	allRegions()
-	//defaultRegion()
+	//allRegions()
+	defaultRegion()
 }
