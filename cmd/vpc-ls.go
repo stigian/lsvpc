@@ -624,19 +624,23 @@ func mapTransitGatewayVpcAttachments(vpcs map[string]VPC, TransitGatewayVpcAttac
 func mapVpcPeeringConnections(vpcs map[string]VPC, VpcPeeringConnections []*ec2.VpcPeeringConnection) {
 	for _, peer := range VpcPeeringConnections {
 		if requester := aws.StringValue(peer.RequesterVpcInfo.VpcId); requester != "" {
-			vpcs[requester].Peers[aws.StringValue(peer.VpcPeeringConnectionId)] = VPCPeer{
-				Id:        peer.VpcPeeringConnectionId,
-				Requester: peer.RequesterVpcInfo.VpcId,
-				Accepter:  peer.AccepterVpcInfo.VpcId,
-				RawPeer:   peer,
+			if _, ok := vpcs[requester]; ok {
+				vpcs[requester].Peers[aws.StringValue(peer.VpcPeeringConnectionId)] = VPCPeer{
+					Id:        peer.VpcPeeringConnectionId,
+					Requester: peer.RequesterVpcInfo.VpcId,
+					Accepter:  peer.AccepterVpcInfo.VpcId,
+					RawPeer:   peer,
+				}
 			}
 		}
 		if accepter := aws.StringValue(peer.AccepterVpcInfo.VpcId); accepter != "" {
-			vpcs[accepter].Peers[aws.StringValue(peer.VpcPeeringConnectionId)] = VPCPeer{
-				Id:        peer.VpcPeeringConnectionId,
-				Requester: peer.RequesterVpcInfo.VpcId,
-				Accepter:  peer.AccepterVpcInfo.VpcId,
-				RawPeer:   peer,
+			if _, ok := vpcs[accepter]; ok {
+				vpcs[accepter].Peers[aws.StringValue(peer.VpcPeeringConnectionId)] = VPCPeer{
+					Id:        peer.VpcPeeringConnectionId,
+					Requester: peer.RequesterVpcInfo.VpcId,
+					Accepter:  peer.AccepterVpcInfo.VpcId,
+					RawPeer:   peer,
+				}
 			}
 		}
 	}
@@ -801,10 +805,10 @@ func printVPCs(vpcs map[string]VPC) {
 		// Print Peers
 		peersExist := false
 		for _, peer := range vpc.Peers {
-			direction := "-->"
+			direction := "peer-->"
 			vpcOperand := aws.StringValue(peer.Accepter)
 			if aws.StringValue(peer.Accepter) == aws.StringValue(vpc.Id) {
-				direction = "<--"
+				direction = "<--peer"
 				vpcOperand = aws.StringValue(peer.Requester)
 			}
 			fmt.Printf(
@@ -988,6 +992,10 @@ func populateVPC(region string) (map[string]VPC, error) {
 	go getVpcEndpoints(svc, &data)
 
 	data.wg.Wait()
+
+	if data.Error != nil {
+		return map[string]VPC{}, fmt.Errorf("failed to populate VPCs: %v", data.Error.Error())
+	}
 
 	mapVpcs(vpcs, data.Vpcs)
 	mapSubnets(vpcs, data.Subnets)
