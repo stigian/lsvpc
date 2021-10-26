@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"sync"
 
@@ -453,17 +454,24 @@ func mapInstances(vpcs map[string]VPC, reservations []*ec2.Reservation) {
 			}
 
 			if *instance.State.Name != "terminated" {
-				vpcs[*instance.VpcId].Subnets[*instance.SubnetId].EC2s[*instance.InstanceId] = EC2{
-					Id:         instance.InstanceId,
-					Type:       instance.InstanceType,
-					SubnetId:   instance.SubnetId,
-					VpcId:      instance.VpcId,
-					State:      instance.State.Name,
-					PublicIP:   instance.PublicIpAddress,
-					PrivateIP:  instance.PrivateIpAddress,
-					Volumes:    volumes,
-					Interfaces: networkInterfaces,
-					RawEc2:     instance,
+				vpcId := aws.StringValue(instance.VpcId)
+				subnetId := aws.StringValue(instance.SubnetId)
+				instanceId := aws.StringValue(instance.InstanceId)
+
+				if vpcId != "" && subnetId != "" && instanceId != "" {
+
+					vpcs[vpcId].Subnets[subnetId].EC2s[instanceId] = EC2{
+						Id:         instance.InstanceId,
+						Type:       instance.InstanceType,
+						SubnetId:   instance.SubnetId,
+						VpcId:      instance.VpcId,
+						State:      instance.State.Name,
+						PublicIP:   instance.PublicIpAddress,
+						PrivateIP:  instance.PrivateIpAddress,
+						Volumes:    volumes,
+						Interfaces: networkInterfaces,
+						RawEc2:     instance,
+					}
 				}
 			}
 		}
@@ -472,6 +480,9 @@ func mapInstances(vpcs map[string]VPC, reservations []*ec2.Reservation) {
 
 func mapNatGateways(vpcs map[string]VPC, natGateways []*ec2.NatGateway) {
 	for _, gateway := range natGateways {
+		if aws.StringValue(gateway.State) == "deleted" {
+			continue
+		}
 		vpcs[*gateway.VpcId].Subnets[*gateway.SubnetId].NatGateways[*gateway.NatGatewayId] = NatGateway{
 			Id:            gateway.NatGatewayId,
 			PrivateIP:     gateway.NatGatewayAddresses[0].PrivateIp,
@@ -623,6 +634,9 @@ func mapTransitGatewayVpcAttachments(vpcs map[string]VPC, TransitGatewayVpcAttac
 
 func mapVpcPeeringConnections(vpcs map[string]VPC, VpcPeeringConnections []*ec2.VpcPeeringConnection) {
 	for _, peer := range VpcPeeringConnections {
+		if aws.StringValue(peer.Status.Code) != "active" {
+			continue
+		}
 		if requester := aws.StringValue(peer.RequesterVpcInfo.VpcId); requester != "" {
 			if _, ok := vpcs[requester]; ok {
 				vpcs[requester].Peers[aws.StringValue(peer.VpcPeeringConnectionId)] = VPCPeer{
@@ -648,7 +662,7 @@ func mapVpcPeeringConnections(vpcs map[string]VPC, VpcPeeringConnections []*ec2.
 
 func mapNetworkInterfaces(vpcs map[string]VPC, networkInterfaces []*ec2.NetworkInterface) {
 	for _, iface := range networkInterfaces {
-		if aws.StringValue(iface.Attachment.InstanceId) != "" {
+		if iface.Attachment != nil && aws.StringValue(iface.Attachment.InstanceId) != "" {
 			continue //we handle instance interfaces elsewhere
 		}
 
@@ -767,7 +781,16 @@ const (
 )
 
 func printVPCs(vpcs map[string]VPC) {
-	for _, vpc := range vpcs {
+	//sort the keys
+	vpcKeys := []string{}
+	for k, _ := range vpcs {
+		vpcKeys = append(vpcKeys, k)
+	}
+
+	sort.Strings(vpcKeys)
+
+	for _, vpcId := range vpcKeys {
+		vpc := vpcs[vpcId]
 
 		// Print VPC
 		fmt.Printf(
@@ -829,7 +852,17 @@ func printVPCs(vpcs map[string]VPC) {
 		}
 
 		// Print Subnets
-		for _, subnet := range vpc.Subnets {
+		subnetKeys := []string{}
+
+		for k, _ := range vpc.Subnets {
+			subnetKeys = append(subnetKeys, k)
+		}
+
+		sort.Strings(subnetKeys)
+
+		for _, subnetId := range subnetKeys {
+
+			subnet := vpc.Subnets[subnetId]
 
 			// Print Subnet Info
 			public := "Private"
@@ -890,7 +923,16 @@ func printVPCs(vpcs map[string]VPC) {
 				)
 			}
 			// Print EC2 Instance
-			for _, instance := range subnet.EC2s {
+			instanceKeys := []string{}
+
+			for k, _ := range subnet.EC2s {
+				instanceKeys = append(instanceKeys, k)
+			}
+
+			sort.Strings(instanceKeys)
+
+			for _, instanceId := range instanceKeys {
+				instance := subnet.EC2s[instanceId]
 
 				// Print Instance Info
 				fmt.Printf(
