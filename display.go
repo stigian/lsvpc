@@ -51,7 +51,7 @@ func printVPCs(vpcs map[string]VPC) {
 
 	//sort the keys
 	vpcKeys := []string{}
-	for k, _ := range vpcs {
+	for k := range vpcs {
 		vpcKeys = append(vpcKeys, k)
 	}
 
@@ -95,7 +95,14 @@ func printVPCs(vpcs map[string]VPC) {
 
 		// Print Peers
 		peersExist := false
-		for _, peer := range vpc.Peers {
+		peerKeys := []string{}
+		for k := range vpc.Peers {
+			peerKeys = append(peerKeys, k)
+		}
+		sort.Strings(peerKeys)
+
+		for _, peerId := range peerKeys {
+			peer := vpc.Peers[peerId]
 			direction := "peer-->"
 			vpcOperand := aws.StringValue(peer.Accepter)
 			if aws.StringValue(peer.Accepter) == aws.StringValue(vpc.Id) {
@@ -122,7 +129,7 @@ func printVPCs(vpcs map[string]VPC) {
 		// Print Subnets
 		subnetKeys := []string{}
 
-		for k, _ := range vpc.Subnets {
+		for k := range vpc.Subnets {
 			subnetKeys = append(subnetKeys, k)
 		}
 
@@ -152,7 +159,13 @@ func printVPCs(vpcs map[string]VPC) {
 			)
 
 			//Print Endpoints
-			for _, interfaceEndpoint := range subnet.InterfaceEndpoints {
+			interfaceEndpointKeys := []string{}
+			for k := range subnet.InterfaceEndpoints {
+				interfaceEndpointKeys = append(interfaceEndpointKeys, k)
+			}
+			sort.Strings(interfaceEndpointKeys)
+			for _, interfaceEndpointId := range interfaceEndpointKeys {
+				interfaceEndpoint := subnet.InterfaceEndpoints[interfaceEndpointId]
 				fmt.Printf(
 					"%s%v%v%v interface--> %v\n",
 					indent(8),
@@ -163,7 +176,13 @@ func printVPCs(vpcs map[string]VPC) {
 				)
 			}
 
-			for _, gatewayEndpoint := range subnet.GatewayEndpoints {
+			gatewayKeys := []string{}
+			for k := range subnet.GatewayEndpoints {
+				gatewayKeys = append(gatewayKeys, k)
+			}
+			sort.Strings(gatewayKeys)
+			for _, gatewayEndpointId := range gatewayKeys {
+				gatewayEndpoint := subnet.GatewayEndpoints[gatewayEndpointId]
 				fmt.Printf(
 					"%s%v%v%v gateway--> %v\n",
 					indent(8),
@@ -175,7 +194,13 @@ func printVPCs(vpcs map[string]VPC) {
 			}
 
 			// Print Interfaces
-			for _, iface := range subnet.ENIs {
+			interfaceKeys := []string{}
+			for k := range subnet.ENIs {
+				interfaceKeys = append(interfaceKeys, k)
+			}
+			sort.Strings(interfaceKeys)
+			for _, interfaceId := range interfaceKeys {
+				iface := subnet.ENIs[interfaceId]
 				fmt.Printf(
 					"%s%v%v%v %v %v %v %v %v : %v\n",
 					indent(8),
@@ -193,7 +218,7 @@ func printVPCs(vpcs map[string]VPC) {
 			// Print EC2 Instance
 			instanceKeys := []string{}
 
-			for k, _ := range subnet.EC2s {
+			for k := range subnet.EC2s {
 				instanceKeys = append(instanceKeys, k)
 			}
 
@@ -240,7 +265,14 @@ func printVPCs(vpcs map[string]VPC) {
 			}
 
 			//Print Nat Gateways
-			for _, natGateway := range subnet.NatGateways {
+			natGatewayKeys := []string{}
+			for k := range subnet.NatGateways {
+				natGatewayKeys = append(natGatewayKeys, k)
+			}
+			sort.Strings(natGatewayKeys)
+
+			for _, natGatewayId := range natGatewayKeys {
+				natGateway := subnet.NatGateways[natGatewayId]
 				fmt.Printf(
 					"%s%v%v%v  %v  %v  %v  %v\n",
 					indent(8),
@@ -255,7 +287,13 @@ func printVPCs(vpcs map[string]VPC) {
 			}
 
 			//Print Transit Gateway Attachments
-			for _, tgw := range subnet.TGWs {
+			tgwKeys := []string{}
+			for k := range subnet.TGWs {
+				tgwKeys = append(tgwKeys, k)
+			}
+			sort.Strings(tgwKeys)
+			for _, tgwId := range tgwKeys {
+				tgw := subnet.TGWs[tgwId]
 				fmt.Printf(
 					"%s%v%v%v ---> %v%v%v\n",
 					indent(8),
