@@ -144,11 +144,34 @@ func stdoutIsPipe() bool {
 	return mode&fs.ModeNamedPipe != 0
 }
 
+func credentialsLoaded() bool {
+	sess := session.Must(session.NewSessionWithOptions(session.Options{
+		SharedConfigState: session.SharedConfigEnable,
+	}))
+
+	creds, err := sess.Config.Credentials.Get()
+	if err != nil {
+		return false
+	}
+
+	if !creds.HasKeys() {
+		return false
+	}
+
+	return true
+}
+
 func main() {
 	flag.Parse()
 
 	if stdoutIsPipe() {
 		Config.noColor = true
+	}
+
+	if !credentialsLoaded() {
+		fmt.Println("Failed to load aws credentials.")
+		fmt.Println("Please set your AWS_PROFILE environment variable to a valid profile.")
+		os.Exit(1)
 	}
 
 	if Config.allRegions {
