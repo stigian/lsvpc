@@ -36,3 +36,44 @@ to install `lsvpc` into `/usr/local/bin/`. `GOBIN` can be set to be the value of
 Or you may simply tell go to run the binary using the repository path:
 
 `go run github.com/tjames-stig/lsvpc`
+
+
+## Usage
+
+### Configuration and Permissions
+This tool only uses [named profiles](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html) for authentication.
+be sure to `export AWS_PROFILE=<profile_name>` before executing this tool so that it can access aws credentials.
+
+below are all of the SDK actions this tool uses, be sure that your aws credentials has permissions for them:
+```
+ec2:DescribeEgressOnlyInternetGateways
+ec2:DescribeInstances
+ec2:DescribeInternetGateways
+ec2:DescribeNatGateways
+ec2:DescribeNetworkInterfaces
+ec2:DescribeRegions
+ec2:DescribeRouteTables
+ec2:DescribeSubnets
+ec2:DescribeTransitGatewayVpcAttachments
+ec2:DescribeVolumes
+ec2:DescribeVpcEndpoints
+ec2:DescribeVpcPeeringConnections
+ec2:DescribeVpcs
+ec2:DescribeVpnGateways
+```
+
+### Execution
+
+Executing `lsvpc` with no arguments produces a colored readout of vpc resources detected in the default region of your aws profile
+
+#### Parameters
+
+`-a, -all`    - Prints data for all regions in account
+
+`-nocolor`    - Suppresses color output. In general, lsvpc will also supress color if its output is piped
+
+`-color`      - Force color output. Overrides nocolor, and will print color even if lsvpc's output is being sent through a pipe
+
+`-nospace`    - Suppresses line spacing between entries.
+
+`-r, -region` - Specify a region to print data for.
