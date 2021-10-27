@@ -1,4 +1,4 @@
-module github.com/stigian/vpc-ls
+module github.com/stigian/lsvpc
 
 go 1.16
 
