@@ -28,7 +28,7 @@ sudo env "PATH=$PATH" make install
 which will install the `lsvpc` binary into `/usr/local/bin/`
 
 
-## Fetching with `go get`
+## Fetching with *go get*
 
 Alternatively, you don't need to actually clone this source, and with golang installed, you may simply call:
 
