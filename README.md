@@ -1,4 +1,4 @@
-# vpc-ls
+# lsvpc
 A simple AWS VPC listing tool to provide quick introspection on the makeup of a VPC
 
 ![basic example](./docs/graphics/lsvpc.png)
