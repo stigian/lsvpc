@@ -54,9 +54,7 @@ func printVPCs(vpcs map[string]VPC) {
 	for k := range vpcs {
 		vpcKeys = append(vpcKeys, k)
 	}
-
 	sort.Strings(vpcKeys)
-
 	for _, vpcId := range vpcKeys {
 		vpc := vpcs[vpcId]
 
@@ -100,7 +98,6 @@ func printVPCs(vpcs map[string]VPC) {
 			peerKeys = append(peerKeys, k)
 		}
 		sort.Strings(peerKeys)
-
 		for _, peerId := range peerKeys {
 			peer := vpc.Peers[peerId]
 			direction := "peer-->"
@@ -128,13 +125,10 @@ func printVPCs(vpcs map[string]VPC) {
 
 		// Print Subnets
 		subnetKeys := []string{}
-
 		for k := range vpc.Subnets {
 			subnetKeys = append(subnetKeys, k)
 		}
-
 		sort.Strings(subnetKeys)
-
 		for _, subnetId := range subnetKeys {
 
 			subnet := vpc.Subnets[subnetId]
@@ -217,13 +211,10 @@ func printVPCs(vpcs map[string]VPC) {
 			}
 			// Print EC2 Instance
 			instanceKeys := []string{}
-
 			for k := range subnet.EC2s {
 				instanceKeys = append(instanceKeys, k)
 			}
-
 			sort.Strings(instanceKeys)
-
 			for _, instanceId := range instanceKeys {
 				instance := subnet.EC2s[instanceId]
 
@@ -270,7 +261,6 @@ func printVPCs(vpcs map[string]VPC) {
 				natGatewayKeys = append(natGatewayKeys, k)
 			}
 			sort.Strings(natGatewayKeys)
-
 			for _, natGatewayId := range natGatewayKeys {
 				natGateway := subnet.NatGateways[natGatewayId]
 				fmt.Printf(
