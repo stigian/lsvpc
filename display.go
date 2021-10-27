@@ -18,18 +18,37 @@ func indent(num int) string {
 	return sb.String()
 }
 
-const (
-	colorReset  = "\033[0m"
-	colorRed    = "\033[31m"
-	colorGreen  = "\033[32m"
-	colorYellow = "\033[33m"
-	colorBlue   = "\033[34m"
-	colorPurple = "\033[35m"
-	colorCyan   = "\033[36m"
-	colorWhite  = "\033[37m"
-)
+type colorPalette struct {
+	Reset  string
+	Red    string
+	Green  string
+	Yellow string
+	Blue   string
+	Purple string
+	Cyan   string
+	White  string
+}
+
+func lineFeed() {
+	if !Config.noSpace {
+		fmt.Println()
+	}
+}
 
 func printVPCs(vpcs map[string]VPC) {
+	color := colorPalette{}
+
+	if !Config.noColor {
+		color.Reset = "\033[0m"
+		color.Red = "\033[31m"
+		color.Green = "\033[32m"
+		color.Yellow = "\033[33m"
+		color.Blue = "\033[34m"
+		color.Purple = "\033[35m"
+		color.Cyan = "\033[36m"
+		color.White = "\033[37m"
+	}
+
 	//sort the keys
 	vpcKeys := []string{}
 	for k, _ := range vpcs {
@@ -44,16 +63,16 @@ func printVPCs(vpcs map[string]VPC) {
 		// Print VPC
 		fmt.Printf(
 			"%v%v%v ",
-			string(colorGreen),
+			color.Green,
 			aws.StringValue(vpc.Id),
-			string(colorReset),
+			color.Reset,
 		)
 
 		if vpc.IsDefault {
 			fmt.Printf(
 				"%v(default)%v ",
-				string(colorYellow),
-				string(colorReset),
+				color.Yellow,
+				color.Reset,
 			)
 		}
 
@@ -66,13 +85,13 @@ func printVPCs(vpcs map[string]VPC) {
 		for _, gateway := range vpc.Gateways {
 			fmt.Printf(
 				"%v%v%v ",
-				string(colorYellow),
+				color.Yellow,
 				gateway,
-				string(colorReset),
+				color.Reset,
 			)
 		}
 
-		fmt.Printf("\n")
+		lineFeed()
 
 		// Print Peers
 		peersExist := false
@@ -86,18 +105,18 @@ func printVPCs(vpcs map[string]VPC) {
 			fmt.Printf(
 				"%s%v%v%v %v %v%v%v\n",
 				indent(4),
-				string(colorCyan),
+				color.Cyan,
 				aws.StringValue(peer.Id),
-				string(colorReset),
+				color.Reset,
 				direction,
-				string(colorGreen),
+				color.Green,
 				vpcOperand,
-				string(colorReset),
+				color.Reset,
 			)
 			peersExist = true
 		}
 		if peersExist {
-			fmt.Println()
+			lineFeed()
 		}
 
 		// Print Subnets
@@ -121,14 +140,14 @@ func printVPCs(vpcs map[string]VPC) {
 			fmt.Printf(
 				"%s%v%v%v  %v  %v %v-->%v%v %v\n",
 				indent(4),
-				string(colorBlue),
+				color.Blue,
 				aws.StringValue(subnet.Id),
-				string(colorReset),
+				color.Reset,
 				aws.StringValue(subnet.AvailabilityZone),
 				aws.StringValue(subnet.CidrBlock),
-				string(colorYellow),
+				color.Yellow,
 				aws.StringValue(subnet.RouteTable.Default),
-				string(colorReset),
+				color.Reset,
 				public,
 			)
 
@@ -137,9 +156,9 @@ func printVPCs(vpcs map[string]VPC) {
 				fmt.Printf(
 					"%s%v%v%v interface--> %v\n",
 					indent(8),
-					string(colorCyan),
+					color.Cyan,
 					aws.StringValue(interfaceEndpoint.Id),
-					string(colorReset),
+					color.Reset,
 					aws.StringValue(interfaceEndpoint.ServiceName),
 				)
 			}
@@ -148,9 +167,9 @@ func printVPCs(vpcs map[string]VPC) {
 				fmt.Printf(
 					"%s%v%v%v gateway--> %v\n",
 					indent(8),
-					string(colorCyan),
+					color.Cyan,
 					aws.StringValue(gatewayEndpoint.Id),
-					string(colorReset),
+					color.Reset,
 					aws.StringValue(gatewayEndpoint.ServiceName),
 				)
 			}
@@ -160,9 +179,9 @@ func printVPCs(vpcs map[string]VPC) {
 				fmt.Printf(
 					"%s%v%v%v %v %v %v %v %v : %v\n",
 					indent(8),
-					string(colorCyan),
+					color.Cyan,
 					aws.StringValue(iface.Id),
-					string(colorReset),
+					color.Reset,
 					aws.StringValue(iface.Type),
 					aws.StringValue(iface.MAC),
 					aws.StringValue(iface.PublicIp),
@@ -187,9 +206,9 @@ func printVPCs(vpcs map[string]VPC) {
 				fmt.Printf(
 					"%s%v%s%v -- %v -- %v -- %v\n",
 					indent(8),
-					string(colorCyan),
+					color.Cyan,
 					aws.StringValue(instance.Id),
-					string(colorReset),
+					color.Reset,
 					aws.StringValue(instance.State),
 					aws.StringValue(instance.PublicIP),
 					aws.StringValue(instance.PrivateIP),
@@ -225,9 +244,9 @@ func printVPCs(vpcs map[string]VPC) {
 				fmt.Printf(
 					"%s%v%v%v  %v  %v  %v  %v\n",
 					indent(8),
-					string(colorCyan),
+					color.Cyan,
 					aws.StringValue(natGateway.Id),
-					string(colorReset),
+					color.Reset,
 					aws.StringValue(natGateway.Type),
 					aws.StringValue(natGateway.State),
 					aws.StringValue(natGateway.PublicIP),
@@ -240,16 +259,16 @@ func printVPCs(vpcs map[string]VPC) {
 				fmt.Printf(
 					"%s%v%v%v ---> %v%v%v\n",
 					indent(8),
-					string(colorCyan),
+					color.Cyan,
 					aws.StringValue(tgw.AttachmentId),
-					string(colorReset),
-					string(colorYellow),
+					color.Reset,
+					color.Yellow,
 					aws.StringValue(tgw.TransitGatewayId),
-					string(colorReset),
+					color.Reset,
 				)
 			}
 
-			fmt.Printf("\n")
+			lineFeed()
 		}
 	}
 }

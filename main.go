@@ -3,13 +3,24 @@
 package main
 
 import (
+	"flag"
 	"fmt"
+	"io/fs"
+	"os"
 	"sync"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 )
+
+type lsvpcConfig struct {
+	noColor    bool
+	noSpace    bool
+	allRegions bool
+}
+
+var Config lsvpcConfig
 
 func populateVPC(region string) (map[string]VPC, error) {
 	sess := session.Must(session.NewSessionWithOptions(
@@ -79,7 +90,7 @@ func getRegionData(fullData map[string]RegionData, region string, wg *sync.WaitG
 	mu.Unlock()
 }
 
-func allRegions() {
+func doAllRegions() {
 	var wg sync.WaitGroup
 
 	regions := getRegions()
@@ -101,7 +112,7 @@ func allRegions() {
 
 }
 
-func defaultRegion() {
+func doDefaultRegion() {
 	sess := session.Must(session.NewSessionWithOptions(session.Options{
 		SharedConfigState: session.SharedConfigEnable,
 	}))
@@ -115,7 +126,34 @@ func defaultRegion() {
 	printVPCs(vpcs)
 }
 
+func init() {
+	flag.BoolVar(&Config.noColor, "nocolor", false, "Suppresses color printing of listing")
+	flag.BoolVar(&Config.noSpace, "nospace", false, "Supresses line-spacing of items")
+	flag.BoolVar(&Config.allRegions, "allregions", false, "Fetches and prints data on all regions")
+	flag.BoolVar(&Config.allRegions, "all", false, "Fetches and prints data on all regions")
+	flag.BoolVar(&Config.allRegions, "a", false, "Fetches and prints data on all regions")
+}
+
+func stdoutIsPipe() bool {
+	info, err := os.Stdout.Stat()
+	if err != nil {
+		panic("Failed to stat stdout")
+	}
+
+	mode := info.Mode()
+	return mode&fs.ModeNamedPipe != 0
+}
+
 func main() {
-	//allRegions()
-	defaultRegion()
+	flag.Parse()
+
+	if stdoutIsPipe() {
+		Config.noColor = true
+	}
+
+	if Config.allRegions {
+		doAllRegions()
+	} else {
+		doDefaultRegion()
+	}
 }
