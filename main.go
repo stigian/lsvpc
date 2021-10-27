@@ -15,9 +15,10 @@ import (
 )
 
 type lsvpcConfig struct {
-	noColor    bool
-	noSpace    bool
-	allRegions bool
+	noColor        bool
+	noSpace        bool
+	allRegions     bool
+	regionOverride string
 }
 
 var Config lsvpcConfig
@@ -90,6 +91,14 @@ func getRegionData(fullData map[string]RegionData, region string, wg *sync.WaitG
 	mu.Unlock()
 }
 
+func doSpecificRegion(region string) {
+	vpcs, err := populateVPC(region)
+	if err != nil {
+		return
+	}
+	printVPCs(vpcs)
+}
+
 func doAllRegions() {
 	var wg sync.WaitGroup
 
@@ -129,9 +138,10 @@ func doDefaultRegion() {
 func init() {
 	flag.BoolVar(&Config.noColor, "nocolor", false, "Suppresses color printing of listing")
 	flag.BoolVar(&Config.noSpace, "nospace", false, "Supresses line-spacing of items")
-	flag.BoolVar(&Config.allRegions, "allregions", false, "Fetches and prints data on all regions")
 	flag.BoolVar(&Config.allRegions, "all", false, "Fetches and prints data on all regions")
-	flag.BoolVar(&Config.allRegions, "a", false, "Fetches and prints data on all regions")
+	flag.BoolVar(&Config.allRegions, "a", false, "Fetches and prints data on all regions (abbrev.)")
+	flag.StringVar(&Config.regionOverride, "region", "", "Specify region (default: profile default region)")
+	flag.StringVar(&Config.regionOverride, "r", "", "Specify region (default: profile default region) (abbrev.)")
 }
 
 func stdoutIsPipe() bool {
@@ -161,6 +171,17 @@ func credentialsLoaded() bool {
 	return true
 }
 
+func validateRegion(region string) bool {
+	regions := getRegions()
+	isValid := false
+	for _, reg := range regions {
+		if region == reg {
+			isValid = true
+		}
+	}
+	return isValid
+}
+
 func main() {
 	flag.Parse()
 
@@ -176,6 +197,12 @@ func main() {
 
 	if Config.allRegions {
 		doAllRegions()
+	} else if Config.regionOverride != "" {
+		if !validateRegion(Config.regionOverride) {
+			fmt.Printf("Region: '%v' is not valid\n", Config.regionOverride)
+			os.Exit(1)
+		}
+		doSpecificRegion(Config.regionOverride)
 	} else {
 		doDefaultRegion()
 	}
