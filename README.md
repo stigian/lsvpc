@@ -3,7 +3,7 @@ A simple AWS VPC listing tool to provide quick introspection on the makeup of a 
 
 ![basic example](./docs/graphics/lsvpc.png)
 
-one really cool use of this tool is to run:
+One really cool use of this tool is to run:
 ```
 watch -c lsvpc -color
 ```
@@ -16,7 +16,7 @@ To produce a live-updating display of the status of your vpcs:
 
 ## From Source
 
-using your OS maintainer's version of go:
+Using your OS maintainer's version of go:
 
 ```
 sudo make install
