@@ -62,7 +62,7 @@ go run github.com/tjames-stig/lsvpc
 This tool only uses [named profiles](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html) for authentication.
 Be sure to `export AWS_PROFILE=<profile_name>` before executing this tool so that it can access aws credentials.
 
-Below are all of the SDK actions this tool uses, be sure that your aws credentials has IAM permissions for them:
+Below are all of the SDK actions this tool uses, be sure that your aws credentials have IAM permissions for them:
 ```
 ec2:DescribeEgressOnlyInternetGateways
 ec2:DescribeInstances
