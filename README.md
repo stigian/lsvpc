@@ -2,9 +2,9 @@
 A simple AWS VPC listing tool to provide quick introspection on the makeup of a VPC
 
 
-## Installation and running
+# Installation and running
 
-### From Source
+## From Source
 
 using your OS maintainer's version of go:
 
@@ -28,7 +28,7 @@ sudo env "PATH=$PATH" make install
 which will install the `lsvpc` binary into `/usr/local/bin/`
 
 
-### Fetching with `go get`
+## Fetching with `go get`
 
 Alternatively, you don't need to actually clone this source, and with golang installed, you may simply call:
 
@@ -46,9 +46,9 @@ go run github.com/tjames-stig/lsvpc
 ```
 
 
-## Usage
+# Usage
 
-### Configuration and Permissions
+## Configuration and Permissions
 This tool only uses [named profiles](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html) for authentication.
 Be sure to `export AWS_PROFILE=<profile_name>` before executing this tool so that it can access aws credentials.
 
@@ -70,11 +70,11 @@ ec2:DescribeVpcs
 ec2:DescribeVpnGateways
 ```
 
-### Execution
+## Execution
 
 Executing `lsvpc` with no arguments produces a colored readout of vpc resources detected in the default region of your aws profile
 
-#### Parameters
+### Parameters
 
 `-a, -all`    - Prints data for all regions in account
 
