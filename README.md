@@ -8,16 +8,22 @@ A simple AWS VPC listing tool to provide quick introspection on the makeup of a 
 
 using your OS maintainer's version of go:
 
-`sudo make install`
+```
+sudo make install
+```
 
 which will install the executable into `/usr/local/bin/`.To install in a different directory, such as `/usr/bin/`, simply override the `INSTALL` variable:
 
-`sudo INSTALL=/usr/bin/ make install`
+```
+sudo INSTALL=/usr/bin/ make install
+```
 
 If go has been installed using the [tarball](https://golang.org/doc/install), the `go` binary is
 probably not in the sudoers `secure_path`, and the path variable will need to be overridden when invoking sudo:
 
-`sudo env "PATH=$PATH" make install`
+```
+sudo env "PATH=$PATH" make install
+```
 
 which will install the `lsvpc` binary into `/usr/local/bin/`
 
@@ -35,7 +41,9 @@ to install `lsvpc` into `/usr/local/bin/`. `GOBIN` can be set to be the value of
 
 Or you may simply tell go to run the binary using the repository path:
 
-`go run github.com/tjames-stig/lsvpc`
+```
+go run github.com/tjames-stig/lsvpc
+```
 
 
 ## Usage
