@@ -18,8 +18,8 @@ which will install the executable into `/usr/local/bin/`.To install in a differe
 sudo INSTALL=/usr/bin/ make install
 ```
 
-If go has been installed using the [tarball](https://golang.org/doc/install), the `go` binary is
-probably not in the sudoers `secure_path`, and the path variable will need to be overridden when invoking sudo:
+If **go** has been installed using the [tarball](https://golang.org/doc/install), the **go** binary is
+probably not reachable the sudoers `secure_path`, and the path variable will need to be overridden when invoking sudo:
 
 ```
 sudo env "PATH=$PATH" make install
@@ -37,7 +37,7 @@ go get github.com/tjames-stig/lsvpc
 sudo GOBIN=/usr/local/bin/ go install github.com/tjames-stig/lsvpc
 ```
 
-to install `lsvpc` into `/usr/local/bin/`. `GOBIN` can be set to be the value of where you want the executable to be installed
+to install **lsvpc** into **/usr/local/bin/**. **GOBIN** can be set to be the value of where you want the executable to be installed
 
 Or you may simply tell go to run the binary using the repository path:
 
@@ -72,7 +72,7 @@ ec2:DescribeVpnGateways
 
 ## Execution
 
-Executing `lsvpc` with no arguments produces a colored readout of vpc resources detected in the default region of your aws profile
+Executing **lsvpc** with no arguments produces a colored readout of vpc resources detected in the default region of your aws profile
 
 ### Parameters
 
