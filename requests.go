@@ -1,3 +1,4 @@
+// Copyright 2021 Stigian Consulting - reference license in top level of project
 package main
 
 import (

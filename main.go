@@ -1,4 +1,4 @@
-// Copyright 2021 Travis James - reference license in top level of project
+// Copyright 2021 Stigian Consulting - reference license in top level of project
 
 package main
 
