@@ -35,7 +35,7 @@ probably not reachable the sudoers `secure_path`, and the path variable will nee
 sudo env "PATH=$PATH" make install
 ```
 
-which will install the `lsvpc` binary into `/usr/local/bin/`
+which will install the `lsvpc` binary into /usr/local/bin/
 
 
 ## Fetching with *go get*
