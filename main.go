@@ -19,6 +19,7 @@ type lsvpcConfig struct {
 	noSpace        bool
 	allRegions     bool
 	regionOverride string
+	Color          bool
 }
 
 var Config lsvpcConfig
@@ -137,6 +138,7 @@ func doDefaultRegion() {
 
 func init() {
 	flag.BoolVar(&Config.noColor, "nocolor", false, "Suppresses color printing of listing")
+	flag.BoolVar(&Config.Color, "color", false, "Force color output, even through pipe")
 	flag.BoolVar(&Config.noSpace, "nospace", false, "Supresses line-spacing of items")
 	flag.BoolVar(&Config.allRegions, "all", false, "Fetches and prints data on all regions")
 	flag.BoolVar(&Config.allRegions, "a", false, "Fetches and prints data on all regions (abbrev.)")
@@ -186,7 +188,9 @@ func main() {
 	flag.Parse()
 
 	if stdoutIsPipe() {
-		Config.noColor = true
+		if !Config.Color {
+			Config.noColor = true
+		}
 	}
 
 	if !credentialsLoaded() {
