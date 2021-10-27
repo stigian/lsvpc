@@ -22,7 +22,7 @@ Using your OS maintainer's version of go:
 sudo make install
 ```
 
-which will install the executable into `/usr/local/bin/`.To install in a different directory, such as `/usr/bin/`, simply override the `INSTALL` variable:
+which will install the executable into /usr/local/bin/. To install in a different directory, such as /usr/bin/, simply override the `INSTALL` variable:
 
 ```
 sudo INSTALL=/usr/bin/ make install
