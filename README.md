@@ -1,6 +1,14 @@
 # vpc-ls
 A simple AWS VPC listing tool to provide quick introspection on the makeup of a VPC
 
+one really cool use of this tool is to run:
+```
+watch -c lsvpc -color
+```
+
+To produce a live-updating display of the status of your vpcs:
+
+![lsvpc and watch](./docs/graphics/lsvpc_example.gif)
 
 # Installation and running
 
