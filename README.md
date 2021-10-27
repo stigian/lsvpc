@@ -22,7 +22,7 @@ probably not in the sudoers `secure_path`, and the path variable will need to be
 which will install the `lsvpc` binary into `/usr/local/bin/`
 
 
-### Fetching with go get
+### Fetching with `go get`
 
 Alternatively, you don't need to actually clone this source, and with golang installed, you may simply call:
 
@@ -42,9 +42,9 @@ Or you may simply tell go to run the binary using the repository path:
 
 ### Configuration and Permissions
 This tool only uses [named profiles](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html) for authentication.
-be sure to `export AWS_PROFILE=<profile_name>` before executing this tool so that it can access aws credentials.
+Be sure to `export AWS_PROFILE=<profile_name>` before executing this tool so that it can access aws credentials.
 
-below are all of the SDK actions this tool uses, be sure that your aws credentials has permissions for them:
+Below are all of the SDK actions this tool uses, be sure that your aws credentials has IAM permissions for them:
 ```
 ec2:DescribeEgressOnlyInternetGateways
 ec2:DescribeInstances
