@@ -105,21 +105,17 @@ type VPCPeer struct {
 	RawPeer   *ec2.VpcPeeringConnection
 }
 
-type VPCEndpoint struct {
-	Id      *string
-	Type    *string
-	Service *string
-}
-
 type InterfaceEndpoint struct {
 	Id          *string
 	ServiceName *string
+	Name        *string
 	RawEndpoint *ec2.VpcEndpoint
 }
 
 type GatewayEndpoint struct {
 	Id          *string
 	ServiceName *string
+	Name        *string
 	RawEndpoint *ec2.VpcEndpoint
 }
 

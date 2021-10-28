@@ -340,6 +340,7 @@ func mapVpcEndpoints(vpcs map[string]VPC, vpcEndpoints []*ec2.VpcEndpoint) {
 				vpcs[*endpoint.VpcId].Subnets[*subnet].InterfaceEndpoints[*endpoint.VpcEndpointId] = InterfaceEndpoint{
 					Id:          endpoint.VpcEndpointId,
 					ServiceName: endpoint.ServiceName,
+					Name:        getNameTag(endpoint.Tags),
 					RawEndpoint: endpoint,
 				}
 			}
@@ -352,6 +353,8 @@ func mapVpcEndpoints(vpcs map[string]VPC, vpcEndpoints []*ec2.VpcEndpoint) {
 						vpcs[*endpoint.VpcId].Subnets[*subnet.Id].GatewayEndpoints[*endpoint.VpcEndpointId] = GatewayEndpoint{
 							Id:          endpoint.VpcEndpointId,
 							ServiceName: endpoint.ServiceName,
+							Name:        getNameTag(endpoint.Tags),
+							RawEndpoint: endpoint,
 						}
 					}
 				}

@@ -181,10 +181,11 @@ func printVPCs(vpcs map[string]VPC) {
 			for _, interfaceEndpointId := range interfaceEndpointKeys {
 				interfaceEndpoint := subnet.InterfaceEndpoints[interfaceEndpointId]
 				fmt.Printf(
-					"%s%v%v%v interface--> %v\n",
+					"%s%v%v%v%v interface--> %v\n",
 					indent(8),
 					color.Cyan,
 					aws.StringValue(interfaceEndpoint.Id),
+					formatName(interfaceEndpoint.Name),
 					color.Reset,
 					aws.StringValue(interfaceEndpoint.ServiceName),
 				)
@@ -198,10 +199,11 @@ func printVPCs(vpcs map[string]VPC) {
 			for _, gatewayEndpointId := range gatewayKeys {
 				gatewayEndpoint := subnet.GatewayEndpoints[gatewayEndpointId]
 				fmt.Printf(
-					"%s%v%v%v gateway--> %v\n",
+					"%s%v%v%v%v gateway--> %v\n",
 					indent(8),
 					color.Cyan,
 					aws.StringValue(gatewayEndpoint.Id),
+					formatName(gatewayEndpoint.Name),
 					color.Reset,
 					aws.StringValue(gatewayEndpoint.ServiceName),
 				)
