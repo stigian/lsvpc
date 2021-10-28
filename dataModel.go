@@ -29,6 +29,7 @@ type Subnet struct {
 	AvailabilityZone   *string
 	AvailabilityZoneId *string
 	Public             bool
+	Name               *string
 	RawSubnet          *ec2.Subnet
 	RouteTable         *RouteTable
 	EC2s               map[string]EC2

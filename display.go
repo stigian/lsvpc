@@ -157,10 +157,11 @@ func printVPCs(vpcs map[string]VPC) {
 				public = "Public"
 			}
 			fmt.Printf(
-				"%s%v%v%v  %v  %v %v-->%v%v %v\n",
+				"%s%v%v%v%v  %v  %v %v-->%v%v %v\n",
 				indent(4),
 				color.Blue,
 				aws.StringValue(subnet.Id),
+				formatName(subnet.Name),
 				color.Reset,
 				aws.StringValue(subnet.AvailabilityZone),
 				aws.StringValue(subnet.CidrBlock),

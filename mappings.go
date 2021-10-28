@@ -6,6 +6,16 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
+func getNameTag(tags []*ec2.Tag) *string {
+	var name *string
+	for _, tag := range tags {
+		if aws.StringValue(tag.Key) == "Name" {
+			name = tag.Value
+		}
+	}
+	return name
+}
+
 func mapVpcs(vpcs map[string]VPC, vpcData []*ec2.Vpc) {
 
 	for _, v := range vpcData {
@@ -19,19 +29,12 @@ func mapVpcs(vpcs map[string]VPC, vpcData []*ec2.Vpc) {
 			}
 		}
 
-		var name *string
-		for _, tag := range v.Tags {
-			if aws.StringValue(tag.Key) == "Name" {
-				name = tag.Value
-			}
-		}
-
 		vpcs[aws.StringValue(v.VpcId)] = VPC{
 			Id:            v.VpcId,
 			IsDefault:     aws.BoolValue(v.IsDefault),
 			CidrBlock:     v.CidrBlock,
 			IPv6CidrBlock: v6cidr,
-			Name:          name,
+			Name:          getNameTag(v.Tags),
 			RawVPC:        v,
 			Subnets:       make(map[string]Subnet),
 			Peers:         make(map[string]VPCPeer),
@@ -48,6 +51,7 @@ func mapSubnets(vpcs map[string]VPC, subnets []*ec2.Subnet) {
 			CidrBlock:          v.CidrBlock,
 			AvailabilityZone:   v.AvailabilityZone,
 			AvailabilityZoneId: v.AvailabilityZoneId,
+			Name:               getNameTag(v.Tags),
 			RawSubnet:          v,
 			Public:             isPublic,
 			EC2s:               make(map[string]EC2),
