@@ -6,6 +6,16 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
+func getNameTag(tags []*ec2.Tag) *string {
+	var name *string
+	for _, tag := range tags {
+		if aws.StringValue(tag.Key) == "Name" {
+			name = tag.Value
+		}
+	}
+	return name
+}
+
 func mapVpcs(vpcs map[string]VPC, vpcData []*ec2.Vpc) {
 
 	for _, v := range vpcData {
@@ -24,6 +34,7 @@ func mapVpcs(vpcs map[string]VPC, vpcData []*ec2.Vpc) {
 			IsDefault:     aws.BoolValue(v.IsDefault),
 			CidrBlock:     v.CidrBlock,
 			IPv6CidrBlock: v6cidr,
+			Name:          getNameTag(v.Tags),
 			RawVPC:        v,
 			Subnets:       make(map[string]Subnet),
 			Peers:         make(map[string]VPCPeer),
@@ -40,6 +51,7 @@ func mapSubnets(vpcs map[string]VPC, subnets []*ec2.Subnet) {
 			CidrBlock:          v.CidrBlock,
 			AvailabilityZone:   v.AvailabilityZone,
 			AvailabilityZoneId: v.AvailabilityZoneId,
+			Name:               getNameTag(v.Tags),
 			RawSubnet:          v,
 			Public:             isPublic,
 			EC2s:               make(map[string]EC2),
@@ -55,16 +67,6 @@ func mapSubnets(vpcs map[string]VPC, subnets []*ec2.Subnet) {
 func mapInstances(vpcs map[string]VPC, reservations []*ec2.Reservation) {
 	for _, reservation := range reservations {
 		for _, instance := range reservation.Instances {
-			networkInterfaces := []InstanceNetworkInterface{}
-			for _, networkInterface := range instance.NetworkInterfaces {
-				networkInterfaces = append(networkInterfaces, InstanceNetworkInterface{
-					Id:                  networkInterface.NetworkInterfaceId,
-					PrivateIp:           networkInterface.PrivateIpAddress,
-					MAC:                 networkInterface.MacAddress,
-					DNS:                 networkInterface.PrivateDnsName,
-					RawNetworkInterface: networkInterface,
-				})
-			}
 
 			volumes := make(map[string]Volume)
 			for _, volume := range instance.BlockDeviceMappings {
@@ -90,8 +92,9 @@ func mapInstances(vpcs map[string]VPC, reservations []*ec2.Reservation) {
 						PublicIP:   instance.PublicIpAddress,
 						PrivateIP:  instance.PrivateIpAddress,
 						Volumes:    volumes,
-						Interfaces: networkInterfaces,
+						Interfaces: make(map[string]NetworkInterface),
 						RawEc2:     instance,
+						Name:       getNameTag(instance.Tags),
 					}
 				}
 			}
@@ -110,6 +113,7 @@ func mapNatGateways(vpcs map[string]VPC, natGateways []*ec2.NatGateway) {
 			PublicIP:      gateway.NatGatewayAddresses[0].PublicIp,
 			State:         gateway.State,
 			Type:          gateway.ConnectivityType,
+			Name:          getNameTag(gateway.Tags),
 			RawNatGateway: gateway,
 		}
 	}
@@ -245,6 +249,7 @@ func mapTransitGatewayVpcAttachments(vpcs map[string]VPC, TransitGatewayVpcAttac
 					vpcs[vpcId].Subnets[subnetId].TGWs[*tgwatt.TransitGatewayAttachmentId] = TGWAttachment{
 						AttachmentId:     tgwatt.TransitGatewayAttachmentId,
 						TransitGatewayId: tgwatt.TransitGatewayId,
+						Name:             getNameTag(tgwatt.Tags),
 						RawAttachment:    tgwatt,
 					}
 				}
@@ -264,6 +269,7 @@ func mapVpcPeeringConnections(vpcs map[string]VPC, VpcPeeringConnections []*ec2.
 					Id:        peer.VpcPeeringConnectionId,
 					Requester: peer.RequesterVpcInfo.VpcId,
 					Accepter:  peer.AccepterVpcInfo.VpcId,
+					Name:      getNameTag(peer.Tags),
 					RawPeer:   peer,
 				}
 			}
@@ -274,6 +280,7 @@ func mapVpcPeeringConnections(vpcs map[string]VPC, VpcPeeringConnections []*ec2.
 					Id:        peer.VpcPeeringConnectionId,
 					Requester: peer.RequesterVpcInfo.VpcId,
 					Accepter:  peer.AccepterVpcInfo.VpcId,
+					Name:      getNameTag(peer.Tags),
 					RawPeer:   peer,
 				}
 			}
@@ -283,10 +290,6 @@ func mapVpcPeeringConnections(vpcs map[string]VPC, VpcPeeringConnections []*ec2.
 
 func mapNetworkInterfaces(vpcs map[string]VPC, networkInterfaces []*ec2.NetworkInterface) {
 	for _, iface := range networkInterfaces {
-		if iface.Attachment != nil && aws.StringValue(iface.Attachment.InstanceId) != "" {
-			continue //we handle instance interfaces elsewhere
-		}
-
 		if aws.StringValue(iface.InterfaceType) == "nat_gateway" {
 			continue //nat gateways are already adequately reported
 		}
@@ -296,16 +299,37 @@ func mapNetworkInterfaces(vpcs map[string]VPC, networkInterfaces []*ec2.NetworkI
 			publicIp = iface.Association.PublicIp
 		}
 
-		description := iface.Description
-		vpcs[*iface.VpcId].Subnets[*iface.SubnetId].ENIs[*iface.NetworkInterfaceId] = NetworkInterface{
+		ifaceIn := NetworkInterface{
 			Id:                  iface.NetworkInterfaceId,
 			PrivateIp:           iface.PrivateIpAddress,
 			MAC:                 iface.MacAddress,
 			PublicIp:            publicIp,
 			Type:                iface.InterfaceType,
-			Description:         description,
+			Description:         iface.Description,
+			Name:                getNameTag(iface.TagSet),
 			RawNetworkInterface: iface,
 		}
+
+		if iface.Attachment != nil && aws.StringValue(iface.Attachment.InstanceId) != "" {
+			ifaceInstanceId := aws.StringValue(iface.Attachment.InstanceId)
+			for vpcId, vpc := range vpcs {
+				for subnetId, subnet := range vpc.Subnets {
+					for instanceId := range subnet.EC2s {
+						if ifaceInstanceId == instanceId {
+							vpcs[vpcId].
+								Subnets[subnetId].
+								EC2s[instanceId].
+								Interfaces[*iface.NetworkInterfaceId] = ifaceIn
+						}
+					}
+				}
+			}
+			continue //The interface is already displayed as a part of the instance, no need to duplicate
+		}
+
+		vpcs[*iface.VpcId].
+			Subnets[*iface.SubnetId].
+			ENIs[*iface.NetworkInterfaceId] = ifaceIn
 	}
 }
 
@@ -316,6 +340,7 @@ func mapVpcEndpoints(vpcs map[string]VPC, vpcEndpoints []*ec2.VpcEndpoint) {
 				vpcs[*endpoint.VpcId].Subnets[*subnet].InterfaceEndpoints[*endpoint.VpcEndpointId] = InterfaceEndpoint{
 					Id:          endpoint.VpcEndpointId,
 					ServiceName: endpoint.ServiceName,
+					Name:        getNameTag(endpoint.Tags),
 					RawEndpoint: endpoint,
 				}
 			}
@@ -328,6 +353,8 @@ func mapVpcEndpoints(vpcs map[string]VPC, vpcEndpoints []*ec2.VpcEndpoint) {
 						vpcs[*endpoint.VpcId].Subnets[*subnet.Id].GatewayEndpoints[*endpoint.VpcEndpointId] = GatewayEndpoint{
 							Id:          endpoint.VpcEndpointId,
 							ServiceName: endpoint.ServiceName,
+							Name:        getNameTag(endpoint.Tags),
+							RawEndpoint: endpoint,
 						}
 					}
 				}
@@ -351,6 +378,7 @@ func instantiateVolumes(svc *ec2.EC2, vpcs map[string]VPC) error {
 						Size:       volume.Size,
 						VolumeType: volume.VolumeType,
 						RawVolume:  volume,
+						Name:       getNameTag(volume.Tags),
 					}
 				}
 			}

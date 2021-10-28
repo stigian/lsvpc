@@ -16,6 +16,7 @@ type VPC struct {
 	IsDefault     bool
 	CidrBlock     *string
 	IPv6CidrBlock *string
+	Name          *string
 	RawVPC        *ec2.Vpc
 	Gateways      []string
 	Subnets       map[string]Subnet
@@ -28,6 +29,7 @@ type Subnet struct {
 	AvailabilityZone   *string
 	AvailabilityZoneId *string
 	Public             bool
+	Name               *string
 	RawSubnet          *ec2.Subnet
 	RouteTable         *RouteTable
 	EC2s               map[string]EC2
@@ -46,20 +48,10 @@ type EC2 struct {
 	State      *string
 	PublicIP   *string
 	PrivateIP  *string
+	Name       *string
 	Volumes    map[string]Volume
-	Interfaces []InstanceNetworkInterface
+	Interfaces map[string]NetworkInterface
 	RawEc2     *ec2.Instance
-}
-
-type InstanceNetworkInterface struct {
-	Id                  *string
-	PrivateIp           *string
-	MAC                 *string
-	DNS                 *string
-	Type                *string
-	Description         *string
-	PublicIp            *string
-	RawNetworkInterface *ec2.InstanceNetworkInterface
 }
 
 type NetworkInterface struct {
@@ -70,6 +62,7 @@ type NetworkInterface struct {
 	Type                *string
 	Description         *string
 	PublicIp            *string
+	Name                *string
 	RawNetworkInterface *ec2.NetworkInterface
 }
 
@@ -78,6 +71,7 @@ type Volume struct {
 	DeviceName *string
 	Size       *int64
 	VolumeType *string
+	Name       *string
 	RawVolume  *ec2.Volume
 }
 type NatGateway struct {
@@ -86,6 +80,7 @@ type NatGateway struct {
 	PublicIP      *string
 	State         *string
 	Type          *string
+	Name          *string
 	RawNatGateway *ec2.NatGateway
 }
 
@@ -98,6 +93,7 @@ type RouteTable struct {
 type TGWAttachment struct {
 	AttachmentId     *string
 	TransitGatewayId *string
+	Name             *string
 	RawAttachment    *ec2.TransitGatewayVpcAttachment
 }
 
@@ -105,24 +101,21 @@ type VPCPeer struct {
 	Id        *string
 	Requester *string
 	Accepter  *string
+	Name      *string
 	RawPeer   *ec2.VpcPeeringConnection
-}
-
-type VPCEndpoint struct {
-	Id      *string
-	Type    *string
-	Service *string
 }
 
 type InterfaceEndpoint struct {
 	Id          *string
 	ServiceName *string
+	Name        *string
 	RawEndpoint *ec2.VpcEndpoint
 }
 
 type GatewayEndpoint struct {
 	Id          *string
 	ServiceName *string
+	Name        *string
 	RawEndpoint *ec2.VpcEndpoint
 }
 

@@ -9,6 +9,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 )
 
+const nameTruncate = 20 //max size a Name tag can be before its truncated with a "..." at the end
+
 func indent(num int) string {
 	sb := strings.Builder{}
 
@@ -36,6 +38,20 @@ func lineFeed() {
 	}
 }
 
+func formatName(name *string) string {
+	if aws.StringValue(name) == "" {
+		return ""
+	}
+	//Names can be up to 255 utf8 runes, we should truncate it
+	runes := []rune(aws.StringValue(name))
+	if len(runes) > nameTruncate {
+		runes = runes[:(nameTruncate - 1 - 3)]
+		runes = append(runes, []rune("...")...)
+	}
+
+	return fmt.Sprintf(" [%s]", string(runes))
+}
+
 func printVPCs(vpcs map[string]VPC) {
 	color := colorPalette{}
 
@@ -61,9 +77,10 @@ func printVPCs(vpcs map[string]VPC) {
 
 		// Print VPC
 		fmt.Printf(
-			"%v%v%v ",
+			"%v%v%v%v ",
 			color.Green,
 			aws.StringValue(vpc.Id),
+			formatName(vpc.Name),
 			color.Reset,
 		)
 
@@ -108,10 +125,11 @@ func printVPCs(vpcs map[string]VPC) {
 				vpcOperand = aws.StringValue(peer.Requester)
 			}
 			fmt.Printf(
-				"%s%v%v%v %v %v%v%v\n",
+				"%s%v%v%v%v %v %v%v%v\n",
 				indent(4),
 				color.Cyan,
 				aws.StringValue(peer.Id),
+				formatName(peer.Name),
 				color.Reset,
 				direction,
 				color.Green,
@@ -140,10 +158,11 @@ func printVPCs(vpcs map[string]VPC) {
 				public = "Public"
 			}
 			fmt.Printf(
-				"%s%v%v%v  %v  %v %v-->%v%v %v\n",
+				"%s%v%v%v%v  %v  %v %v-->%v%v %v\n",
 				indent(4),
 				color.Blue,
 				aws.StringValue(subnet.Id),
+				formatName(subnet.Name),
 				color.Reset,
 				aws.StringValue(subnet.AvailabilityZone),
 				aws.StringValue(subnet.CidrBlock),
@@ -162,10 +181,11 @@ func printVPCs(vpcs map[string]VPC) {
 			for _, interfaceEndpointId := range interfaceEndpointKeys {
 				interfaceEndpoint := subnet.InterfaceEndpoints[interfaceEndpointId]
 				fmt.Printf(
-					"%s%v%v%v interface--> %v\n",
+					"%s%v%v%v%v interface--> %v\n",
 					indent(8),
 					color.Cyan,
 					aws.StringValue(interfaceEndpoint.Id),
+					formatName(interfaceEndpoint.Name),
 					color.Reset,
 					aws.StringValue(interfaceEndpoint.ServiceName),
 				)
@@ -179,10 +199,11 @@ func printVPCs(vpcs map[string]VPC) {
 			for _, gatewayEndpointId := range gatewayKeys {
 				gatewayEndpoint := subnet.GatewayEndpoints[gatewayEndpointId]
 				fmt.Printf(
-					"%s%v%v%v gateway--> %v\n",
+					"%s%v%v%v%v gateway--> %v\n",
 					indent(8),
 					color.Cyan,
 					aws.StringValue(gatewayEndpoint.Id),
+					formatName(gatewayEndpoint.Name),
 					color.Reset,
 					aws.StringValue(gatewayEndpoint.ServiceName),
 				)
@@ -197,10 +218,11 @@ func printVPCs(vpcs map[string]VPC) {
 			for _, interfaceId := range interfaceKeys {
 				iface := subnet.ENIs[interfaceId]
 				fmt.Printf(
-					"%s%v%v%v %v %v %v %v %v : %v\n",
+					"%s%v%v%v%v %v %v %v %v %v : %v\n",
 					indent(8),
 					color.Cyan,
 					aws.StringValue(iface.Id),
+					formatName(iface.Name),
 					color.Reset,
 					aws.StringValue(iface.Type),
 					aws.StringValue(iface.MAC),
@@ -221,22 +243,30 @@ func printVPCs(vpcs map[string]VPC) {
 
 				// Print Instance Info
 				fmt.Printf(
-					"%s%v%s%v -- %v -- %v -- %v\n",
+					"%s%v%s%v%v -- %v -- %v -- %v\n",
 					indent(8),
 					color.Cyan,
 					aws.StringValue(instance.Id),
+					formatName(instance.Name),
 					color.Reset,
 					aws.StringValue(instance.State),
 					aws.StringValue(instance.PublicIP),
 					aws.StringValue(instance.PrivateIP),
 				)
 
-				// Print Instance Volumes
-				for _, iface := range instance.Interfaces {
+				// Print Instance Interfaces
+				instanceInterfaceKeys := []string{}
+				for k := range instance.Interfaces {
+					instanceInterfaceKeys = append(instanceInterfaceKeys, k)
+				}
+				sort.Strings(instanceInterfaceKeys)
+				for _, interfaceId := range instanceInterfaceKeys {
+					iface := instance.Interfaces[interfaceId]
 					fmt.Printf(
-						"%s%v  %v  %v  %v\n",
+						"%s%v%v  %v  %v  %v\n",
 						indent(12),
 						aws.StringValue(iface.Id),
+						formatName(iface.Name),
 						aws.StringValue(iface.MAC),
 						aws.StringValue(iface.PrivateIp),
 						aws.StringValue(iface.DNS),
@@ -246,9 +276,10 @@ func printVPCs(vpcs map[string]VPC) {
 				// Print Instance Volumes
 				for _, volume := range instance.Volumes {
 					fmt.Printf(
-						"%s%v  %v  %v  %v GiB\n",
+						"%s%v%v  %v  %v  %v GiB\n",
 						indent(12),
 						aws.StringValue(volume.Id),
+						formatName(volume.Name),
 						aws.StringValue(volume.VolumeType),
 						aws.StringValue(volume.DeviceName),
 						aws.Int64Value(volume.Size),
@@ -265,10 +296,11 @@ func printVPCs(vpcs map[string]VPC) {
 			for _, natGatewayId := range natGatewayKeys {
 				natGateway := subnet.NatGateways[natGatewayId]
 				fmt.Printf(
-					"%s%v%v%v  %v  %v  %v  %v\n",
+					"%s%v%v%v%v  %v  %v  %v  %v\n",
 					indent(8),
 					color.Cyan,
 					aws.StringValue(natGateway.Id),
+					formatName(natGateway.Name),
 					color.Reset,
 					aws.StringValue(natGateway.Type),
 					aws.StringValue(natGateway.State),
@@ -286,10 +318,11 @@ func printVPCs(vpcs map[string]VPC) {
 			for _, tgwId := range tgwKeys {
 				tgw := subnet.TGWs[tgwId]
 				fmt.Printf(
-					"%s%v%v%v ---> %v%v%v\n",
+					"%s%v%v%v%v ---> %v%v%v\n",
 					indent(8),
 					color.Cyan,
 					aws.StringValue(tgw.AttachmentId),
+					formatName(tgw.Name),
 					color.Reset,
 					color.Yellow,
 					aws.StringValue(tgw.TransitGatewayId),
