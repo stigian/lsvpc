@@ -19,11 +19,19 @@ func mapVpcs(vpcs map[string]VPC, vpcData []*ec2.Vpc) {
 			}
 		}
 
+		var name *string
+		for _, tag := range v.Tags {
+			if aws.StringValue(tag.Key) == "Name" {
+				name = tag.Value
+			}
+		}
+
 		vpcs[aws.StringValue(v.VpcId)] = VPC{
 			Id:            v.VpcId,
 			IsDefault:     aws.BoolValue(v.IsDefault),
 			CidrBlock:     v.CidrBlock,
 			IPv6CidrBlock: v6cidr,
+			Name:          name,
 			RawVPC:        v,
 			Subnets:       make(map[string]Subnet),
 			Peers:         make(map[string]VPCPeer),

@@ -16,6 +16,7 @@ type VPC struct {
 	IsDefault     bool
 	CidrBlock     *string
 	IPv6CidrBlock *string
+	Name          *string
 	RawVPC        *ec2.Vpc
 	Gateways      []string
 	Subnets       map[string]Subnet

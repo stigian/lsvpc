@@ -9,6 +9,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 )
 
+const nameTruncate = 20 //max size a Name tag can be before its truncated with a "..." at the end
+
 func indent(num int) string {
 	sb := strings.Builder{}
 
@@ -36,6 +38,20 @@ func lineFeed() {
 	}
 }
 
+func formatName(name *string) string {
+	if aws.StringValue(name) == "" {
+		return ""
+	}
+	//Names can be up to 255 utf8 runes, we should truncate it
+	runes := []rune(aws.StringValue(name))
+	if len(runes) > nameTruncate {
+		runes = runes[:(nameTruncate - 1 - 3)]
+		runes = append(runes, []rune("...")...)
+	}
+
+	return fmt.Sprintf(" [%s]", string(runes))
+}
+
 func printVPCs(vpcs map[string]VPC) {
 	color := colorPalette{}
 
@@ -61,9 +77,10 @@ func printVPCs(vpcs map[string]VPC) {
 
 		// Print VPC
 		fmt.Printf(
-			"%v%v%v ",
+			"%v%v%v%v ",
 			color.Green,
 			aws.StringValue(vpc.Id),
+			formatName(vpc.Name),
 			color.Reset,
 		)
 
