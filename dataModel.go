@@ -80,6 +80,7 @@ type NatGateway struct {
 	PublicIP      *string
 	State         *string
 	Type          *string
+	Name          *string
 	RawNatGateway *ec2.NatGateway
 }
 

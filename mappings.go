@@ -113,6 +113,7 @@ func mapNatGateways(vpcs map[string]VPC, natGateways []*ec2.NatGateway) {
 			PublicIP:      gateway.NatGatewayAddresses[0].PublicIp,
 			State:         gateway.State,
 			Type:          gateway.ConnectivityType,
+			Name:          getNameTag(gateway.Tags),
 			RawNatGateway: gateway,
 		}
 	}

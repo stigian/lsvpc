@@ -294,10 +294,11 @@ func printVPCs(vpcs map[string]VPC) {
 			for _, natGatewayId := range natGatewayKeys {
 				natGateway := subnet.NatGateways[natGatewayId]
 				fmt.Printf(
-					"%s%v%v%v  %v  %v  %v  %v\n",
+					"%s%v%v%v%v  %v  %v  %v  %v\n",
 					indent(8),
 					color.Cyan,
 					aws.StringValue(natGateway.Id),
+					formatName(natGateway.Name),
 					color.Reset,
 					aws.StringValue(natGateway.Type),
 					aws.StringValue(natGateway.State),
