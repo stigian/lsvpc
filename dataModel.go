@@ -71,6 +71,7 @@ type Volume struct {
 	DeviceName *string
 	Size       *int64
 	VolumeType *string
+	Name       *string
 	RawVolume  *ec2.Volume
 }
 type NatGateway struct {

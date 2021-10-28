@@ -371,6 +371,7 @@ func instantiateVolumes(svc *ec2.EC2, vpcs map[string]VPC) error {
 						Size:       volume.Size,
 						VolumeType: volume.VolumeType,
 						RawVolume:  volume,
+						Name:       getNameTag(volume.Tags),
 					}
 				}
 			}

@@ -273,9 +273,10 @@ func printVPCs(vpcs map[string]VPC) {
 				// Print Instance Volumes
 				for _, volume := range instance.Volumes {
 					fmt.Printf(
-						"%s%v  %v  %v  %v GiB\n",
+						"%s%v%v  %v  %v  %v GiB\n",
 						indent(12),
 						aws.StringValue(volume.Id),
+						formatName(volume.Name),
 						aws.StringValue(volume.VolumeType),
 						aws.StringValue(volume.DeviceName),
 						aws.Int64Value(volume.Size),
