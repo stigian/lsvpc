@@ -99,6 +99,7 @@ type VPCPeer struct {
 	Id        *string
 	Requester *string
 	Accepter  *string
+	Name      *string
 	RawPeer   *ec2.VpcPeeringConnection
 }
 

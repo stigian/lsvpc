@@ -125,10 +125,11 @@ func printVPCs(vpcs map[string]VPC) {
 				vpcOperand = aws.StringValue(peer.Requester)
 			}
 			fmt.Printf(
-				"%s%v%v%v %v %v%v%v\n",
+				"%s%v%v%v%v %v %v%v%v\n",
 				indent(4),
 				color.Cyan,
 				aws.StringValue(peer.Id),
+				formatName(peer.Name),
 				color.Reset,
 				direction,
 				color.Green,

@@ -267,6 +267,7 @@ func mapVpcPeeringConnections(vpcs map[string]VPC, VpcPeeringConnections []*ec2.
 					Id:        peer.VpcPeeringConnectionId,
 					Requester: peer.RequesterVpcInfo.VpcId,
 					Accepter:  peer.AccepterVpcInfo.VpcId,
+					Name:      getNameTag(peer.Tags),
 					RawPeer:   peer,
 				}
 			}
@@ -277,6 +278,7 @@ func mapVpcPeeringConnections(vpcs map[string]VPC, VpcPeeringConnections []*ec2.
 					Id:        peer.VpcPeeringConnectionId,
 					Requester: peer.RequesterVpcInfo.VpcId,
 					Accepter:  peer.AccepterVpcInfo.VpcId,
+					Name:      getNameTag(peer.Tags),
 					RawPeer:   peer,
 				}
 			}
