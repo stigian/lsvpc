@@ -16,8 +16,6 @@ To produce a live-updating display of the status of your vpcs:
 
 ## From Source
 
-Using your OS maintainer's version of go:
-
 ```
 sudo make install
 ```
