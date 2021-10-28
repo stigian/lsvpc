@@ -68,14 +68,6 @@ func mapInstances(vpcs map[string]VPC, reservations []*ec2.Reservation) {
 	for _, reservation := range reservations {
 		for _, instance := range reservation.Instances {
 
-			volumes := make(map[string]Volume)
-			for _, volume := range instance.BlockDeviceMappings {
-				volumes[*volume.Ebs.VolumeId] = Volume{
-					Id:         volume.Ebs.VolumeId,
-					DeviceName: volume.DeviceName,
-				}
-			}
-
 			if *instance.State.Name != "terminated" {
 				vpcId := aws.StringValue(instance.VpcId)
 				subnetId := aws.StringValue(instance.SubnetId)
@@ -91,10 +83,38 @@ func mapInstances(vpcs map[string]VPC, reservations []*ec2.Reservation) {
 						State:      instance.State.Name,
 						PublicIP:   instance.PublicIpAddress,
 						PrivateIP:  instance.PrivateIpAddress,
-						Volumes:    volumes,
+						Volumes:    make(map[string]Volume),
 						Interfaces: make(map[string]NetworkInterface),
 						RawEc2:     instance,
 						Name:       getNameTag(instance.Tags),
+					}
+				}
+			}
+		}
+	}
+}
+
+func mapVolumes(vpcs map[string]VPC, volumes []*ec2.Volume) {
+	for _, volume := range volumes {
+		for _, attachment := range volume.Attachments {
+			if volInstanceId := aws.StringValue(attachment.InstanceId); volInstanceId != "" {
+				for vpcId, vpc := range vpcs {
+					for subnetId, subnet := range vpc.Subnets {
+						for instanceId := range subnet.EC2s {
+							if volInstanceId == instanceId {
+								vpcs[vpcId].
+									Subnets[subnetId].
+									EC2s[instanceId].
+									Volumes[*volume.VolumeId] = Volume{
+									Id:         volume.VolumeId,
+									DeviceName: attachment.Device,
+									Size:       volume.Size,
+									VolumeType: volume.VolumeType,
+									RawVolume:  volume,
+									Name:       getNameTag(volume.Tags),
+								}
+							}
+						}
 					}
 				}
 			}
@@ -361,28 +381,4 @@ func mapVpcEndpoints(vpcs map[string]VPC, vpcEndpoints []*ec2.VpcEndpoint) {
 			}
 		}
 	}
-}
-
-func instantiateVolumes(svc *ec2.EC2, vpcs map[string]VPC) error {
-	for vk, v := range vpcs {
-		for sk, s := range v.Subnets {
-			for ik, i := range s.EC2s {
-				for volk, vol := range i.Volumes {
-					volume, err := getVolume(svc, aws.StringValue(vol.Id))
-					if err != nil {
-						return err
-					}
-					vpcs[vk].Subnets[sk].EC2s[ik].Volumes[volk] = Volume{
-						Id:         vol.Id,
-						DeviceName: vol.DeviceName,
-						Size:       volume.Size,
-						VolumeType: volume.VolumeType,
-						RawVolume:  volume,
-						Name:       getNameTag(volume.Tags),
-					}
-				}
-			}
-		}
-	}
-	return nil
 }

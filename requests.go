@@ -2,8 +2,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
@@ -244,25 +242,23 @@ func getVpcEndpoints(svc *ec2.EC2, data *RecievedData) {
 	data.VPCEndpoints = endpoints
 }
 
-func getVolume(svc *ec2.EC2, volumeId string) (*ec2.Volume, error) {
-	if volumeId == "" {
-		return &ec2.Volume{}, fmt.Errorf("getVolume handed an empty string")
-	}
-	out, err := svc.DescribeVolumes(&ec2.DescribeVolumesInput{
-		VolumeIds: []*string{
-			aws.String(volumeId),
+func getVolumes(svc *ec2.EC2, data *RecievedData) {
+	defer data.wg.Done()
+	volumes := []*ec2.Volume{}
+
+	err := svc.DescribeVolumesPages(
+		&ec2.DescribeVolumesInput{},
+		func(page *ec2.DescribeVolumesOutput, lastPage bool) bool {
+			volumes = append(volumes, page.Volumes...)
+			return !lastPage
 		},
-	})
+	)
 	if err != nil {
-		return &ec2.Volume{}, err
+		data.mu.Lock()
+		data.Error = err
+		data.mu.Unlock()
 	}
-
-	if len(out.Volumes) != 1 {
-		return &ec2.Volume{}, fmt.Errorf("incorrect number of volumes returned")
-	}
-
-	return out.Volumes[0], nil
-
+	data.Volumes = volumes
 }
 
 func getRegions() []string {

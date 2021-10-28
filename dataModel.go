@@ -134,5 +134,6 @@ type RecievedData struct {
 	PeeringConnections []*ec2.VpcPeeringConnection
 	NetworkInterfaces  []*ec2.NetworkInterface
 	VPCEndpoints       []*ec2.VpcEndpoint
+	Volumes            []*ec2.Volume
 	Error              error
 }

@@ -38,10 +38,11 @@ func populateVPC(region string) (map[string]VPC, error) {
 	var data RecievedData
 	vpcs := make(map[string]VPC)
 
-	data.wg.Add(12)
+	data.wg.Add(13)
 	go getVpcs(svc, &data)
 	go getSubnets(svc, &data)
 	go getInstances(svc, &data)
+	go getVolumes(svc, &data)
 	go getNatGatways(svc, &data)
 	go getRouteTables(svc, &data)
 	go getInternetGateways(svc, &data)
@@ -62,10 +63,7 @@ func populateVPC(region string) (map[string]VPC, error) {
 	mapVpcs(vpcs, data.Vpcs)
 	mapSubnets(vpcs, data.Subnets)
 	mapInstances(vpcs, data.Instances)
-	err := instantiateVolumes(svc, vpcs)
-	if err != nil {
-		return map[string]VPC{}, fmt.Errorf("failed to populate VPCs: %v", err.Error())
-	}
+	mapVolumes(vpcs, data.Volumes)
 	mapNatGateways(vpcs, data.NatGateways)
 	mapRouteTables(vpcs, data.RouteTables)
 	mapInternetGateways(vpcs, data.InternetGateways)
