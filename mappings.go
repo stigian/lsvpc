@@ -67,16 +67,6 @@ func mapSubnets(vpcs map[string]VPC, subnets []*ec2.Subnet) {
 func mapInstances(vpcs map[string]VPC, reservations []*ec2.Reservation) {
 	for _, reservation := range reservations {
 		for _, instance := range reservation.Instances {
-			networkInterfaces := []InstanceNetworkInterface{}
-			for _, networkInterface := range instance.NetworkInterfaces {
-				networkInterfaces = append(networkInterfaces, InstanceNetworkInterface{
-					Id:                  networkInterface.NetworkInterfaceId,
-					PrivateIp:           networkInterface.PrivateIpAddress,
-					MAC:                 networkInterface.MacAddress,
-					DNS:                 networkInterface.PrivateDnsName,
-					RawNetworkInterface: networkInterface,
-				})
-			}
 
 			volumes := make(map[string]Volume)
 			for _, volume := range instance.BlockDeviceMappings {
@@ -102,8 +92,9 @@ func mapInstances(vpcs map[string]VPC, reservations []*ec2.Reservation) {
 						PublicIP:   instance.PublicIpAddress,
 						PrivateIP:  instance.PrivateIpAddress,
 						Volumes:    volumes,
-						Interfaces: networkInterfaces,
+						Interfaces: make(map[string]NetworkInterface),
 						RawEc2:     instance,
+						Name:       getNameTag(instance.Tags),
 					}
 				}
 			}
@@ -295,10 +286,6 @@ func mapVpcPeeringConnections(vpcs map[string]VPC, VpcPeeringConnections []*ec2.
 
 func mapNetworkInterfaces(vpcs map[string]VPC, networkInterfaces []*ec2.NetworkInterface) {
 	for _, iface := range networkInterfaces {
-		if iface.Attachment != nil && aws.StringValue(iface.Attachment.InstanceId) != "" {
-			continue //we handle instance interfaces elsewhere
-		}
-
 		if aws.StringValue(iface.InterfaceType) == "nat_gateway" {
 			continue //nat gateways are already adequately reported
 		}
@@ -308,16 +295,37 @@ func mapNetworkInterfaces(vpcs map[string]VPC, networkInterfaces []*ec2.NetworkI
 			publicIp = iface.Association.PublicIp
 		}
 
-		description := iface.Description
-		vpcs[*iface.VpcId].Subnets[*iface.SubnetId].ENIs[*iface.NetworkInterfaceId] = NetworkInterface{
+		ifaceIn := NetworkInterface{
 			Id:                  iface.NetworkInterfaceId,
 			PrivateIp:           iface.PrivateIpAddress,
 			MAC:                 iface.MacAddress,
 			PublicIp:            publicIp,
 			Type:                iface.InterfaceType,
-			Description:         description,
+			Description:         iface.Description,
+			Name:                getNameTag(iface.TagSet),
 			RawNetworkInterface: iface,
 		}
+
+		if iface.Attachment != nil && aws.StringValue(iface.Attachment.InstanceId) != "" {
+			ifaceInstanceId := aws.StringValue(iface.Attachment.InstanceId)
+			for vpcId, vpc := range vpcs {
+				for subnetId, subnet := range vpc.Subnets {
+					for instanceId := range subnet.EC2s {
+						if ifaceInstanceId == instanceId {
+							vpcs[vpcId].
+								Subnets[subnetId].
+								EC2s[instanceId].
+								Interfaces[*iface.NetworkInterfaceId] = ifaceIn
+						}
+					}
+				}
+			}
+			continue //The interface is already displayed as a part of the instance, no need to duplicate
+		}
+
+		vpcs[*iface.VpcId].
+			Subnets[*iface.SubnetId].
+			ENIs[*iface.NetworkInterfaceId] = ifaceIn
 	}
 }
 

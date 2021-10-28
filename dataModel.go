@@ -48,20 +48,10 @@ type EC2 struct {
 	State      *string
 	PublicIP   *string
 	PrivateIP  *string
+	Name       *string
 	Volumes    map[string]Volume
-	Interfaces []InstanceNetworkInterface
+	Interfaces map[string]NetworkInterface
 	RawEc2     *ec2.Instance
-}
-
-type InstanceNetworkInterface struct {
-	Id                  *string
-	PrivateIp           *string
-	MAC                 *string
-	DNS                 *string
-	Type                *string
-	Description         *string
-	PublicIp            *string
-	RawNetworkInterface *ec2.InstanceNetworkInterface
 }
 
 type NetworkInterface struct {
@@ -72,6 +62,7 @@ type NetworkInterface struct {
 	Type                *string
 	Description         *string
 	PublicIp            *string
+	Name                *string
 	RawNetworkInterface *ec2.NetworkInterface
 }
 

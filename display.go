@@ -215,10 +215,11 @@ func printVPCs(vpcs map[string]VPC) {
 			for _, interfaceId := range interfaceKeys {
 				iface := subnet.ENIs[interfaceId]
 				fmt.Printf(
-					"%s%v%v%v %v %v %v %v %v : %v\n",
+					"%s%v%v%v%v %v %v %v %v %v : %v\n",
 					indent(8),
 					color.Cyan,
 					aws.StringValue(iface.Id),
+					formatName(iface.Name),
 					color.Reset,
 					aws.StringValue(iface.Type),
 					aws.StringValue(iface.MAC),
@@ -239,22 +240,30 @@ func printVPCs(vpcs map[string]VPC) {
 
 				// Print Instance Info
 				fmt.Printf(
-					"%s%v%s%v -- %v -- %v -- %v\n",
+					"%s%v%s%v%v -- %v -- %v -- %v\n",
 					indent(8),
 					color.Cyan,
 					aws.StringValue(instance.Id),
+					formatName(instance.Name),
 					color.Reset,
 					aws.StringValue(instance.State),
 					aws.StringValue(instance.PublicIP),
 					aws.StringValue(instance.PrivateIP),
 				)
 
-				// Print Instance Volumes
-				for _, iface := range instance.Interfaces {
+				// Print Instance Interfaces
+				instanceInterfaceKeys := []string{}
+				for k := range instance.Interfaces {
+					instanceInterfaceKeys = append(instanceInterfaceKeys, k)
+				}
+				sort.Strings(instanceInterfaceKeys)
+				for _, interfaceId := range instanceInterfaceKeys {
+					iface := instance.Interfaces[interfaceId]
 					fmt.Printf(
-						"%s%v  %v  %v  %v\n",
+						"%s%v%v  %v  %v  %v\n",
 						indent(12),
 						aws.StringValue(iface.Id),
+						formatName(iface.Name),
 						aws.StringValue(iface.MAC),
 						aws.StringValue(iface.PrivateIp),
 						aws.StringValue(iface.DNS),
