@@ -315,10 +315,11 @@ func printVPCs(vpcs map[string]VPC) {
 			for _, tgwId := range tgwKeys {
 				tgw := subnet.TGWs[tgwId]
 				fmt.Printf(
-					"%s%v%v%v ---> %v%v%v\n",
+					"%s%v%v%v%v ---> %v%v%v\n",
 					indent(8),
 					color.Cyan,
 					aws.StringValue(tgw.AttachmentId),
+					formatName(tgw.Name),
 					color.Reset,
 					color.Yellow,
 					aws.StringValue(tgw.TransitGatewayId),

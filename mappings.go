@@ -248,6 +248,7 @@ func mapTransitGatewayVpcAttachments(vpcs map[string]VPC, TransitGatewayVpcAttac
 					vpcs[vpcId].Subnets[subnetId].TGWs[*tgwatt.TransitGatewayAttachmentId] = TGWAttachment{
 						AttachmentId:     tgwatt.TransitGatewayAttachmentId,
 						TransitGatewayId: tgwatt.TransitGatewayId,
+						Name:             getNameTag(tgwatt.Tags),
 						RawAttachment:    tgwatt,
 					}
 				}

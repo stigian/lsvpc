@@ -92,6 +92,7 @@ type RouteTable struct {
 type TGWAttachment struct {
 	AttachmentId     *string
 	TransitGatewayId *string
+	Name             *string
 	RawAttachment    *ec2.TransitGatewayVpcAttachment
 }
 
