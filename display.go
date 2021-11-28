@@ -243,12 +243,13 @@ func printVPCs(vpcs map[string]VPC) {
 
 				// Print Instance Info
 				fmt.Printf(
-					"%s%v%s%v%v -- %v -- %v -- %v\n",
+					"%s%v%s%v%v %v -- %v -- %v -- %v\n",
 					indent(8),
 					color.Cyan,
 					aws.StringValue(instance.Id),
 					formatName(instance.Name),
 					color.Reset,
+					aws.StringValue(instance.Type),
 					aws.StringValue(instance.State),
 					aws.StringValue(instance.PublicIP),
 					aws.StringValue(instance.PrivateIP),
