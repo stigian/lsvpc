@@ -171,6 +171,9 @@ func getDefaultRoute(rtb *ec2.RouteTable) string {
 			if dest := aws.StringValue(route.VpcPeeringConnectionId); dest != "" {
 				return dest
 			}
+			if dest := aws.StringValue(route.CoreNetworkArn); dest != "" {
+				return dest
+			}
 		}
 	}
 	return "" //no default route found, which doesn't necessarily mean an error
