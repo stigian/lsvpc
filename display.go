@@ -243,7 +243,7 @@ func printVPCs(vpcs map[string]VPC) {
 
 				// Print Instance Info
 				fmt.Printf(
-					"%s%v%s%v%v %v -- %v %v -- %v -- %v\n",
+					"%s%v%s%v%v %v -- %v,%v -- %v -- %v\n",
 					indent(8),
 					color.Cyan,
 					aws.StringValue(instance.Id),
