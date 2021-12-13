@@ -94,6 +94,24 @@ func mapInstances(vpcs map[string]VPC, reservations []*ec2.Reservation) {
 	}
 }
 
+func mapInstanceStatuses(vpcs map[string]VPC, statuses []*ec2.InstanceStatus) {
+	for _, status := range statuses {
+		for vpcId, vpc := range vpcs {
+			for subnetId, subnet := range vpc.Subnets {
+				for instanceId, instance := range subnet.EC2s {
+					if aws.StringValue(status.InstanceId) == instanceId {
+						updatedInstance := instance
+						updatedInstance.Status = status.InstanceStatus.Status
+						vpcs[vpcId].
+							Subnets[subnetId].
+							EC2s[instanceId] = updatedInstance
+					}
+				}
+			}
+		}
+	}
+}
+
 func mapVolumes(vpcs map[string]VPC, volumes []*ec2.Volume) {
 	for _, volume := range volumes {
 		for _, attachment := range volume.Attachments {

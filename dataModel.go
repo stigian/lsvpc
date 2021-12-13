@@ -49,6 +49,7 @@ type EC2 struct {
 	PublicIP   *string
 	PrivateIP  *string
 	Name       *string
+	Status     *string
 	Volumes    map[string]Volume
 	Interfaces map[string]NetworkInterface
 	RawEc2     *ec2.Instance
@@ -125,6 +126,7 @@ type RecievedData struct {
 	Vpcs               []*ec2.Vpc
 	Subnets            []*ec2.Subnet
 	Instances          []*ec2.Reservation
+	InstanceStatuses   []*ec2.InstanceStatus
 	NatGateways        []*ec2.NatGateway
 	RouteTables        []*ec2.RouteTable
 	InternetGateways   []*ec2.InternetGateway

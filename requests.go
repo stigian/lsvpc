@@ -65,6 +65,26 @@ func getInstances(svc *ec2.EC2, data *RecievedData) {
 	data.Instances = instances
 }
 
+func getInstanceStatuses(svc *ec2.EC2, data *RecievedData) {
+	defer data.wg.Done()
+	statuses := []*ec2.InstanceStatus{}
+	err := svc.DescribeInstanceStatusPages(
+		&ec2.DescribeInstanceStatusInput{},
+		func(page *ec2.DescribeInstanceStatusOutput, lastPage bool) bool {
+			statuses = append(statuses, page.InstanceStatuses...)
+			return !lastPage
+		},
+	)
+
+	if err != nil {
+		data.mu.Lock()
+		data.Error = err
+		data.mu.Unlock()
+	}
+
+	data.InstanceStatuses = statuses
+}
+
 func getNatGatways(svc *ec2.EC2, data *RecievedData) {
 	defer data.wg.Done()
 	natGateways := []*ec2.NatGateway{}
