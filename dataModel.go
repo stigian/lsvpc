@@ -41,18 +41,19 @@ type Subnet struct {
 }
 
 type EC2 struct {
-	Id         *string
-	Type       *string
-	SubnetId   *string
-	VpcId      *string
-	State      *string
-	PublicIP   *string
-	PrivateIP  *string
-	Name       *string
-	Status     *string
-	Volumes    map[string]Volume
-	Interfaces map[string]NetworkInterface
-	RawEc2     *ec2.Instance
+	Id             *string
+	Type           *string
+	SubnetId       *string
+	VpcId          *string
+	State          *string
+	PublicIP       *string
+	PrivateIP      *string
+	Name           *string
+	InstanceStatus *string
+	SystemStatus   *string
+	Volumes        map[string]Volume
+	Interfaces     map[string]NetworkInterface
+	RawEc2         *ec2.Instance
 }
 
 type NetworkInterface struct {

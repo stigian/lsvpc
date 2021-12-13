@@ -101,7 +101,8 @@ func mapInstanceStatuses(vpcs map[string]VPC, statuses []*ec2.InstanceStatus) {
 				for instanceId, instance := range subnet.EC2s {
 					if aws.StringValue(status.InstanceId) == instanceId {
 						updatedInstance := instance
-						updatedInstance.Status = status.InstanceStatus.Status
+						updatedInstance.InstanceStatus = status.InstanceStatus.Status
+						updatedInstance.SystemStatus = status.SystemStatus.Status
 						vpcs[vpcId].
 							Subnets[subnetId].
 							EC2s[instanceId] = updatedInstance
