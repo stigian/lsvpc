@@ -32,7 +32,7 @@ type Subnet struct {
 	Name               *string
 	RawSubnet          *ec2.Subnet
 	RouteTable         *RouteTable
-	EC2s               map[string]EC2
+	Instances          map[string]Instance
 	NatGateways        map[string]NatGateway
 	TGWs               map[string]TGWAttachment
 	ENIs               map[string]NetworkInterface
@@ -40,7 +40,7 @@ type Subnet struct {
 	GatewayEndpoints   map[string]GatewayEndpoint
 }
 
-type EC2 struct {
+type Instance struct {
 	Id             *string
 	Type           *string
 	SubnetId       *string

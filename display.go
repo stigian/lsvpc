@@ -232,14 +232,14 @@ func printVPCs(vpcs map[string]VPC) {
 					aws.StringValue(iface.Description),
 				)
 			}
-			// Print EC2 Instance
+			// Print EC2 Instances
 			instanceKeys := []string{}
-			for k := range subnet.EC2s {
+			for k := range subnet.Instances {
 				instanceKeys = append(instanceKeys, k)
 			}
 			sort.Strings(instanceKeys)
 			for _, instanceId := range instanceKeys {
-				instance := subnet.EC2s[instanceId]
+				instance := subnet.Instances[instanceId]
 
 				// Its too clunky to directly report SystemStatus and InstanceStatus, lets do it like the console does
 				status := 0
