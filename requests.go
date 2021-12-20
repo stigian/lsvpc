@@ -2,6 +2,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
@@ -289,7 +291,7 @@ func getRegions() []string {
 	regions := []string{}
 	res, err := svc.DescribeRegions(&ec2.DescribeRegionsInput{})
 	if err != nil {
-		panic("Could not get regions")
+		panic(fmt.Sprintf("Could not get regions: %v", err.Error()))
 	}
 
 	for _, region := range res.Regions {
