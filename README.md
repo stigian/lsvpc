@@ -64,6 +64,7 @@ Below are all of the SDK actions this tool uses, be sure that your aws credentia
 ```
 ec2:DescribeEgressOnlyInternetGateways
 ec2:DescribeInstances
+ec2:DescribeInstanceStatus
 ec2:DescribeInternetGateways
 ec2:DescribeNatGateways
 ec2:DescribeNetworkInterfaces
