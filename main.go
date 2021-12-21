@@ -130,7 +130,7 @@ func doDefaultRegion() {
 	currentRegion := aws.StringValue(sess.Config.Region)
 	vpcs, err := populateVPC(currentRegion)
 	if err != nil {
-		panic("populateVPC failed")
+		panic(fmt.Sprintf("populateVPC failed: %v", err.Error()))
 	}
 
 	printVPCs(vpcs)
@@ -168,6 +168,13 @@ func credentialsLoaded() bool {
 
 	if !creds.HasKeys() {
 		return false
+	}
+
+	if aws.StringValue(sess.Config.Region) == "" {
+		//no default region in profile/credentials, check that AWS_DEFAULT_REGION exists
+		if os.Getenv("AWS_DEFAULT_REGION") == "" {
+			os.Setenv("AWS_DEFAULT_REGION", "us-east-1")
+		}
 	}
 
 	return true
