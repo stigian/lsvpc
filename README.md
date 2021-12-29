@@ -57,8 +57,10 @@ go run github.com/tjames-stig/lsvpc
 # Usage
 
 ## Configuration and Permissions
-This tool only uses [named profiles](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html) for authentication.
-Be sure to `export AWS_PROFILE=<profile_name>` before executing this tool so that it can access aws credentials.
+This tool can make use of [named profiles](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html) for authentication.
+Be sure to `export AWS_PROFILE=<profile_name>` before executing this tool so that it can access awscli credentials. It will otherwise seek credentials in the order specified [here](https://docs.aws.amazon.com/sdk-for-go/api/aws/session/#hdr-Credential_and_config_loading_order). The `SharedConfig` option for sessions is enabled, and it will automatically seek environment variables, shared config/credential files or instance metadata for sdk credentials.
+
+If sdk library is unable to find a default region from credentials or environment variables, lsvpc will default to using `us-east-1` for its operation.
 
 Below are all of the SDK actions this tool uses, be sure that your aws credentials have IAM permissions for them:
 ```
