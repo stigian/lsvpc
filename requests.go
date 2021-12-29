@@ -7,7 +7,19 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/service/sts"
 )
+
+func getIdentity(svc *sts.STS, data *RecievedData) {
+	defer data.wg.Done()
+	out, err := svc.GetCallerIdentity(&sts.GetCallerIdentityInput{})
+	if err != nil {
+		data.mu.Lock()
+		data.Error = err
+		data.mu.Unlock()
+	}
+	data.Identity = out
+}
 
 func getVpcs(svc *ec2.EC2, data *RecievedData) {
 	defer data.wg.Done()

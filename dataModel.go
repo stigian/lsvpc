@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/service/sts"
 )
 
 type RegionData struct {
@@ -124,6 +125,7 @@ type GatewayEndpoint struct {
 type RecievedData struct {
 	wg                 sync.WaitGroup
 	mu                 sync.Mutex
+	Identity           *sts.GetCallerIdentityOutput
 	Vpcs               []*ec2.Vpc
 	Subnets            []*ec2.Subnet
 	Instances          []*ec2.Reservation

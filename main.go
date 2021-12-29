@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/service/sts"
 )
 
 type lsvpcConfig struct {
@@ -35,10 +36,12 @@ func populateVPC(region string) (map[string]VPC, error) {
 	))
 
 	svc := ec2.New(sess)
+	stsSvc := sts.New(sess)
 	var data RecievedData
 	vpcs := make(map[string]VPC)
 
-	data.wg.Add(14)
+	data.wg.Add(15)
+	go getIdentity(stsSvc, &data)
 	go getVpcs(svc, &data)
 	go getSubnets(svc, &data)
 	go getInstances(svc, &data)
@@ -71,7 +74,7 @@ func populateVPC(region string) (map[string]VPC, error) {
 	mapInternetGateways(vpcs, data.InternetGateways)
 	mapEgressOnlyInternetGateways(vpcs, data.EOInternetGateways)
 	mapVPNGateways(vpcs, data.VPNGateways)
-	mapTransitGatewayVpcAttachments(vpcs, data.TransitGateways)
+	mapTransitGatewayVpcAttachments(vpcs, data.TransitGateways, data.Identity)
 	mapVpcPeeringConnections(vpcs, data.PeeringConnections)
 	mapNetworkInterfaces(vpcs, data.NetworkInterfaces)
 	mapVpcEndpoints(vpcs, data.VPCEndpoints)

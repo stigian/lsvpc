@@ -4,6 +4,7 @@ package main
 import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/service/sts"
 )
 
 func getNameTag(tags []*ec2.Tag) *string {
@@ -283,16 +284,19 @@ func mapVPNGateways(vpcs map[string]VPC, VPNGateways []*ec2.VpnGateway) {
 	}
 }
 
-func mapTransitGatewayVpcAttachments(vpcs map[string]VPC, TransitGatewayVpcAttachments []*ec2.TransitGatewayVpcAttachment) {
+func mapTransitGatewayVpcAttachments(vpcs map[string]VPC, TransitGatewayVpcAttachments []*ec2.TransitGatewayVpcAttachment, identity *sts.GetCallerIdentityOutput) {
 	for _, tgwatt := range TransitGatewayVpcAttachments {
-		if vpcId := aws.StringValue(tgwatt.VpcId); vpcId != "" {
-			for _, subnet := range tgwatt.SubnetIds {
-				if subnetId := aws.StringValue(subnet); subnetId != "" {
-					vpcs[vpcId].Subnets[subnetId].TGWs[*tgwatt.TransitGatewayAttachmentId] = TGWAttachment{
-						AttachmentId:     tgwatt.TransitGatewayAttachmentId,
-						TransitGatewayId: tgwatt.TransitGatewayId,
-						Name:             getNameTag(tgwatt.Tags),
-						RawAttachment:    tgwatt,
+		//Transit Gateway vpc attachments are reported for external accounts too, need to omit those to fit in this data model
+		if aws.StringValue(tgwatt.VpcOwnerId) == aws.StringValue(identity.Account) {
+			if vpcId := aws.StringValue(tgwatt.VpcId); vpcId != "" {
+				for _, subnet := range tgwatt.SubnetIds {
+					if subnetId := aws.StringValue(subnet); subnetId != "" {
+						vpcs[vpcId].Subnets[subnetId].TGWs[aws.StringValue(tgwatt.TransitGatewayAttachmentId)] = TGWAttachment{
+							AttachmentId:     tgwatt.TransitGatewayAttachmentId,
+							TransitGatewayId: tgwatt.TransitGatewayId,
+							Name:             getNameTag(tgwatt.Tags),
+							RawAttachment:    tgwatt,
+						}
 					}
 				}
 			}
