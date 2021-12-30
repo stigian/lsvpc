@@ -2,6 +2,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/sts"
@@ -60,6 +62,7 @@ func mapSubnets(vpcs map[string]VPC, subnets []*ec2.Subnet) {
 			TGWs:               make(map[string]TGWAttachment),
 			ENIs:               make(map[string]NetworkInterface),
 			InterfaceEndpoints: make(map[string]InterfaceEndpoint),
+			GatewayEndpoints:   make(map[string]GatewayEndpoint),
 		}
 
 	}
@@ -380,9 +383,25 @@ func mapNetworkInterfaces(vpcs map[string]VPC, networkInterfaces []*ec2.NetworkI
 }
 
 func mapVpcEndpoints(vpcs map[string]VPC, vpcEndpoints []*ec2.VpcEndpoint) {
+	vpcIds := dumpVpcIds(vpcs)
+	subnetIds := dumpSubnetIds(vpcs)
 	for _, endpoint := range vpcEndpoints {
+		//validate vpc and subnet values
+		if _, exists := vpcIds[aws.StringValue(endpoint.VpcId)]; !exists {
+			fmt.Printf("Warning: undiscovered VPC %v when processing endpoint %v\n",
+				aws.StringValue(endpoint.VpcId),
+				aws.StringValue(endpoint.VpcEndpointId))
+			continue
+		}
+
 		if aws.StringValue(endpoint.VpcEndpointType) == "Interface" {
 			for _, subnet := range endpoint.SubnetIds {
+				if _, exists := subnetIds[aws.StringValue(subnet)]; !exists {
+					fmt.Printf("Warning: undiscovered subnet %v when processing endpoint %v\n",
+						aws.StringValue(subnet),
+						aws.StringValue(endpoint.VpcEndpointId))
+					continue
+				}
 				vpcs[*endpoint.VpcId].Subnets[*subnet].InterfaceEndpoints[*endpoint.VpcEndpointId] = InterfaceEndpoint{
 					Id:          endpoint.VpcEndpointId,
 					ServiceName: endpoint.ServiceName,
@@ -407,4 +426,23 @@ func mapVpcEndpoints(vpcs map[string]VPC, vpcEndpoints []*ec2.VpcEndpoint) {
 			}
 		}
 	}
+}
+
+func dumpVpcIds(vpcs map[string]VPC) map[string]bool {
+	keys := make(map[string]bool)
+	for vpcId := range vpcs {
+		keys[vpcId] = true
+	}
+	return keys
+}
+
+func dumpSubnetIds(vpcs map[string]VPC) map[string]bool {
+	keys := make(map[string]bool)
+
+	for _, vpc := range vpcs {
+		for subnetId := range vpc.Subnets {
+			keys[subnetId] = true
+		}
+	}
+	return keys
 }
