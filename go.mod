@@ -1,4 +1,4 @@
-module github.com/tjames-stig/lsvpc
+module github.com/stigian/lsvpc
 
 go 1.16
 
