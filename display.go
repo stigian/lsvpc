@@ -74,6 +74,12 @@ func printSortedVPCs(vpcs []VPCSorted) {
 			}
 			for _, instance := range subnet.Instances {
 				fmt.Printf("      %v\n", aws.StringValue(instance.Id))
+				for _, volume := range instance.Volumes {
+					fmt.Printf("        %v\n", aws.StringValue(volume.Id))
+				}
+				for _, eni := range instance.Interfaces {
+					fmt.Printf("        %v\n", aws.StringValue(eni.Id))
+				}
 			}
 		}
 	}
