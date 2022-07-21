@@ -52,6 +52,15 @@ func formatName(name *string) string {
 	return fmt.Sprintf(" [%s]", string(runes))
 }
 
+func printSortedVPCs(vpcs []VPCSorted) {
+	for _, vpc := range vpcs {
+		fmt.Printf("%v [%v]\n", aws.StringValue(vpc.Id), aws.StringValue(vpc.Name))
+		for _, subnet := range vpc.Subnets {
+			fmt.Printf("    %v\n", aws.StringValue(subnet.Id))
+		}
+	}
+}
+
 func printVPCs(vpcs map[string]VPC) {
 	color := colorPalette{}
 
