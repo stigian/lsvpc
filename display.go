@@ -51,39 +51,6 @@ func formatName(name *string) string {
 	return fmt.Sprintf(" [%s]", string(runes))
 }
 
-func printSortedVPCs(vpcs []VPCSorted) {
-	for _, vpc := range vpcs {
-		fmt.Printf("%v [%v]\n", aws.StringValue(vpc.Id), aws.StringValue(vpc.Name))
-		for _, subnet := range vpc.Subnets {
-			fmt.Printf("    %v\n", aws.StringValue(subnet.Id))
-			for _, nat := range subnet.NatGateways {
-				fmt.Printf("      %v\n", aws.StringValue(nat.Id))
-			}
-			for _, tgw := range subnet.NatGateways {
-				fmt.Printf("      %v\n", aws.StringValue(tgw.Id))
-			}
-			for _, eni := range subnet.ENIs {
-				fmt.Printf("      %v\n", aws.StringValue(eni.Id))
-			}
-			for _, interfaceEndpoint := range subnet.InterfaceEndpoints {
-				fmt.Printf("      %v\n", aws.StringValue(interfaceEndpoint.Id))
-			}
-			for _, gatewayEndpoint := range subnet.GatewayEndpoints {
-				fmt.Printf("      %v\n", aws.StringValue(gatewayEndpoint.Id))
-			}
-			for _, instance := range subnet.Instances {
-				fmt.Printf("      %v\n", aws.StringValue(instance.Id))
-				for _, volume := range instance.Volumes {
-					fmt.Printf("        %v\n", aws.StringValue(volume.Id))
-				}
-				for _, eni := range instance.Interfaces {
-					fmt.Printf("        %v\n", aws.StringValue(eni.Id))
-				}
-			}
-		}
-	}
-}
-
 func printVPCs(in map[string]VPC) {
 	vpcs := sortVPCs(in)
 	color := colorPalette{}
