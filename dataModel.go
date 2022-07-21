@@ -12,16 +12,27 @@ type RegionData struct {
 	VPCs map[string]VPC
 }
 
-type VPC struct {
+type VPCData struct {
 	Id            *string
 	IsDefault     bool
 	CidrBlock     *string
 	IPv6CidrBlock *string
 	Name          *string
 	RawVPC        *ec2.Vpc
-	Gateways      []string
-	Subnets       map[string]Subnet
-	Peers         map[string]VPCPeer
+}
+
+type VPCSorted struct {
+	VPCData
+	Gateways []string
+	Subnets  []Subnet
+	Peers    []VPCPeer
+}
+
+type VPC struct {
+	VPCData
+	Gateways []string
+	Subnets  map[string]Subnet
+	Peers    map[string]VPCPeer
 }
 
 type Subnet struct {

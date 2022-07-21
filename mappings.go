@@ -33,14 +33,16 @@ func mapVpcs(vpcs map[string]VPC, vpcData []*ec2.Vpc) {
 		}
 
 		vpcs[aws.StringValue(v.VpcId)] = VPC{
-			Id:            v.VpcId,
-			IsDefault:     aws.BoolValue(v.IsDefault),
-			CidrBlock:     v.CidrBlock,
-			IPv6CidrBlock: v6cidr,
-			Name:          getNameTag(v.Tags),
-			RawVPC:        v,
-			Subnets:       make(map[string]Subnet),
-			Peers:         make(map[string]VPCPeer),
+			VPCData: VPCData{
+				Id:            v.VpcId,
+				IsDefault:     aws.BoolValue(v.IsDefault),
+				CidrBlock:     v.CidrBlock,
+				IPv6CidrBlock: v6cidr,
+				Name:          getNameTag(v.Tags),
+				RawVPC:        v,
+			},
+			Subnets: make(map[string]Subnet),
+			Peers:   make(map[string]VPCPeer),
 		}
 	}
 }
