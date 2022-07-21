@@ -135,8 +135,6 @@ func doDefaultRegion() {
 	if err != nil {
 		panic(fmt.Sprintf("populateVPC failed: %v", err.Error()))
 	}
-	//vpcsSorted := sortVPCs(vpcs)
-	//printSortedVPCs(vpcsSorted)
 	printVPCs(vpcs)
 }
 

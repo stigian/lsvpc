@@ -1,8 +1,6 @@
 package main
 
-import (
-	"sort"
-)
+import "sort"
 
 func sortVPCs(vpcs map[string]VPC) []VPCSorted {
 
