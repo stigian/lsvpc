@@ -24,7 +24,7 @@ type VPCData struct {
 type VPCSorted struct {
 	VPCData
 	Gateways []string
-	Subnets  []Subnet
+	Subnets  []SubnetSorted
 	Peers    []VPCPeer
 }
 
@@ -35,7 +35,7 @@ type VPC struct {
 	Peers    map[string]VPCPeer
 }
 
-type Subnet struct {
+type SubnetData struct {
 	Id                 *string
 	CidrBlock          *string
 	AvailabilityZone   *string
@@ -44,6 +44,20 @@ type Subnet struct {
 	Name               *string
 	RawSubnet          *ec2.Subnet
 	RouteTable         *RouteTable
+}
+
+type SubnetSorted struct {
+	SubnetData
+	Instances          []Instance
+	NatGateways        []NatGateway
+	TGWs               []TGWAttachment
+	ENIs               []NetworkInterface
+	InterfaceEndpoints []InterfaceEndpoint
+	GatewayEndpoints   []GatewayEndpoint
+}
+
+type Subnet struct {
+	SubnetData
 	Instances          map[string]Instance
 	NatGateways        map[string]NatGateway
 	TGWs               map[string]TGWAttachment

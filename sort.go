@@ -33,9 +33,9 @@ func sortVPC(vpc VPC) VPCSorted {
 	}
 	sort.Strings(subnetKeys)
 
-	subnetsSorted := []Subnet{}
+	subnetsSorted := []SubnetSorted{}
 	for _, subnetId := range subnetKeys {
-		subnetsSorted = append(subnetsSorted, vpc.Subnets[subnetId])
+		subnetsSorted = append(subnetsSorted, sortSubnet(vpc.Subnets[subnetId]))
 	}
 
 	//sort peers
@@ -54,5 +54,83 @@ func sortVPC(vpc VPC) VPCSorted {
 		Gateways: gatewaysSorted,
 		Subnets:  subnetsSorted,
 		Peers:    peersSorted,
+	}
+}
+
+func sortSubnet(subnet Subnet) SubnetSorted {
+	//sort Instances
+	instanceKeys := []string{}
+	for k := range subnet.Instances {
+		instanceKeys = append(instanceKeys, k)
+	}
+	sort.Strings(instanceKeys)
+	instancesSorted := []Instance{}
+	for _, instanceId := range instanceKeys {
+		instancesSorted = append(instancesSorted, subnet.Instances[instanceId])
+	}
+
+	//sort NatGateways
+	natGatewayKeys := []string{}
+	for k := range subnet.NatGateways {
+		natGatewayKeys = append(natGatewayKeys, k)
+	}
+	sort.Strings(natGatewayKeys)
+	natGatewaysSorted := []NatGateway{}
+	for _, natGatewayId := range natGatewayKeys {
+		natGatewaysSorted = append(natGatewaysSorted, subnet.NatGateways[natGatewayId])
+	}
+
+	//sort TGWAttachments
+	transitGatewayKeys := []string{}
+	for k := range subnet.TGWs {
+		transitGatewayKeys = append(transitGatewayKeys, k)
+	}
+	sort.Strings(transitGatewayKeys)
+	transitGatewaysSorted := []TGWAttachment{}
+	for _, transitGatewayId := range transitGatewayKeys {
+		transitGatewaysSorted = append(transitGatewaysSorted, subnet.TGWs[transitGatewayId])
+	}
+
+	//sort ENIs
+	networkInterfaceKeys := []string{}
+	for k := range subnet.ENIs {
+		networkInterfaceKeys = append(networkInterfaceKeys, k)
+	}
+	sort.Strings(networkInterfaceKeys)
+	networkInterfacesSorted := []NetworkInterface{}
+	for _, networkInterfaceId := range networkInterfaceKeys {
+		networkInterfacesSorted = append(networkInterfacesSorted, subnet.ENIs[networkInterfaceId])
+	}
+
+	//sort InterfaceEndpoints
+	interfaceEndpointKeys := []string{}
+	for k := range subnet.InterfaceEndpoints {
+		interfaceEndpointKeys = append(interfaceEndpointKeys, k)
+	}
+	sort.Strings(interfaceEndpointKeys)
+	interfaceEndpointsSorted := []InterfaceEndpoint{}
+	for _, interfaceEndpointId := range interfaceEndpointKeys {
+		interfaceEndpointsSorted = append(interfaceEndpointsSorted, subnet.InterfaceEndpoints[interfaceEndpointId])
+	}
+
+	//sort GatewayEndpoints
+	gatewayEndpointKeys := []string{}
+	for k := range subnet.GatewayEndpoints {
+		gatewayEndpointKeys = append(gatewayEndpointKeys, k)
+	}
+	sort.Strings(gatewayEndpointKeys)
+	gatewayEndpointsSorted := []GatewayEndpoint{}
+	for _, gatewayEndpointId := range gatewayEndpointKeys {
+		gatewayEndpointsSorted = append(gatewayEndpointsSorted, subnet.GatewayEndpoints[gatewayEndpointId])
+	}
+
+	return SubnetSorted{
+		SubnetData:         subnet.SubnetData,
+		Instances:          instancesSorted,
+		NatGateways:        natGatewaysSorted,
+		TGWs:               transitGatewaysSorted,
+		ENIs:               networkInterfacesSorted,
+		InterfaceEndpoints: interfaceEndpointsSorted,
+		GatewayEndpoints:   gatewayEndpointsSorted,
 	}
 }

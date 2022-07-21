@@ -52,13 +52,15 @@ func mapSubnets(vpcs map[string]VPC, subnets []*ec2.Subnet) {
 		isPublic := aws.BoolValue(v.MapCustomerOwnedIpOnLaunch) || aws.BoolValue(v.MapPublicIpOnLaunch)
 
 		vpcs[*v.VpcId].Subnets[*v.SubnetId] = Subnet{
-			Id:                 v.SubnetId,
-			CidrBlock:          v.CidrBlock,
-			AvailabilityZone:   v.AvailabilityZone,
-			AvailabilityZoneId: v.AvailabilityZoneId,
-			Name:               getNameTag(v.Tags),
-			RawSubnet:          v,
-			Public:             isPublic,
+			SubnetData: SubnetData{
+				Id:                 v.SubnetId,
+				CidrBlock:          v.CidrBlock,
+				AvailabilityZone:   v.AvailabilityZone,
+				AvailabilityZoneId: v.AvailabilityZoneId,
+				Name:               getNameTag(v.Tags),
+				RawSubnet:          v,
+				Public:             isPublic,
+			},
 			Instances:          make(map[string]Instance),
 			NatGateways:        make(map[string]NatGateway),
 			TGWs:               make(map[string]TGWAttachment),

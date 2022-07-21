@@ -57,6 +57,24 @@ func printSortedVPCs(vpcs []VPCSorted) {
 		fmt.Printf("%v [%v]\n", aws.StringValue(vpc.Id), aws.StringValue(vpc.Name))
 		for _, subnet := range vpc.Subnets {
 			fmt.Printf("    %v\n", aws.StringValue(subnet.Id))
+			for _, nat := range subnet.NatGateways {
+				fmt.Printf("      %v\n", aws.StringValue(nat.Id))
+			}
+			for _, tgw := range subnet.NatGateways {
+				fmt.Printf("      %v\n", aws.StringValue(tgw.Id))
+			}
+			for _, eni := range subnet.ENIs {
+				fmt.Printf("      %v\n", aws.StringValue(eni.Id))
+			}
+			for _, interfaceEndpoint := range subnet.InterfaceEndpoints {
+				fmt.Printf("      %v\n", aws.StringValue(interfaceEndpoint.Id))
+			}
+			for _, gatewayEndpoint := range subnet.GatewayEndpoints {
+				fmt.Printf("      %v\n", aws.StringValue(gatewayEndpoint.Id))
+			}
+			for _, instance := range subnet.Instances {
+				fmt.Printf("      %v\n", aws.StringValue(instance.Id))
+			}
 		}
 	}
 }
