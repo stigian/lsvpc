@@ -84,17 +84,19 @@ func mapInstances(vpcs map[string]VPC, reservations []*ec2.Reservation) {
 				if vpcId != "" && subnetId != "" && instanceId != "" {
 
 					vpcs[vpcId].Subnets[subnetId].Instances[instanceId] = Instance{
-						Id:         instance.InstanceId,
-						Type:       instance.InstanceType,
-						SubnetId:   instance.SubnetId,
-						VpcId:      instance.VpcId,
-						State:      instance.State.Name,
-						PublicIP:   instance.PublicIpAddress,
-						PrivateIP:  instance.PrivateIpAddress,
+						InstanceData: InstanceData{
+							Id:        instance.InstanceId,
+							Type:      instance.InstanceType,
+							SubnetId:  instance.SubnetId,
+							VpcId:     instance.VpcId,
+							State:     instance.State.Name,
+							PublicIP:  instance.PublicIpAddress,
+							PrivateIP: instance.PrivateIpAddress,
+							RawEc2:    instance,
+							Name:      getNameTag(instance.Tags),
+						},
 						Volumes:    make(map[string]Volume),
 						Interfaces: make(map[string]NetworkInterface),
-						RawEc2:     instance,
-						Name:       getNameTag(instance.Tags),
 					}
 				}
 			}

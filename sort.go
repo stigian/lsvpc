@@ -64,9 +64,9 @@ func sortSubnet(subnet Subnet) SubnetSorted {
 		instanceKeys = append(instanceKeys, k)
 	}
 	sort.Strings(instanceKeys)
-	instancesSorted := []Instance{}
+	instancesSorted := []InstanceSorted{}
 	for _, instanceId := range instanceKeys {
-		instancesSorted = append(instancesSorted, subnet.Instances[instanceId])
+		instancesSorted = append(instancesSorted, sortInstance(subnet.Instances[instanceId]))
 	}
 
 	//sort NatGateways
@@ -133,4 +133,36 @@ func sortSubnet(subnet Subnet) SubnetSorted {
 		InterfaceEndpoints: interfaceEndpointsSorted,
 		GatewayEndpoints:   gatewayEndpointsSorted,
 	}
+}
+
+func sortInstance(instance Instance) InstanceSorted {
+
+	// sort volumes
+	volumeKeys := []string{}
+	for k := range instance.Volumes {
+		volumeKeys = append(volumeKeys, k)
+	}
+	sort.Strings(volumeKeys)
+	volumesSorted := []Volume{}
+	for _, volumeId := range volumeKeys {
+		volumesSorted = append(volumesSorted, instance.Volumes[volumeId])
+	}
+
+	// sort network interfaces
+	interfaceKeys := []string{}
+	for k := range instance.Interfaces {
+		interfaceKeys = append(interfaceKeys, k)
+	}
+	sort.Strings(interfaceKeys)
+	interfacesSorted := []NetworkInterface{}
+	for _, interfaceId := range interfaceKeys {
+		interfacesSorted = append(interfacesSorted, instance.Interfaces[interfaceId])
+	}
+
+	return InstanceSorted{
+		InstanceData: instance.InstanceData,
+		Volumes:      volumesSorted,
+		Interfaces:   interfacesSorted,
+	}
+
 }

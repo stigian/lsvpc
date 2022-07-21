@@ -48,7 +48,7 @@ type SubnetData struct {
 
 type SubnetSorted struct {
 	SubnetData
-	Instances          []Instance
+	Instances          []InstanceSorted
 	NatGateways        []NatGateway
 	TGWs               []TGWAttachment
 	ENIs               []NetworkInterface
@@ -66,7 +66,7 @@ type Subnet struct {
 	GatewayEndpoints   map[string]GatewayEndpoint
 }
 
-type Instance struct {
+type InstanceData struct {
 	Id             *string
 	Type           *string
 	SubnetId       *string
@@ -77,9 +77,19 @@ type Instance struct {
 	Name           *string
 	InstanceStatus *string
 	SystemStatus   *string
-	Volumes        map[string]Volume
-	Interfaces     map[string]NetworkInterface
 	RawEc2         *ec2.Instance
+}
+
+type InstanceSorted struct {
+	InstanceData
+	Volumes    []Volume
+	Interfaces []NetworkInterface
+}
+
+type Instance struct {
+	InstanceData
+	Volumes    map[string]Volume
+	Interfaces map[string]NetworkInterface
 }
 
 type NetworkInterface struct {
