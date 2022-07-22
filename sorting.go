@@ -1,6 +1,26 @@
 package main
 
-import "sort"
+import (
+	"sort"
+)
+
+func sortRegionData(regionData map[string]RegionData) []RegionDataSorted {
+	regionKeys := []string{}
+	for k := range regionData {
+		regionKeys = append(regionKeys, k)
+	}
+	sort.Strings(regionKeys)
+
+	regionDataSorted := []RegionDataSorted{}
+	for _, region := range regionKeys {
+		regionDataSorted = append(regionDataSorted, RegionDataSorted{
+			Region: region,
+			VPCs:   sortVPCs(regionData[region].VPCs),
+		})
+	}
+
+	return regionDataSorted
+}
 
 func sortVPCs(vpcs map[string]VPC) []VPCSorted {
 
@@ -106,9 +126,9 @@ func sortSubnet(subnet Subnet) SubnetSorted {
 		interfaceEndpointKeys = append(interfaceEndpointKeys, k)
 	}
 	sort.Strings(interfaceEndpointKeys)
-	interfaceEndpointsSorted := []InterfaceEndpoint{}
+	interfaceEndpointsSorted := []InterfaceEndpointSorted{}
 	for _, interfaceEndpointId := range interfaceEndpointKeys {
-		interfaceEndpointsSorted = append(interfaceEndpointsSorted, subnet.InterfaceEndpoints[interfaceEndpointId])
+		interfaceEndpointsSorted = append(interfaceEndpointsSorted, sortInterfaceEndpoint(subnet.InterfaceEndpoints[interfaceEndpointId]))
 	}
 
 	//sort GatewayEndpoints
@@ -163,4 +183,21 @@ func sortInstance(instance Instance) InstanceSorted {
 		Interfaces:   interfacesSorted,
 	}
 
+}
+
+func sortInterfaceEndpoint(endpoint InterfaceEndpoint) InterfaceEndpointSorted {
+	ifaceKeys := []string{}
+	for k := range endpoint.Interfaces {
+		ifaceKeys = append(ifaceKeys, k)
+	}
+	sort.Strings(ifaceKeys)
+
+	interfacesSorted := []NetworkInterface{}
+	for _, interfaceId := range ifaceKeys {
+		interfacesSorted = append(interfacesSorted, endpoint.Interfaces[interfaceId])
+	}
+	return InterfaceEndpointSorted{
+		InterfaceEndpointData: endpoint.InterfaceEndpointData,
+		Interfaces:            interfacesSorted,
+	}
 }
