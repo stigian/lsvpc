@@ -164,33 +164,34 @@ func printVPCs(vpcs []VPCSorted) {
 			)
 
 			//Print Endpoints
-			for _, interfaceEndpoint := range subnet.InterfaceEndpoints {
-				fmt.Printf(
-					"%s%v%v%v%v interface--> %v\n",
-					indent(8),
-					color.Cyan,
-					interfaceEndpoint.Id,
-					formatName(interfaceEndpoint.Name),
-					color.Reset,
-					interfaceEndpoint.ServiceName,
-				)
-				for _, iface := range interfaceEndpoint.Interfaces {
-					//an endpoint can have multiple interfaces in multiple subnets, we only want to display whats relevant to the subnet
-					if iface.SubnetId == subnet.Id {
-						fmt.Printf(
-							"%s%v%v %v %v %v %v %v \n",
-							indent(12),
-							iface.Id,
-							formatName(iface.Name),
-							iface.Type,
-							iface.MAC,
-							iface.PublicIp,
-							iface.PrivateIp,
-							iface.DNS,
-						)
+			if Config.Verbose {
+				for _, interfaceEndpoint := range subnet.InterfaceEndpoints {
+					fmt.Printf(
+						"%s%v%v%v%v interface--> %v\n",
+						indent(8),
+						color.Cyan,
+						interfaceEndpoint.Id,
+						formatName(interfaceEndpoint.Name),
+						color.Reset,
+						interfaceEndpoint.ServiceName,
+					)
+					for _, iface := range interfaceEndpoint.Interfaces {
+						//an endpoint can have multiple interfaces in multiple subnets, we only want to display whats relevant to the subnet
+						if iface.SubnetId == subnet.Id {
+							fmt.Printf(
+								"%s%v%v %v %v %v %v %v \n",
+								indent(12),
+								iface.Id,
+								formatName(iface.Name),
+								iface.Type,
+								iface.MAC,
+								iface.PublicIp,
+								iface.PrivateIp,
+								iface.DNS,
+							)
 
+						}
 					}
-
 				}
 			}
 
@@ -250,29 +251,31 @@ func printVPCs(vpcs []VPCSorted) {
 				)
 
 				// Print Instance Interfaces
-				for _, iface := range instance.Interfaces {
-					fmt.Printf(
-						"%s%v%v  %v  %v  %v\n",
-						indent(12),
-						iface.Id,
-						formatName(iface.Name),
-						iface.MAC,
-						iface.PrivateIp,
-						iface.DNS,
-					)
-				}
+				if Config.Verbose {
+					for _, iface := range instance.Interfaces {
+						fmt.Printf(
+							"%s%v%v  %v  %v  %v\n",
+							indent(12),
+							iface.Id,
+							formatName(iface.Name),
+							iface.MAC,
+							iface.PrivateIp,
+							iface.DNS,
+						)
+					}
 
-				// Print Instance Volumes
-				for _, volume := range instance.Volumes {
-					fmt.Printf(
-						"%s%v%v  %v  %v  %v GiB\n",
-						indent(12),
-						volume.Id,
-						formatName(volume.Name),
-						volume.VolumeType,
-						volume.DeviceName,
-						volume.Size,
-					)
+					// Print Instance Volumes
+					for _, volume := range instance.Volumes {
+						fmt.Printf(
+							"%s%v%v  %v  %v  %v GiB\n",
+							indent(12),
+							volume.Id,
+							formatName(volume.Name),
+							volume.VolumeType,
+							volume.DeviceName,
+							volume.Size,
+						)
+					}
 				}
 			}
 
