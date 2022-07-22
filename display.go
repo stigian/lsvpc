@@ -8,7 +8,6 @@ import (
 )
 
 const nameTruncate = 20 //max size a Name tag can be before its truncated with a "..." at the end
-const doTruncate = false
 
 func indent(num int) string {
 	sb := strings.Builder{}
@@ -43,7 +42,7 @@ func formatName(name string) string {
 	}
 	//Names can be up to 255 utf8 runes, we should truncate it
 	runes := []rune(name)
-	if doTruncate {
+	if Config.Truncate {
 		if len(runes) > nameTruncate {
 			runes = runes[:(nameTruncate - 1 - 3)]
 			runes = append(runes, []rune("...")...)
