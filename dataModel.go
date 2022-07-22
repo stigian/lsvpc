@@ -67,16 +67,16 @@ type Subnet struct {
 }
 
 type InstanceData struct {
-	Id             *string
-	Type           *string
-	SubnetId       *string
-	VpcId          *string
-	State          *string
-	PublicIP       *string
-	PrivateIP      *string
+	Id             string
+	Type           string
+	SubnetId       string
+	VpcId          string
+	State          string
+	PublicIP       string
+	PrivateIP      string
 	Name           string
-	InstanceStatus *string
-	SystemStatus   *string
+	InstanceStatus string
+	SystemStatus   string
 	RawEc2         *ec2.Instance
 }
 

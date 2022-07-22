@@ -85,13 +85,13 @@ func mapInstances(vpcs map[string]VPC, reservations []*ec2.Reservation) {
 
 					vpcs[vpcId].Subnets[subnetId].Instances[instanceId] = Instance{
 						InstanceData: InstanceData{
-							Id:        instance.InstanceId,
-							Type:      instance.InstanceType,
-							SubnetId:  instance.SubnetId,
-							VpcId:     instance.VpcId,
-							State:     instance.State.Name,
-							PublicIP:  instance.PublicIpAddress,
-							PrivateIP: instance.PrivateIpAddress,
+							Id:        aws.StringValue(instance.InstanceId),
+							Type:      aws.StringValue(instance.InstanceType),
+							SubnetId:  aws.StringValue(instance.SubnetId),
+							VpcId:     aws.StringValue(instance.VpcId),
+							State:     aws.StringValue(instance.State.Name),
+							PublicIP:  aws.StringValue(instance.PublicIpAddress),
+							PrivateIP: aws.StringValue(instance.PrivateIpAddress),
 							RawEc2:    instance,
 							Name:      getNameTag(instance.Tags),
 						},
@@ -111,8 +111,8 @@ func mapInstanceStatuses(vpcs map[string]VPC, statuses []*ec2.InstanceStatus) {
 				for instanceId, instance := range subnet.Instances {
 					if aws.StringValue(status.InstanceId) == instanceId {
 						updatedInstance := instance
-						updatedInstance.InstanceStatus = status.InstanceStatus.Status
-						updatedInstance.SystemStatus = status.SystemStatus.Status
+						updatedInstance.InstanceStatus = aws.StringValue(status.InstanceStatus.Status)
+						updatedInstance.SystemStatus = aws.StringValue(status.SystemStatus.Status)
 						vpcs[vpcId].
 							Subnets[subnetId].
 							Instances[instanceId] = updatedInstance

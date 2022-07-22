@@ -201,10 +201,10 @@ func printVPCs(in map[string]VPC) {
 			for _, instance := range subnet.Instances {
 				// Its too clunky to directly report SystemStatus and InstanceStatus, lets do it like the console does
 				status := 0
-				if aws.StringValue(instance.SystemStatus) == "ok" {
+				if instance.SystemStatus == "ok" {
 					status = status + 1
 				}
-				if aws.StringValue(instance.InstanceStatus) == "ok" {
+				if instance.InstanceStatus == "ok" {
 					status = status + 1
 				}
 
@@ -213,14 +213,14 @@ func printVPCs(in map[string]VPC) {
 					"%s%v%s%v%v %v -- %v (%v/2) -- %v -- %v\n",
 					indent(8),
 					color.Cyan,
-					aws.StringValue(instance.Id),
+					instance.Id,
 					formatName(instance.Name),
 					color.Reset,
-					aws.StringValue(instance.Type),
-					aws.StringValue(instance.State),
+					instance.Type,
+					instance.State,
 					status,
-					aws.StringValue(instance.PublicIP),
-					aws.StringValue(instance.PrivateIP),
+					instance.PublicIP,
+					instance.PrivateIP,
 				)
 
 				// Print Instance Interfaces
