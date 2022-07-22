@@ -13,7 +13,7 @@ type RegionData struct {
 }
 
 type VPCData struct {
-	Id            *string
+	Id            string
 	IsDefault     bool
 	CidrBlock     *string
 	IPv6CidrBlock *string

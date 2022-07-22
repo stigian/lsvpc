@@ -72,7 +72,7 @@ func printVPCs(in map[string]VPC) {
 		fmt.Printf(
 			"%v%v%v%v ",
 			color.Green,
-			aws.StringValue(vpc.Id),
+			vpc.Id,
 			formatName(vpc.Name),
 			color.Reset,
 		)
@@ -107,7 +107,7 @@ func printVPCs(in map[string]VPC) {
 		for _, peer := range vpc.Peers {
 			direction := "peer-->"
 			vpcOperand := aws.StringValue(peer.Accepter)
-			if aws.StringValue(peer.Accepter) == aws.StringValue(vpc.Id) {
+			if aws.StringValue(peer.Accepter) == vpc.Id {
 				direction = "<--peer"
 				vpcOperand = aws.StringValue(peer.Requester)
 			}

@@ -34,7 +34,7 @@ func mapVpcs(vpcs map[string]VPC, vpcData []*ec2.Vpc) {
 
 		vpcs[aws.StringValue(v.VpcId)] = VPC{
 			VPCData: VPCData{
-				Id:            v.VpcId,
+				Id:            aws.StringValue(v.VpcId),
 				IsDefault:     aws.BoolValue(v.IsDefault),
 				CidrBlock:     v.CidrBlock,
 				IPv6CidrBlock: v6cidr,
