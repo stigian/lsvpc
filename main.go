@@ -163,7 +163,7 @@ func init() {
 	flag.StringVar(&Config.regionOverride, "region", "", "Specify region (default: profile default region)")
 	flag.StringVar(&Config.regionOverride, "r", "", "Specify region (default: profile default region) (abbrev.)")
 	flag.BoolVar(&Config.jsonOutput, "j", false, "Output json instead of the typical textual output")
-	flag.BoolVar(&Config.HideIP, "n", false, "no not display IP addresses and CIDRs")
+	flag.BoolVar(&Config.HideIP, "n", false, "do not display IP addresses and CIDRs (does not affect json output)")
 	flag.BoolVar(&Config.Verbose, "v", false, "output verbose information about assets in vpc")
 }
 
