@@ -36,10 +36,10 @@ type VPC struct {
 }
 
 type SubnetData struct {
-	Id                 *string
-	CidrBlock          *string
-	AvailabilityZone   *string
-	AvailabilityZoneId *string
+	Id                 string
+	CidrBlock          string
+	AvailabilityZone   string
+	AvailabilityZoneId string
 	Public             bool
 	Name               string
 	RawSubnet          *ec2.Subnet
