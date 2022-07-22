@@ -241,11 +241,11 @@ func printVPCs(in map[string]VPC) {
 					fmt.Printf(
 						"%s%v%v  %v  %v  %v GiB\n",
 						indent(12),
-						aws.StringValue(volume.Id),
+						volume.Id,
 						formatName(volume.Name),
-						aws.StringValue(volume.VolumeType),
-						aws.StringValue(volume.DeviceName),
-						aws.Int64Value(volume.Size),
+						volume.VolumeType,
+						volume.DeviceName,
+						volume.Size,
 					)
 				}
 			}

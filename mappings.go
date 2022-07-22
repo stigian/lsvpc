@@ -135,10 +135,10 @@ func mapVolumes(vpcs map[string]VPC, volumes []*ec2.Volume) {
 									Subnets[subnetId].
 									Instances[instanceId].
 									Volumes[*volume.VolumeId] = Volume{
-									Id:         volume.VolumeId,
-									DeviceName: attachment.Device,
-									Size:       volume.Size,
-									VolumeType: volume.VolumeType,
+									Id:         aws.StringValue(volume.VolumeId),
+									DeviceName: aws.StringValue(attachment.Device),
+									Size:       aws.Int64Value(volume.Size),
+									VolumeType: aws.StringValue(volume.VolumeType),
 									RawVolume:  volume,
 									Name:       getNameTag(volume.Tags),
 								}

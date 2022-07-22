@@ -105,10 +105,10 @@ type NetworkInterface struct {
 }
 
 type Volume struct {
-	Id         *string
-	DeviceName *string
-	Size       *int64
-	VolumeType *string
+	Id         string
+	DeviceName string
+	Size       int64
+	VolumeType string
 	Name       string
 	RawVolume  *ec2.Volume
 }
