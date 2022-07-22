@@ -33,14 +33,16 @@ func mapVpcs(vpcs map[string]VPC, vpcData []*ec2.Vpc) {
 		}
 
 		vpcs[aws.StringValue(v.VpcId)] = VPC{
-			Id:            v.VpcId,
-			IsDefault:     aws.BoolValue(v.IsDefault),
-			CidrBlock:     v.CidrBlock,
-			IPv6CidrBlock: v6cidr,
-			Name:          getNameTag(v.Tags),
-			RawVPC:        v,
-			Subnets:       make(map[string]Subnet),
-			Peers:         make(map[string]VPCPeer),
+			VPCData: VPCData{
+				Id:            v.VpcId,
+				IsDefault:     aws.BoolValue(v.IsDefault),
+				CidrBlock:     v.CidrBlock,
+				IPv6CidrBlock: v6cidr,
+				Name:          getNameTag(v.Tags),
+				RawVPC:        v,
+			},
+			Subnets: make(map[string]Subnet),
+			Peers:   make(map[string]VPCPeer),
 		}
 	}
 }
@@ -50,13 +52,15 @@ func mapSubnets(vpcs map[string]VPC, subnets []*ec2.Subnet) {
 		isPublic := aws.BoolValue(v.MapCustomerOwnedIpOnLaunch) || aws.BoolValue(v.MapPublicIpOnLaunch)
 
 		vpcs[*v.VpcId].Subnets[*v.SubnetId] = Subnet{
-			Id:                 v.SubnetId,
-			CidrBlock:          v.CidrBlock,
-			AvailabilityZone:   v.AvailabilityZone,
-			AvailabilityZoneId: v.AvailabilityZoneId,
-			Name:               getNameTag(v.Tags),
-			RawSubnet:          v,
-			Public:             isPublic,
+			SubnetData: SubnetData{
+				Id:                 v.SubnetId,
+				CidrBlock:          v.CidrBlock,
+				AvailabilityZone:   v.AvailabilityZone,
+				AvailabilityZoneId: v.AvailabilityZoneId,
+				Name:               getNameTag(v.Tags),
+				RawSubnet:          v,
+				Public:             isPublic,
+			},
 			Instances:          make(map[string]Instance),
 			NatGateways:        make(map[string]NatGateway),
 			TGWs:               make(map[string]TGWAttachment),
@@ -80,17 +84,19 @@ func mapInstances(vpcs map[string]VPC, reservations []*ec2.Reservation) {
 				if vpcId != "" && subnetId != "" && instanceId != "" {
 
 					vpcs[vpcId].Subnets[subnetId].Instances[instanceId] = Instance{
-						Id:         instance.InstanceId,
-						Type:       instance.InstanceType,
-						SubnetId:   instance.SubnetId,
-						VpcId:      instance.VpcId,
-						State:      instance.State.Name,
-						PublicIP:   instance.PublicIpAddress,
-						PrivateIP:  instance.PrivateIpAddress,
+						InstanceData: InstanceData{
+							Id:        instance.InstanceId,
+							Type:      instance.InstanceType,
+							SubnetId:  instance.SubnetId,
+							VpcId:     instance.VpcId,
+							State:     instance.State.Name,
+							PublicIP:  instance.PublicIpAddress,
+							PrivateIP: instance.PrivateIpAddress,
+							RawEc2:    instance,
+							Name:      getNameTag(instance.Tags),
+						},
 						Volumes:    make(map[string]Volume),
 						Interfaces: make(map[string]NetworkInterface),
-						RawEc2:     instance,
-						Name:       getNameTag(instance.Tags),
 					}
 				}
 			}

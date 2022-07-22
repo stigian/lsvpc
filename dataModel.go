@@ -12,19 +12,30 @@ type RegionData struct {
 	VPCs map[string]VPC
 }
 
-type VPC struct {
+type VPCData struct {
 	Id            *string
 	IsDefault     bool
 	CidrBlock     *string
 	IPv6CidrBlock *string
 	Name          *string
 	RawVPC        *ec2.Vpc
-	Gateways      []string
-	Subnets       map[string]Subnet
-	Peers         map[string]VPCPeer
 }
 
-type Subnet struct {
+type VPCSorted struct {
+	VPCData
+	Gateways []string
+	Subnets  []SubnetSorted
+	Peers    []VPCPeer
+}
+
+type VPC struct {
+	VPCData
+	Gateways []string
+	Subnets  map[string]Subnet
+	Peers    map[string]VPCPeer
+}
+
+type SubnetData struct {
 	Id                 *string
 	CidrBlock          *string
 	AvailabilityZone   *string
@@ -33,6 +44,20 @@ type Subnet struct {
 	Name               *string
 	RawSubnet          *ec2.Subnet
 	RouteTable         *RouteTable
+}
+
+type SubnetSorted struct {
+	SubnetData
+	Instances          []InstanceSorted
+	NatGateways        []NatGateway
+	TGWs               []TGWAttachment
+	ENIs               []NetworkInterface
+	InterfaceEndpoints []InterfaceEndpoint
+	GatewayEndpoints   []GatewayEndpoint
+}
+
+type Subnet struct {
+	SubnetData
 	Instances          map[string]Instance
 	NatGateways        map[string]NatGateway
 	TGWs               map[string]TGWAttachment
@@ -41,7 +66,7 @@ type Subnet struct {
 	GatewayEndpoints   map[string]GatewayEndpoint
 }
 
-type Instance struct {
+type InstanceData struct {
 	Id             *string
 	Type           *string
 	SubnetId       *string
@@ -52,9 +77,19 @@ type Instance struct {
 	Name           *string
 	InstanceStatus *string
 	SystemStatus   *string
-	Volumes        map[string]Volume
-	Interfaces     map[string]NetworkInterface
 	RawEc2         *ec2.Instance
+}
+
+type InstanceSorted struct {
+	InstanceData
+	Volumes    []Volume
+	Interfaces []NetworkInterface
+}
+
+type Instance struct {
+	InstanceData
+	Volumes    map[string]Volume
+	Interfaces map[string]NetworkInterface
 }
 
 type NetworkInterface struct {
