@@ -52,12 +52,12 @@ type SubnetData struct {
 
 type SubnetSorted struct {
 	SubnetData
-	Instances          []InstanceSorted    `json:"instances,omitempty"`
-	NatGateways        []NatGateway        `json:"natGateways,omitempty"`
-	TGWs               []TGWAttachment     `json:"tgws,omitempty"`
-	ENIs               []NetworkInterface  `json:"enis,omitempty"`
-	InterfaceEndpoints []InterfaceEndpoint `json:"interfaceEndpoints,omitempty"`
-	GatewayEndpoints   []GatewayEndpoint   `json:"gatewayEndpoints,omitempty"`
+	Instances          []InstanceSorted          `json:"instances,omitempty"`
+	NatGateways        []NatGateway              `json:"natGateways,omitempty"`
+	TGWs               []TGWAttachment           `json:"tgws,omitempty"`
+	ENIs               []NetworkInterface        `json:"enis,omitempty"`
+	InterfaceEndpoints []InterfaceEndpointSorted `json:"interfaceEndpoints,omitempty"`
+	GatewayEndpoints   []GatewayEndpoint         `json:"gatewayEndpoints,omitempty"`
 }
 
 type Subnet struct {
@@ -106,7 +106,8 @@ type NetworkInterface struct {
 	Description         string                `json:"description"`
 	PublicIp            string                `json:"publicIp"`
 	Name                string                `json:"name"`
-	RawNetworkInterface *ec2.NetworkInterface `json:"-"`
+	SubnetId            string                `json:"subnetId"` // we're just accounting for this for display purposes
+	RawNetworkInterface *ec2.NetworkInterface `json:"raw"`
 }
 
 type Volume struct {
@@ -148,11 +149,21 @@ type VPCPeer struct {
 	RawPeer   *ec2.VpcPeeringConnection `json:"-"`
 }
 
-type InterfaceEndpoint struct {
+type InterfaceEndpointData struct {
 	Id          string           `json:"id"`
 	ServiceName string           `json:"serviceName"`
 	Name        string           `json:"name"`
-	RawEndpoint *ec2.VpcEndpoint `json:"-"`
+	RawEndpoint *ec2.VpcEndpoint `json:"raw"`
+}
+
+type InterfaceEndpoint struct {
+	InterfaceEndpointData
+	Interfaces map[string]NetworkInterface
+}
+
+type InterfaceEndpointSorted struct {
+	InterfaceEndpointData
+	Interfaces []NetworkInterface
 }
 
 type GatewayEndpoint struct {
