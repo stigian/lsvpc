@@ -2,6 +2,24 @@ package main
 
 import "sort"
 
+func sortRegionData(regionData map[string]RegionData) []RegionDataSorted {
+	regionKeys := []string{}
+	for k := range regionData {
+		regionKeys = append(regionKeys, k)
+	}
+	sort.Strings(regionKeys)
+
+	regionDataSorted := []RegionDataSorted{}
+	for _, region := range regionKeys {
+		regionDataSorted = append(regionDataSorted, RegionDataSorted{
+			Region: region,
+			VPCs:   sortVPCs(regionData[region].VPCs),
+		})
+	}
+
+	return regionDataSorted
+}
+
 func sortVPCs(vpcs map[string]VPC) []VPCSorted {
 
 	vpcKeys := []string{}

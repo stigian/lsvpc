@@ -12,6 +12,11 @@ type RegionData struct {
 	VPCs map[string]VPC
 }
 
+type RegionDataSorted struct {
+	Region string `json:"region"`
+	VPCs   []VPCSorted
+}
+
 type VPCData struct {
 	Id            string `json:"id"`
 	IsDefault     bool   `json:"isDefault"`
