@@ -186,15 +186,15 @@ func printVPCs(in map[string]VPC) {
 					"%s%v%v%v%v %v %v %v %v %v : %v\n",
 					indent(8),
 					color.Cyan,
-					aws.StringValue(iface.Id),
+					iface.Id,
 					formatName(iface.Name),
 					color.Reset,
-					aws.StringValue(iface.Type),
-					aws.StringValue(iface.MAC),
-					aws.StringValue(iface.PublicIp),
-					aws.StringValue(iface.PrivateIp),
-					aws.StringValue(iface.DNS),
-					aws.StringValue(iface.Description),
+					iface.Type,
+					iface.MAC,
+					iface.PublicIp,
+					iface.PrivateIp,
+					iface.DNS,
+					iface.Description,
 				)
 			}
 			// Print EC2 Instances
@@ -228,11 +228,11 @@ func printVPCs(in map[string]VPC) {
 					fmt.Printf(
 						"%s%v%v  %v  %v  %v\n",
 						indent(12),
-						aws.StringValue(iface.Id),
+						iface.Id,
 						formatName(iface.Name),
-						aws.StringValue(iface.MAC),
-						aws.StringValue(iface.PrivateIp),
-						aws.StringValue(iface.DNS),
+						iface.MAC,
+						iface.PrivateIp,
+						iface.DNS,
 					)
 				}
 

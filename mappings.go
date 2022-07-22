@@ -355,12 +355,12 @@ func mapNetworkInterfaces(vpcs map[string]VPC, networkInterfaces []*ec2.NetworkI
 		}
 
 		ifaceIn := NetworkInterface{
-			Id:                  iface.NetworkInterfaceId,
-			PrivateIp:           iface.PrivateIpAddress,
-			MAC:                 iface.MacAddress,
-			PublicIp:            publicIp,
-			Type:                iface.InterfaceType,
-			Description:         iface.Description,
+			Id:                  aws.StringValue(iface.NetworkInterfaceId),
+			PrivateIp:           aws.StringValue(iface.PrivateIpAddress),
+			MAC:                 aws.StringValue(iface.MacAddress),
+			PublicIp:            aws.StringValue(publicIp),
+			Type:                aws.StringValue(iface.InterfaceType),
+			Description:         aws.StringValue(iface.Description),
 			Name:                getNameTag(iface.TagSet),
 			RawNetworkInterface: iface,
 		}

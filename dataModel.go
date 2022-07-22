@@ -93,13 +93,13 @@ type Instance struct {
 }
 
 type NetworkInterface struct {
-	Id                  *string
-	PrivateIp           *string
-	MAC                 *string
-	DNS                 *string
-	Type                *string
-	Description         *string
-	PublicIp            *string
+	Id                  string
+	PrivateIp           string
+	MAC                 string
+	DNS                 string
+	Type                string
+	Description         string
+	PublicIp            string
 	Name                string
 	RawNetworkInterface *ec2.NetworkInterface
 }
