@@ -9,14 +9,14 @@ import (
 	"github.com/aws/aws-sdk-go/service/sts"
 )
 
-func getNameTag(tags []*ec2.Tag) *string {
+func getNameTag(tags []*ec2.Tag) string {
 	var name *string
 	for _, tag := range tags {
 		if aws.StringValue(tag.Key) == "Name" {
 			name = tag.Value
 		}
 	}
-	return name
+	return aws.StringValue(name)
 }
 
 func mapVpcs(vpcs map[string]VPC, vpcData []*ec2.Vpc) {
@@ -36,8 +36,8 @@ func mapVpcs(vpcs map[string]VPC, vpcData []*ec2.Vpc) {
 			VPCData: VPCData{
 				Id:            aws.StringValue(v.VpcId),
 				IsDefault:     aws.BoolValue(v.IsDefault),
-				CidrBlock:     v.CidrBlock,
-				IPv6CidrBlock: v6cidr,
+				CidrBlock:     aws.StringValue(v.CidrBlock),
+				IPv6CidrBlock: aws.StringValue(v6cidr),
 				Name:          getNameTag(v.Tags),
 				RawVPC:        v,
 			},

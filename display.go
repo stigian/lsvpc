@@ -9,6 +9,7 @@ import (
 )
 
 const nameTruncate = 20 //max size a Name tag can be before its truncated with a "..." at the end
+const doTruncate = false
 
 func indent(num int) string {
 	sb := strings.Builder{}
@@ -37,15 +38,17 @@ func lineFeed() {
 	}
 }
 
-func formatName(name *string) string {
-	if aws.StringValue(name) == "" {
+func formatName(name string) string {
+	if name == "" {
 		return ""
 	}
 	//Names can be up to 255 utf8 runes, we should truncate it
-	runes := []rune(aws.StringValue(name))
-	if len(runes) > nameTruncate {
-		runes = runes[:(nameTruncate - 1 - 3)]
-		runes = append(runes, []rune("...")...)
+	runes := []rune(name)
+	if doTruncate {
+		if len(runes) > nameTruncate {
+			runes = runes[:(nameTruncate - 1 - 3)]
+			runes = append(runes, []rune("...")...)
+		}
 	}
 
 	return fmt.Sprintf(" [%s]", string(runes))
@@ -87,8 +90,8 @@ func printVPCs(in map[string]VPC) {
 
 		fmt.Printf(
 			"%v %v -- ",
-			aws.StringValue(vpc.CidrBlock),
-			aws.StringValue(vpc.IPv6CidrBlock),
+			vpc.CidrBlock,
+			vpc.IPv6CidrBlock,
 		)
 		// Print gateways set to VPC
 		for _, gateway := range vpc.Gateways {

@@ -15,9 +15,9 @@ type RegionData struct {
 type VPCData struct {
 	Id            string
 	IsDefault     bool
-	CidrBlock     *string
-	IPv6CidrBlock *string
-	Name          *string
+	CidrBlock     string
+	IPv6CidrBlock string
+	Name          string
 	RawVPC        *ec2.Vpc
 }
 
@@ -41,7 +41,7 @@ type SubnetData struct {
 	AvailabilityZone   *string
 	AvailabilityZoneId *string
 	Public             bool
-	Name               *string
+	Name               string
 	RawSubnet          *ec2.Subnet
 	RouteTable         *RouteTable
 }
@@ -74,7 +74,7 @@ type InstanceData struct {
 	State          *string
 	PublicIP       *string
 	PrivateIP      *string
-	Name           *string
+	Name           string
 	InstanceStatus *string
 	SystemStatus   *string
 	RawEc2         *ec2.Instance
@@ -100,7 +100,7 @@ type NetworkInterface struct {
 	Type                *string
 	Description         *string
 	PublicIp            *string
-	Name                *string
+	Name                string
 	RawNetworkInterface *ec2.NetworkInterface
 }
 
@@ -109,7 +109,7 @@ type Volume struct {
 	DeviceName *string
 	Size       *int64
 	VolumeType *string
-	Name       *string
+	Name       string
 	RawVolume  *ec2.Volume
 }
 type NatGateway struct {
@@ -118,7 +118,7 @@ type NatGateway struct {
 	PublicIP      *string
 	State         *string
 	Type          *string
-	Name          *string
+	Name          string
 	RawNatGateway *ec2.NatGateway
 }
 
@@ -131,7 +131,7 @@ type RouteTable struct {
 type TGWAttachment struct {
 	AttachmentId     *string
 	TransitGatewayId *string
-	Name             *string
+	Name             string
 	RawAttachment    *ec2.TransitGatewayVpcAttachment
 }
 
@@ -139,21 +139,21 @@ type VPCPeer struct {
 	Id        *string
 	Requester *string
 	Accepter  *string
-	Name      *string
+	Name      string
 	RawPeer   *ec2.VpcPeeringConnection
 }
 
 type InterfaceEndpoint struct {
 	Id          *string
 	ServiceName *string
-	Name        *string
+	Name        string
 	RawEndpoint *ec2.VpcEndpoint
 }
 
 type GatewayEndpoint struct {
 	Id          *string
 	ServiceName *string
-	Name        *string
+	Name        string
 	RawEndpoint *ec2.VpcEndpoint
 }
 
