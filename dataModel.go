@@ -123,36 +123,36 @@ type NatGateway struct {
 }
 
 type RouteTable struct {
-	Id       *string
-	Default  *string
+	Id       string
+	Default  string
 	RawRoute *ec2.RouteTable
 }
 
 type TGWAttachment struct {
-	AttachmentId     *string
-	TransitGatewayId *string
+	AttachmentId     string
+	TransitGatewayId string
 	Name             string
 	RawAttachment    *ec2.TransitGatewayVpcAttachment
 }
 
 type VPCPeer struct {
-	Id        *string
-	Requester *string
-	Accepter  *string
+	Id        string
+	Requester string
+	Accepter  string
 	Name      string
 	RawPeer   *ec2.VpcPeeringConnection
 }
 
 type InterfaceEndpoint struct {
-	Id          *string
-	ServiceName *string
+	Id          string
+	ServiceName string
 	Name        string
 	RawEndpoint *ec2.VpcEndpoint
 }
 
 type GatewayEndpoint struct {
-	Id          *string
-	ServiceName *string
+	Id          string
+	ServiceName string
 	Name        string
 	RawEndpoint *ec2.VpcEndpoint
 }

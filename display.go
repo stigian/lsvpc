@@ -4,8 +4,6 @@ package main
 import (
 	"fmt"
 	"strings"
-
-	"github.com/aws/aws-sdk-go/aws"
 )
 
 const nameTruncate = 20 //max size a Name tag can be before its truncated with a "..." at the end
@@ -109,16 +107,16 @@ func printVPCs(in map[string]VPC) {
 		peersExist := false
 		for _, peer := range vpc.Peers {
 			direction := "peer-->"
-			vpcOperand := aws.StringValue(peer.Accepter)
-			if aws.StringValue(peer.Accepter) == vpc.Id {
+			vpcOperand := peer.Accepter
+			if peer.Accepter == vpc.Id {
 				direction = "<--peer"
-				vpcOperand = aws.StringValue(peer.Requester)
+				vpcOperand = peer.Requester
 			}
 			fmt.Printf(
 				"%s%v%v%v%v %v %v%v%v\n",
 				indent(4),
 				color.Cyan,
-				aws.StringValue(peer.Id),
+				peer.Id,
 				formatName(peer.Name),
 				color.Reset,
 				direction,
@@ -150,7 +148,7 @@ func printVPCs(in map[string]VPC) {
 				subnet.AvailabilityZone,
 				subnet.CidrBlock,
 				color.Yellow,
-				aws.StringValue(subnet.RouteTable.Default),
+				subnet.RouteTable.Default,
 				color.Reset,
 				public,
 			)
@@ -161,10 +159,10 @@ func printVPCs(in map[string]VPC) {
 					"%s%v%v%v%v interface--> %v\n",
 					indent(8),
 					color.Cyan,
-					aws.StringValue(interfaceEndpoint.Id),
+					interfaceEndpoint.Id,
 					formatName(interfaceEndpoint.Name),
 					color.Reset,
-					aws.StringValue(interfaceEndpoint.ServiceName),
+					interfaceEndpoint.ServiceName,
 				)
 			}
 
@@ -173,10 +171,10 @@ func printVPCs(in map[string]VPC) {
 					"%s%v%v%v%v gateway--> %v\n",
 					indent(8),
 					color.Cyan,
-					aws.StringValue(gatewayEndpoint.Id),
+					gatewayEndpoint.Id,
 					formatName(gatewayEndpoint.Name),
 					color.Reset,
-					aws.StringValue(gatewayEndpoint.ServiceName),
+					gatewayEndpoint.ServiceName,
 				)
 			}
 
@@ -272,11 +270,11 @@ func printVPCs(in map[string]VPC) {
 					"%s%v%v%v%v ---> %v%v%v\n",
 					indent(8),
 					color.Cyan,
-					aws.StringValue(tgw.AttachmentId),
+					tgw.AttachmentId,
 					formatName(tgw.Name),
 					color.Reset,
 					color.Yellow,
-					aws.StringValue(tgw.TransitGatewayId),
+					tgw.TransitGatewayId,
 					color.Reset,
 				)
 			}

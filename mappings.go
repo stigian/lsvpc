@@ -226,8 +226,8 @@ func mapRouteTables(vpcs map[string]VPC, routeTables []*ec2.RouteTable) {
 					subnet := vpcs[*routeTable.VpcId].Subnets[subnet_id]
 					defaultRoute := getDefaultRoute(routeTable)
 					subnet.RouteTable = &RouteTable{
-						Id:       routeTable.RouteTableId,
-						Default:  &defaultRoute,
+						Id:       aws.StringValue(routeTable.RouteTableId),
+						Default:  aws.StringValue(&defaultRoute),
 						RawRoute: routeTable,
 					}
 					vpcs[*routeTable.VpcId].Subnets[subnet_id] = subnet
@@ -248,8 +248,8 @@ func mapRouteTables(vpcs map[string]VPC, routeTables []*ec2.RouteTable) {
 			subnet := vpcs[*routeTable.VpcId].Subnets[*association.SubnetId]
 			defaultRoute := getDefaultRoute(routeTable)
 			subnet.RouteTable = &RouteTable{
-				Id:       routeTable.RouteTableId,
-				Default:  &defaultRoute,
+				Id:       aws.StringValue(routeTable.RouteTableId),
+				Default:  aws.StringValue(&defaultRoute),
 				RawRoute: routeTable,
 			}
 			vpcs[*routeTable.VpcId].Subnets[*association.SubnetId] = subnet
@@ -301,8 +301,8 @@ func mapTransitGatewayVpcAttachments(vpcs map[string]VPC, TransitGatewayVpcAttac
 				for _, subnet := range tgwatt.SubnetIds {
 					if subnetId := aws.StringValue(subnet); subnetId != "" {
 						vpcs[vpcId].Subnets[subnetId].TGWs[aws.StringValue(tgwatt.TransitGatewayAttachmentId)] = TGWAttachment{
-							AttachmentId:     tgwatt.TransitGatewayAttachmentId,
-							TransitGatewayId: tgwatt.TransitGatewayId,
+							AttachmentId:     aws.StringValue(tgwatt.TransitGatewayAttachmentId),
+							TransitGatewayId: aws.StringValue(tgwatt.TransitGatewayId),
 							Name:             getNameTag(tgwatt.Tags),
 							RawAttachment:    tgwatt,
 						}
@@ -321,9 +321,9 @@ func mapVpcPeeringConnections(vpcs map[string]VPC, VpcPeeringConnections []*ec2.
 		if requester := aws.StringValue(peer.RequesterVpcInfo.VpcId); requester != "" {
 			if _, ok := vpcs[requester]; ok {
 				vpcs[requester].Peers[aws.StringValue(peer.VpcPeeringConnectionId)] = VPCPeer{
-					Id:        peer.VpcPeeringConnectionId,
-					Requester: peer.RequesterVpcInfo.VpcId,
-					Accepter:  peer.AccepterVpcInfo.VpcId,
+					Id:        aws.StringValue(peer.VpcPeeringConnectionId),
+					Requester: aws.StringValue(peer.RequesterVpcInfo.VpcId),
+					Accepter:  aws.StringValue(peer.AccepterVpcInfo.VpcId),
 					Name:      getNameTag(peer.Tags),
 					RawPeer:   peer,
 				}
@@ -332,9 +332,9 @@ func mapVpcPeeringConnections(vpcs map[string]VPC, VpcPeeringConnections []*ec2.
 		if accepter := aws.StringValue(peer.AccepterVpcInfo.VpcId); accepter != "" {
 			if _, ok := vpcs[accepter]; ok {
 				vpcs[accepter].Peers[aws.StringValue(peer.VpcPeeringConnectionId)] = VPCPeer{
-					Id:        peer.VpcPeeringConnectionId,
-					Requester: peer.RequesterVpcInfo.VpcId,
-					Accepter:  peer.AccepterVpcInfo.VpcId,
+					Id:        aws.StringValue(peer.VpcPeeringConnectionId),
+					Requester: aws.StringValue(peer.RequesterVpcInfo.VpcId),
+					Accepter:  aws.StringValue(peer.AccepterVpcInfo.VpcId),
 					Name:      getNameTag(peer.Tags),
 					RawPeer:   peer,
 				}
@@ -409,8 +409,8 @@ func mapVpcEndpoints(vpcs map[string]VPC, vpcEndpoints []*ec2.VpcEndpoint) {
 					continue
 				}
 				vpcs[*endpoint.VpcId].Subnets[*subnet].InterfaceEndpoints[*endpoint.VpcEndpointId] = InterfaceEndpoint{
-					Id:          endpoint.VpcEndpointId,
-					ServiceName: endpoint.ServiceName,
+					Id:          aws.StringValue(endpoint.VpcEndpointId),
+					ServiceName: aws.StringValue(endpoint.ServiceName),
 					Name:        getNameTag(endpoint.Tags),
 					RawEndpoint: endpoint,
 				}
@@ -420,10 +420,10 @@ func mapVpcEndpoints(vpcs map[string]VPC, vpcEndpoints []*ec2.VpcEndpoint) {
 		if aws.StringValue(endpoint.VpcEndpointType) == "Gateway" {
 			for _, rtb := range endpoint.RouteTableIds {
 				for _, subnet := range vpcs[*endpoint.VpcId].Subnets {
-					if aws.StringValue(subnet.RouteTable.Id) == aws.StringValue(rtb) {
+					if subnet.RouteTable.Id == aws.StringValue(rtb) {
 						vpcs[*endpoint.VpcId].Subnets[subnet.Id].GatewayEndpoints[*endpoint.VpcEndpointId] = GatewayEndpoint{
-							Id:          endpoint.VpcEndpointId,
-							ServiceName: endpoint.ServiceName,
+							Id:          aws.StringValue(endpoint.VpcEndpointId),
+							ServiceName: aws.StringValue(endpoint.ServiceName),
 							Name:        getNameTag(endpoint.Tags),
 							RawEndpoint: endpoint,
 						}
