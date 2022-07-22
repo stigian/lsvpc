@@ -77,8 +77,8 @@ func populateVPC(region string) (map[string]VPC, error) {
 	mapVPNGateways(vpcs, data.VPNGateways)
 	mapTransitGatewayVpcAttachments(vpcs, data.TransitGateways, data.Identity)
 	mapVpcPeeringConnections(vpcs, data.PeeringConnections)
-	mapNetworkInterfaces(vpcs, data.NetworkInterfaces)
 	mapVpcEndpoints(vpcs, data.VPCEndpoints)
+	mapNetworkInterfaces(vpcs, data.NetworkInterfaces)
 
 	return vpcs, nil
 }
