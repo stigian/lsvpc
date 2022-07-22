@@ -21,6 +21,7 @@ type lsvpcConfig struct {
 	allRegions     bool
 	regionOverride string
 	Color          bool
+	jsonOutput     bool
 }
 
 var Config lsvpcConfig
@@ -95,12 +96,17 @@ func getRegionData(fullData map[string]RegionData, region string, wg *sync.WaitG
 	mu.Unlock()
 }
 
-func doSpecificRegion(region string) {
+func doSpecificRegion() {
+	region := Config.regionOverride
 	vpcs, err := populateVPC(region)
 	if err != nil {
 		return
 	}
-	printVPCs(vpcs)
+	if Config.jsonOutput {
+		printVPCsJSON(sortVPCs(vpcs))
+	} else {
+		printVPCs(sortVPCs(vpcs))
+	}
 }
 
 func doAllRegions() {
@@ -118,9 +124,13 @@ func doAllRegions() {
 
 	wg.Wait()
 
-	for region, vpcs := range fullData {
-		fmt.Printf("===%v===\n", region)
-		printVPCs(vpcs.VPCs)
+	if Config.jsonOutput {
+		printRegionsJSON(sortRegionData(fullData))
+	} else {
+		for region, vpcs := range fullData {
+			fmt.Printf("===%v===\n", region)
+			printVPCs(sortVPCs(vpcs.VPCs))
+		}
 	}
 
 }
@@ -135,7 +145,11 @@ func doDefaultRegion() {
 	if err != nil {
 		panic(fmt.Sprintf("populateVPC failed: %v", err.Error()))
 	}
-	printVPCs(vpcs)
+	if Config.jsonOutput {
+		printVPCsJSON(sortVPCs(vpcs))
+	} else {
+		printVPCs(sortVPCs(vpcs))
+	}
 }
 
 func init() {
@@ -146,6 +160,7 @@ func init() {
 	flag.BoolVar(&Config.allRegions, "a", false, "Fetches and prints data on all regions (abbrev.)")
 	flag.StringVar(&Config.regionOverride, "region", "", "Specify region (default: profile default region)")
 	flag.StringVar(&Config.regionOverride, "r", "", "Specify region (default: profile default region) (abbrev.)")
+	flag.BoolVar(&Config.jsonOutput, "j", false, "Output json instead of the typical textual output")
 }
 
 func stdoutIsPipe() bool {
@@ -215,7 +230,7 @@ func main() {
 			fmt.Printf("Region: '%v' is not valid\n", Config.regionOverride)
 			os.Exit(1)
 		}
-		doSpecificRegion(Config.regionOverride)
+		doSpecificRegion()
 	} else {
 		doDefaultRegion()
 	}
