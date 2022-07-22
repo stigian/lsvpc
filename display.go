@@ -96,11 +96,13 @@ func printVPCs(vpcs []VPCSorted) {
 			)
 		}
 
-		fmt.Printf(
-			"%v %v -- ",
-			vpc.CidrBlock,
-			vpc.IPv6CidrBlock,
-		)
+		if !Config.HideIP {
+			fmt.Printf(
+				"%v %v -- ",
+				vpc.CidrBlock,
+				vpc.IPv6CidrBlock,
+			)
+		}
 		// Print gateways set to VPC
 		for _, gateway := range vpc.Gateways {
 			fmt.Printf(
@@ -148,6 +150,9 @@ func printVPCs(vpcs []VPCSorted) {
 			if subnet.Public {
 				public = "Public"
 			}
+			if Config.HideIP {
+				subnet.CidrBlock = ""
+			}
 			fmt.Printf(
 				"%s%v%v%v%v  %v  %v %v-->%v%v %v\n",
 				indent(4),
@@ -177,6 +182,11 @@ func printVPCs(vpcs []VPCSorted) {
 					)
 					for _, iface := range interfaceEndpoint.Interfaces {
 						//an endpoint can have multiple interfaces in multiple subnets, we only want to display whats relevant to the subnet
+						if Config.HideIP {
+							iface.MAC = ""
+							iface.PublicIp = ""
+							iface.PrivateIp = ""
+						}
 						if iface.SubnetId == subnet.Id {
 							fmt.Printf(
 								"%s%v%v %v %v %v %v %v \n",
@@ -209,6 +219,11 @@ func printVPCs(vpcs []VPCSorted) {
 
 			// Print Interfaces
 			for _, iface := range subnet.ENIs {
+				if Config.HideIP {
+					iface.MAC = ""
+					iface.PrivateIp = ""
+					iface.PublicIp = ""
+				}
 				fmt.Printf(
 					"%s%v%v%v%v %v %v %v %v %v : %v\n",
 					indent(8),
@@ -236,6 +251,10 @@ func printVPCs(vpcs []VPCSorted) {
 				}
 
 				// Print Instance Info
+				if Config.HideIP {
+					instance.PublicIP = ""
+					instance.PrivateIP = ""
+				}
 				fmt.Printf(
 					"%s%v%s%v%v %v -- %v (%v/2) -- %v -- %v\n",
 					indent(8),
@@ -253,6 +272,11 @@ func printVPCs(vpcs []VPCSorted) {
 				// Print Instance Interfaces
 				if Config.Verbose {
 					for _, iface := range instance.Interfaces {
+						if Config.HideIP {
+							iface.MAC = ""
+							iface.PrivateIp = ""
+							iface.PublicIp = ""
+						}
 						fmt.Printf(
 							"%s%v%v  %v  %v  %v\n",
 							indent(12),
@@ -281,6 +305,10 @@ func printVPCs(vpcs []VPCSorted) {
 
 			//Print Nat Gateways
 			for _, natGateway := range subnet.NatGateways {
+				if Config.HideIP {
+					natGateway.PrivateIP = ""
+					natGateway.PublicIP = ""
+				}
 				fmt.Printf(
 					"%s%v%v%v%v  %v  %v  %v  %v\n",
 					indent(8),
