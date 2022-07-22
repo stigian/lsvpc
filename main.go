@@ -23,6 +23,7 @@ type lsvpcConfig struct {
 	Color          bool
 	jsonOutput     bool
 	Verbose        bool
+	Truncate       bool
 }
 
 var Config lsvpcConfig
@@ -163,6 +164,7 @@ func init() {
 	flag.StringVar(&Config.regionOverride, "r", "", "Specify region (default: profile default region) (abbrev.)")
 	flag.BoolVar(&Config.jsonOutput, "j", false, "Output json instead of the typical textual output")
 	flag.BoolVar(&Config.Verbose, "v", false, "output verbose information about assets in vpc")
+	flag.BoolVar(&Config.Verbose, "t", false, "truncate nametags")
 }
 
 func stdoutIsPipe() bool {
