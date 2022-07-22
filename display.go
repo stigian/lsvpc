@@ -96,13 +96,17 @@ func printVPCs(vpcs []VPCSorted) {
 			)
 		}
 
-		if !Config.HideIP {
-			fmt.Printf(
-				"%v %v -- ",
-				vpc.CidrBlock,
-				vpc.IPv6CidrBlock,
-			)
+		if Config.HideIP {
+			vpc.CidrBlock = "xxx.xxx.xxx.xxx/xx"
+			if vpc.IPv6CidrBlock != "" {
+				vpc.IPv6CidrBlock = "xxxx::xxxx/xx"
+			}
 		}
+		fmt.Printf(
+			"%v %v -- ",
+			vpc.CidrBlock,
+			vpc.IPv6CidrBlock,
+		)
 		// Print gateways set to VPC
 		for _, gateway := range vpc.Gateways {
 			fmt.Printf(
@@ -151,7 +155,7 @@ func printVPCs(vpcs []VPCSorted) {
 				public = "Public"
 			}
 			if Config.HideIP {
-				subnet.CidrBlock = ""
+				subnet.CidrBlock = "xxx.xxx.xxx.xxx/xx"
 			}
 			fmt.Printf(
 				"%s%v%v%v%v  %v  %v %v-->%v%v %v\n",
@@ -183,9 +187,12 @@ func printVPCs(vpcs []VPCSorted) {
 					for _, iface := range interfaceEndpoint.Interfaces {
 						//an endpoint can have multiple interfaces in multiple subnets, we only want to display whats relevant to the subnet
 						if Config.HideIP {
-							iface.MAC = ""
-							iface.PublicIp = ""
-							iface.PrivateIp = ""
+							iface.MAC = "xx:xx:xx:xx:xx:xx"
+							iface.PublicIp = "xxx.xxx.xxx.xxx"
+							iface.PrivateIp = "xxx.xxx.xxx.xxx"
+							if iface.DNS != "" {
+								iface.DNS = "xxxx.xxxx.xxxx"
+							}
 						}
 						if iface.SubnetId == subnet.Id {
 							fmt.Printf(
@@ -220,9 +227,12 @@ func printVPCs(vpcs []VPCSorted) {
 			// Print Interfaces
 			for _, iface := range subnet.ENIs {
 				if Config.HideIP {
-					iface.MAC = ""
-					iface.PrivateIp = ""
-					iface.PublicIp = ""
+					iface.MAC = "xx:xx:xx:xx:xx:xx"
+					iface.PrivateIp = "xxx.xxx.xxx.xxx"
+					iface.PublicIp = "xxx.xxx.xxx.xxx"
+					if iface.DNS != "" {
+						iface.DNS = "xxxx.xxxx.xxxx"
+					}
 				}
 				fmt.Printf(
 					"%s%v%v%v%v %v %v %v %v %v : %v\n",
@@ -252,8 +262,8 @@ func printVPCs(vpcs []VPCSorted) {
 
 				// Print Instance Info
 				if Config.HideIP {
-					instance.PublicIP = ""
-					instance.PrivateIP = ""
+					instance.PublicIP = "xxx.xxx.xxx.xxx"
+					instance.PrivateIP = "xxx.xxx.xxx.xxx"
 				}
 				fmt.Printf(
 					"%s%v%s%v%v %v -- %v (%v/2) -- %v -- %v\n",
@@ -273,9 +283,12 @@ func printVPCs(vpcs []VPCSorted) {
 				if Config.Verbose {
 					for _, iface := range instance.Interfaces {
 						if Config.HideIP {
-							iface.MAC = ""
-							iface.PrivateIp = ""
-							iface.PublicIp = ""
+							iface.MAC = "xx:xx:xx:xx:xx:xx"
+							iface.PrivateIp = "xxx.xxx.xxx.xxx"
+							iface.PublicIp = "xxx.xxx.xxx.xxx"
+							if iface.DNS != "" {
+								iface.DNS = "xxxx.xxxx.xxxx"
+							}
 						}
 						fmt.Printf(
 							"%s%v%v  %v  %v  %v\n",
@@ -306,8 +319,8 @@ func printVPCs(vpcs []VPCSorted) {
 			//Print Nat Gateways
 			for _, natGateway := range subnet.NatGateways {
 				if Config.HideIP {
-					natGateway.PrivateIP = ""
-					natGateway.PublicIP = ""
+					natGateway.PrivateIP = "xxx.xxx.xxx.xxx"
+					natGateway.PublicIP = "xxx.xxx.xxx.xxx"
 				}
 				fmt.Printf(
 					"%s%v%v%v%v  %v  %v  %v  %v\n",
