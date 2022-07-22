@@ -174,6 +174,24 @@ func printVPCs(vpcs []VPCSorted) {
 					color.Reset,
 					interfaceEndpoint.ServiceName,
 				)
+				for _, iface := range interfaceEndpoint.Interfaces {
+					//an endpoint can have multiple interfaces in multiple subnets, we only want to display whats relevant to the subnet
+					if iface.SubnetId == subnet.Id {
+						fmt.Printf(
+							"%s%v%v %v %v %v %v %v \n",
+							indent(12),
+							iface.Id,
+							formatName(iface.Name),
+							iface.Type,
+							iface.MAC,
+							iface.PublicIp,
+							iface.PrivateIp,
+							iface.DNS,
+						)
+
+					}
+
+				}
 			}
 
 			for _, gatewayEndpoint := range subnet.GatewayEndpoints {
