@@ -18,7 +18,6 @@ type VPCData struct {
 	CidrBlock     string
 	IPv6CidrBlock string
 	Name          string
-	RawVPC        *ec2.Vpc
 }
 
 type VPCSorted struct {
@@ -30,6 +29,7 @@ type VPCSorted struct {
 
 type VPC struct {
 	VPCData
+	RawVPC   *ec2.Vpc
 	Gateways []string
 	Subnets  map[string]Subnet
 	Peers    map[string]VPCPeer
@@ -42,7 +42,6 @@ type SubnetData struct {
 	AvailabilityZoneId string
 	Public             bool
 	Name               string
-	RawSubnet          *ec2.Subnet
 	RouteTable         *RouteTable
 }
 
@@ -58,6 +57,7 @@ type SubnetSorted struct {
 
 type Subnet struct {
 	SubnetData
+	RawSubnet          *ec2.Subnet
 	Instances          map[string]Instance
 	NatGateways        map[string]NatGateway
 	TGWs               map[string]TGWAttachment
@@ -77,7 +77,6 @@ type InstanceData struct {
 	Name           string
 	InstanceStatus string
 	SystemStatus   string
-	RawEc2         *ec2.Instance
 }
 
 type InstanceSorted struct {
@@ -88,6 +87,7 @@ type InstanceSorted struct {
 
 type Instance struct {
 	InstanceData
+	RawEc2     *ec2.Instance
 	Volumes    map[string]Volume
 	Interfaces map[string]NetworkInterface
 }
@@ -101,7 +101,7 @@ type NetworkInterface struct {
 	Description         string
 	PublicIp            string
 	Name                string
-	RawNetworkInterface *ec2.NetworkInterface
+	RawNetworkInterface *ec2.NetworkInterface `json:"-"`
 }
 
 type Volume struct {
@@ -110,7 +110,7 @@ type Volume struct {
 	Size       int64
 	VolumeType string
 	Name       string
-	RawVolume  *ec2.Volume
+	RawVolume  *ec2.Volume `json:"-"`
 }
 type NatGateway struct {
 	Id            string
@@ -119,20 +119,20 @@ type NatGateway struct {
 	State         string
 	Type          string
 	Name          string
-	RawNatGateway *ec2.NatGateway
+	RawNatGateway *ec2.NatGateway `json:"-"`
 }
 
 type RouteTable struct {
 	Id       string
 	Default  string
-	RawRoute *ec2.RouteTable
+	RawRoute *ec2.RouteTable `json:"-"`
 }
 
 type TGWAttachment struct {
 	AttachmentId     string
 	TransitGatewayId string
 	Name             string
-	RawAttachment    *ec2.TransitGatewayVpcAttachment
+	RawAttachment    *ec2.TransitGatewayVpcAttachment `json:"-"`
 }
 
 type VPCPeer struct {
@@ -140,21 +140,21 @@ type VPCPeer struct {
 	Requester string
 	Accepter  string
 	Name      string
-	RawPeer   *ec2.VpcPeeringConnection
+	RawPeer   *ec2.VpcPeeringConnection `json:"-"`
 }
 
 type InterfaceEndpoint struct {
 	Id          string
 	ServiceName string
 	Name        string
-	RawEndpoint *ec2.VpcEndpoint
+	RawEndpoint *ec2.VpcEndpoint `json:"-"`
 }
 
 type GatewayEndpoint struct {
 	Id          string
 	ServiceName string
 	Name        string
-	RawEndpoint *ec2.VpcEndpoint
+	RawEndpoint *ec2.VpcEndpoint `json:"-"`
 }
 
 type RecievedData struct {
