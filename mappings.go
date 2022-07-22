@@ -157,12 +157,12 @@ func mapNatGateways(vpcs map[string]VPC, natGateways []*ec2.NatGateway) {
 			continue
 		}
 		vpcs[*gateway.VpcId].Subnets[*gateway.SubnetId].NatGateways[*gateway.NatGatewayId] = NatGateway{
-			Id:            gateway.NatGatewayId,
-			PrivateIP:     gateway.NatGatewayAddresses[0].PrivateIp,
-			PublicIP:      gateway.NatGatewayAddresses[0].PublicIp,
-			State:         gateway.State,
-			Type:          gateway.ConnectivityType,
-			Name:          getNameTag(gateway.Tags),
+			Id:            aws.StringValue(gateway.NatGatewayId),
+			PrivateIP:     aws.StringValue(gateway.NatGatewayAddresses[0].PrivateIp),
+			PublicIP:      aws.StringValue(gateway.NatGatewayAddresses[0].PublicIp),
+			State:         aws.StringValue(gateway.State),
+			Type:          aws.StringValue(gateway.ConnectivityType),
+			Name:          aws.StringValue(getNameTag(gateway.Tags)),
 			RawNatGateway: gateway,
 		}
 	}

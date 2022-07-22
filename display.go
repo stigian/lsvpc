@@ -256,13 +256,13 @@ func printVPCs(in map[string]VPC) {
 					"%s%v%v%v%v  %v  %v  %v  %v\n",
 					indent(8),
 					color.Cyan,
-					aws.StringValue(natGateway.Id),
+					natGateway.Id,
 					formatName(natGateway.Name),
 					color.Reset,
-					aws.StringValue(natGateway.Type),
-					aws.StringValue(natGateway.State),
-					aws.StringValue(natGateway.PublicIP),
-					aws.StringValue(natGateway.PrivateIP),
+					natGateway.Type,
+					natGateway.State,
+					natGateway.PublicIP,
+					natGateway.PrivateIP,
 				)
 			}
 

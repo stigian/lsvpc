@@ -113,11 +113,11 @@ type Volume struct {
 	RawVolume  *ec2.Volume
 }
 type NatGateway struct {
-	Id            *string
-	PrivateIP     *string
-	PublicIP      *string
-	State         *string
-	Type          *string
+	Id            string
+	PrivateIP     string
+	PublicIP      string
+	State         string
+	Type          string
 	Name          string
 	RawNatGateway *ec2.NatGateway
 }
