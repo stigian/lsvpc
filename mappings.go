@@ -162,7 +162,7 @@ func mapNatGateways(vpcs map[string]VPC, natGateways []*ec2.NatGateway) {
 			PublicIP:      aws.StringValue(gateway.NatGatewayAddresses[0].PublicIp),
 			State:         aws.StringValue(gateway.State),
 			Type:          aws.StringValue(gateway.ConnectivityType),
-			Name:          aws.StringValue(getNameTag(gateway.Tags)),
+			Name:          getNameTag(gateway.Tags),
 			RawNatGateway: gateway,
 		}
 	}
