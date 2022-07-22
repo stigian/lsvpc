@@ -2,6 +2,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 )
@@ -52,8 +53,17 @@ func formatName(name string) string {
 	return fmt.Sprintf(" [%s]", string(runes))
 }
 
-func printVPCs(in map[string]VPC) {
-	vpcs := sortVPCs(in)
+func printRegionsJSON(regions []RegionDataSorted) {
+	export, _ := json.Marshal(regions)
+	fmt.Printf("%v", string(export))
+}
+
+func printVPCsJSON(vpcs []VPCSorted) {
+	export, _ := json.Marshal(vpcs)
+	fmt.Printf("%v", string(export))
+}
+
+func printVPCs(vpcs []VPCSorted) {
 	color := colorPalette{}
 
 	if !Config.noColor {
