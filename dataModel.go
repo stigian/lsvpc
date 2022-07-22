@@ -107,7 +107,7 @@ type NetworkInterface struct {
 	PublicIp            string                `json:"publicIp"`
 	Name                string                `json:"name"`
 	SubnetId            string                `json:"subnetId"` // we're just accounting for this for display purposes
-	RawNetworkInterface *ec2.NetworkInterface `json:"raw"`
+	RawNetworkInterface *ec2.NetworkInterface `json:"-"`
 }
 
 type Volume struct {
@@ -153,7 +153,7 @@ type InterfaceEndpointData struct {
 	Id          string           `json:"id"`
 	ServiceName string           `json:"serviceName"`
 	Name        string           `json:"name"`
-	RawEndpoint *ec2.VpcEndpoint `json:"raw"`
+	RawEndpoint *ec2.VpcEndpoint `json:"-"`
 }
 
 type InterfaceEndpoint struct {
