@@ -22,9 +22,9 @@ type VPCData struct {
 
 type VPCSorted struct {
 	VPCData
-	Gateways []string       `json:"gateways"`
-	Subnets  []SubnetSorted `json:"subnets"`
-	Peers    []VPCPeer      `json:"peers"`
+	Gateways []string       `json:"gateways,omitempty"`
+	Subnets  []SubnetSorted `json:"subnets,omitempty"`
+	Peers    []VPCPeer      `json:"peers,omitempty"`
 }
 
 type VPC struct {
@@ -47,12 +47,12 @@ type SubnetData struct {
 
 type SubnetSorted struct {
 	SubnetData
-	Instances          []InstanceSorted    `json:"instances"`
-	NatGateways        []NatGateway        `json:"natGateways"`
-	TGWs               []TGWAttachment     `json:"tGWs"`
-	ENIs               []NetworkInterface  `json:"eNIs"`
-	InterfaceEndpoints []InterfaceEndpoint `json:"interfaceEndpoints"`
-	GatewayEndpoints   []GatewayEndpoint   `json:"gatewayEndpoints"`
+	Instances          []InstanceSorted    `json:"instances,omitempty"`
+	NatGateways        []NatGateway        `json:"natGateways,omitempty"`
+	TGWs               []TGWAttachment     `json:"tgws,omitempty"`
+	ENIs               []NetworkInterface  `json:"enis,omitempty"`
+	InterfaceEndpoints []InterfaceEndpoint `json:"interfaceEndpoints,omitempty"`
+	GatewayEndpoints   []GatewayEndpoint   `json:"gatewayEndpoints,omitempty"`
 }
 
 type Subnet struct {
@@ -81,8 +81,8 @@ type InstanceData struct {
 
 type InstanceSorted struct {
 	InstanceData
-	Volumes    []Volume           `json:"volumes"`
-	Interfaces []NetworkInterface `json:"interfaces"`
+	Volumes    []Volume           `json:"volumes,omitempty"`
+	Interfaces []NetworkInterface `json:"interfaces,omitempty"`
 }
 
 type Instance struct {
