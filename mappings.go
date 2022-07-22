@@ -362,7 +362,27 @@ func mapNetworkInterfaces(vpcs map[string]VPC, networkInterfaces []*ec2.NetworkI
 			Type:                aws.StringValue(iface.InterfaceType),
 			Description:         aws.StringValue(iface.Description),
 			Name:                getNameTag(iface.TagSet),
+			SubnetId:            aws.StringValue(iface.SubnetId),
 			RawNetworkInterface: iface,
+		}
+
+		if aws.StringValue(iface.InterfaceType) == "vpc_endpoint" {
+			for vpcId, vpc := range vpcs {
+				for subnetId, subnet := range vpc.Subnets {
+					for endpointId, endpoint := range subnet.InterfaceEndpoints {
+						for _, endpointENIId := range endpoint.RawEndpoint.NetworkInterfaceIds {
+							if ifaceIn.Id == aws.StringValue(endpointENIId) {
+								//network interface id found in endpoint
+								vpcs[vpcId].
+									Subnets[subnetId].
+									InterfaceEndpoints[endpointId].
+									Interfaces[aws.StringValue(iface.NetworkInterfaceId)] = ifaceIn
+							}
+						}
+					}
+				}
+			}
+			continue //dont duplicate this eni anywhere else
 		}
 
 		if iface.Attachment != nil && aws.StringValue(iface.Attachment.InstanceId) != "" {
@@ -409,10 +429,13 @@ func mapVpcEndpoints(vpcs map[string]VPC, vpcEndpoints []*ec2.VpcEndpoint) {
 					continue
 				}
 				vpcs[*endpoint.VpcId].Subnets[*subnet].InterfaceEndpoints[*endpoint.VpcEndpointId] = InterfaceEndpoint{
-					Id:          aws.StringValue(endpoint.VpcEndpointId),
-					ServiceName: aws.StringValue(endpoint.ServiceName),
-					Name:        getNameTag(endpoint.Tags),
-					RawEndpoint: endpoint,
+					InterfaceEndpointData: InterfaceEndpointData{
+						Id:          aws.StringValue(endpoint.VpcEndpointId),
+						ServiceName: aws.StringValue(endpoint.ServiceName),
+						Name:        getNameTag(endpoint.Tags),
+						RawEndpoint: endpoint,
+					},
+					Interfaces: make(map[string]NetworkInterface),
 				}
 			}
 		}
