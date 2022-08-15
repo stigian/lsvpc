@@ -116,7 +116,7 @@ func printVPCs(vpcs []VPCSorted) {
 			)
 		}
 
-		lineFeed()
+		fmt.Printf("\n")
 
 		// Print Peers
 		peersExist := false
