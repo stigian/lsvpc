@@ -20,5 +20,5 @@ jobs:
       # Runs a single command using the runners shell
       - name: golangci-golint
         run: |
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.45.0
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.50.1
           ./bin/golangci-lint run -v ./...
