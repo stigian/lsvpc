@@ -12,11 +12,9 @@ jobs:
     name: uses golangci-golint on lsvpc
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v2
         with:
-          go-version-file: go.mod
-          cache: true
-          cache-dependency-path: go.sum
+          go-version: '^1'
       - run: go version
       
       - uses: actions/checkout@v3
