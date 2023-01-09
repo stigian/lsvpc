@@ -23,4 +23,4 @@ jobs:
       - name: install golangci-lint
         run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.47.3
       - name: run golangci-lint
-        run: GOGC=5 golangci-lint run -v ./... -out-format=github-actions
+        run: GOGC=5 golangci-lint run -v ./... --out-format=github-actions
