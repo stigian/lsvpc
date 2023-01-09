@@ -96,3 +96,4 @@ Executing **lsvpc** with no arguments produces a colored readout of vpc resource
 `-nospace`    - Suppresses line spacing between entries.
 
 `-r, -region` - Specify a region to print data for.
+
