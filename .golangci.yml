@@ -1,6 +1,3 @@
-run:
-  concurrency: 2
-
 linters-settings:
   errcheck:
     check-type-assertions: true
@@ -63,3 +60,4 @@ linters:
 
 run:
   issues-exit-code: 1
+  concurrency: 2
