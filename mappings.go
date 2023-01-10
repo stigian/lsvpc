@@ -77,13 +77,13 @@ func mapInstances(vpcs map[string]VPC, reservations []*ec2.Reservation) {
 		for _, instance := range reservation.Instances {
 
 			if *instance.State.Name != "terminated" {
-				vpcId := aws.StringValue(instance.VpcId)
+				vpcID := aws.StringValue(instance.VpcId)
 				subnetID := aws.StringValue(instance.SubnetId)
 				instanceId := aws.StringValue(instance.InstanceId)
 
-				if vpcId != "" && subnetID != "" && instanceId != "" {
+				if vpcID != "" && subnetID != "" && instanceId != "" {
 
-					vpcs[vpcId].Subnets[subnetID].Instances[instanceId] = Instance{
+					vpcs[vpcID].Subnets[subnetID].Instances[instanceId] = Instance{
 						InstanceData: InstanceData{
 							Id:        aws.StringValue(instance.InstanceId),
 							Type:      aws.StringValue(instance.InstanceType),
@@ -459,8 +459,8 @@ func mapVpcEndpoints(vpcs map[string]VPC, vpcEndpoints []*ec2.VpcEndpoint) {
 
 func dumpVpcIds(vpcs map[string]VPC) map[string]bool {
 	keys := make(map[string]bool)
-	for vpcId := range vpcs {
-		keys[vpcId] = true
+	for vpcID := range vpcs {
+		keys[vpcID] = true
 	}
 	return keys
 }

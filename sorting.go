@@ -32,8 +32,8 @@ func sortVPCs(vpcs map[string]VPC) []VPCSorted {
 	sort.Strings(vpcKeys)
 
 	vpcsSorted := []VPCSorted{}
-	for _, vpcId := range vpcKeys {
-		vpcsSorted = append(vpcsSorted, sortVPC(vpcs[vpcId]))
+	for _, vpcID := range vpcKeys {
+		vpcsSorted = append(vpcsSorted, sortVPC(vpcs[vpcID]))
 	}
 	return vpcsSorted
 }
@@ -116,8 +116,8 @@ func sortSubnet(subnet Subnet) SubnetSorted {
 	}
 	sort.Strings(networkInterfaceKeys)
 	networkInterfacesSorted := []NetworkInterface{}
-	for _, networkInterfaceId := range networkInterfaceKeys {
-		networkInterfacesSorted = append(networkInterfacesSorted, subnet.ENIs[networkInterfaceId])
+	for _, networkInterfaceID := range networkInterfaceKeys {
+		networkInterfacesSorted = append(networkInterfacesSorted, subnet.ENIs[networkInterfaceID])
 	}
 
 	//sort InterfaceEndpoints
