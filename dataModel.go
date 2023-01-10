@@ -27,9 +27,9 @@ type VPCData struct {
 
 type VPCSorted struct {
 	VPCData
-	Gateways []string       `json:"gateways,omitempty"`
-	Subnets  []SubnetSorted `json:"subnets,omitempty"`
-	Peers    []VPCPeer      `json:"peers,omitempty"`
+	Gateways []string        `json:"gateways,omitempty"`
+	Subnets  []*SubnetSorted `json:"subnets,omitempty"`
+	Peers    []*VPCPeer      `json:"peers,omitempty"`
 }
 
 type VPC struct {
@@ -52,12 +52,12 @@ type SubnetData struct {
 
 type SubnetSorted struct {
 	SubnetData
-	Instances          []InstanceSorted          `json:"instances,omitempty"`
-	NatGateways        []NatGateway              `json:"natGateways,omitempty"`
-	TGWs               []TGWAttachment           `json:"tgws,omitempty"`
-	ENIs               []NetworkInterface        `json:"enis,omitempty"`
-	InterfaceEndpoints []InterfaceEndpointSorted `json:"interfaceEndpoints,omitempty"`
-	GatewayEndpoints   []GatewayEndpoint         `json:"gatewayEndpoints,omitempty"`
+	Instances          []*InstanceSorted          `json:"instances,omitempty"`
+	NatGateways        []*NatGateway              `json:"natGateways,omitempty"`
+	TGWs               []*TGWAttachment           `json:"tgws,omitempty"`
+	ENIs               []*NetworkInterface        `json:"enis,omitempty"`
+	InterfaceEndpoints []*InterfaceEndpointSorted `json:"interfaceEndpoints,omitempty"`
+	GatewayEndpoints   []*GatewayEndpoint         `json:"gatewayEndpoints,omitempty"`
 }
 
 type Subnet struct {
@@ -163,7 +163,7 @@ type InterfaceEndpoint struct {
 
 type InterfaceEndpointSorted struct {
 	InterfaceEndpointData
-	Interfaces []NetworkInterface
+	Interfaces []*NetworkInterface
 }
 
 type GatewayEndpoint struct {
