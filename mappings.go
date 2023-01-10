@@ -56,7 +56,7 @@ func mapSubnets(vpcs map[string]VPC, subnets []*ec2.Subnet) {
 				Id:                 aws.StringValue(v.SubnetId),
 				CidrBlock:          aws.StringValue(v.CidrBlock),
 				AvailabilityZone:   aws.StringValue(v.AvailabilityZone),
-				AvailabilityZoneId: aws.StringValue(v.AvailabilityZoneId),
+				AvailabilityZoneID: aws.StringValue(v.AvailabilityZoneId),
 				Name:               getNameTag(v.Tags),
 				Public:             isPublic,
 			},
@@ -301,8 +301,8 @@ func mapTransitGatewayVpcAttachments(vpcs map[string]VPC, TransitGatewayVpcAttac
 				for _, subnet := range tgwatt.SubnetIds {
 					if subnetID := aws.StringValue(subnet); subnetID != "" {
 						vpcs[vpcID].Subnets[subnetID].TGWs[aws.StringValue(tgwatt.TransitGatewayAttachmentId)] = TGWAttachment{
-							AttachmentId:     aws.StringValue(tgwatt.TransitGatewayAttachmentId),
-							TransitGatewayId: aws.StringValue(tgwatt.TransitGatewayId),
+							AttachmentID:     aws.StringValue(tgwatt.TransitGatewayAttachmentId),
+							TransitGatewayID: aws.StringValue(tgwatt.TransitGatewayId),
 							Name:             getNameTag(tgwatt.Tags),
 							RawAttachment:    tgwatt,
 						}

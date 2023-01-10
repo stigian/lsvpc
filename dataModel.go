@@ -44,7 +44,7 @@ type SubnetData struct {
 	Id                 string `json:"id"`
 	CidrBlock          string `json:"cidrBlock"`
 	AvailabilityZone   string `json:"availabilityZone"`
-	AvailabilityZoneId string `json:"availabilityZoneId"`
+	AvailabilityZoneID string `json:"availabilityZoneId"`
 	Public             bool   `json:"public"`
 	Name               string `json:"name"`
 	RouteTable         *RouteTable
@@ -135,8 +135,8 @@ type RouteTable struct {
 }
 
 type TGWAttachment struct {
-	AttachmentId     string                           `json:"attachmentId"`
-	TransitGatewayId string                           `json:"transitGatewayId"`
+	AttachmentID     string                           `json:"attachmentId"`
+	TransitGatewayID string                           `json:"transitGatewayId"`
 	Name             string                           `json:"name"`
 	RawAttachment    *ec2.TransitGatewayVpcAttachment `json:"-"`
 }

@@ -341,11 +341,11 @@ func printVPCs(vpcs []VPCSorted) {
 					"%s%v%v%v%v ---> %v%v%v\n",
 					indent(8),
 					color.Cyan,
-					tgw.AttachmentId,
+					tgw.AttachmentID,
 					formatName(tgw.Name),
 					color.Reset,
 					color.Yellow,
-					tgw.TransitGatewayId,
+					tgw.TransitGatewayID,
 					color.Reset,
 				)
 			}
