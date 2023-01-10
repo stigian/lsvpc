@@ -222,15 +222,15 @@ func mapRouteTables(vpcs map[string]VPC, routeTables []*ec2.RouteTable) {
 	for _, routeTable := range routeTables {
 		for _, association := range routeTable.Associations {
 			if association.Main != nil && *association.Main {
-				for subnet_id := range vpcs[*routeTable.VpcId].Subnets {
-					subnet := vpcs[*routeTable.VpcId].Subnets[subnet_id]
+				for subnetID := range vpcs[*routeTable.VpcId].Subnets {
+					subnet := vpcs[*routeTable.VpcId].Subnets[subnetID]
 					defaultRoute := getDefaultRoute(routeTable)
 					subnet.RouteTable = &RouteTable{
 						ID:       aws.StringValue(routeTable.RouteTableId),
 						Default:  aws.StringValue(&defaultRoute),
 						RawRoute: routeTable,
 					}
-					vpcs[*routeTable.VpcId].Subnets[subnet_id] = subnet
+					vpcs[*routeTable.VpcId].Subnets[subnetID] = subnet
 				}
 			}
 		}
@@ -349,16 +349,16 @@ func mapNetworkInterfaces(vpcs map[string]VPC, networkInterfaces []*ec2.NetworkI
 			continue //nat gateways are already adequately reported
 		}
 
-		var publicIp *string
+		var publicIP *string
 		if iface.Association != nil {
-			publicIp = iface.Association.PublicIp
+			publicIP = iface.Association.PublicIp
 		}
 
 		ifaceIn := NetworkInterface{
 			ID:                  aws.StringValue(iface.NetworkInterfaceId),
 			PrivateIp:           aws.StringValue(iface.PrivateIpAddress),
 			MAC:                 aws.StringValue(iface.MacAddress),
-			PublicIp:            aws.StringValue(publicIp),
+			PublicIp:            aws.StringValue(publicIP),
 			Type:                aws.StringValue(iface.InterfaceType),
 			Description:         aws.StringValue(iface.Description),
 			Name:                getNameTag(iface.TagSet),
@@ -369,13 +369,13 @@ func mapNetworkInterfaces(vpcs map[string]VPC, networkInterfaces []*ec2.NetworkI
 		if aws.StringValue(iface.InterfaceType) == "vpc_endpoint" {
 			for vpcID, vpc := range vpcs {
 				for subnetID, subnet := range vpc.Subnets {
-					for endpointId, endpoint := range subnet.InterfaceEndpoints {
+					for endpointID, endpoint := range subnet.InterfaceEndpoints {
 						for _, endpointENIId := range endpoint.RawEndpoint.NetworkInterfaceIds {
 							if ifaceIn.ID == aws.StringValue(endpointENIId) {
 								//network interface id found in endpoint
 								vpcs[vpcID].
 									Subnets[subnetID].
-									InterfaceEndpoints[endpointId].
+									InterfaceEndpoints[endpointID].
 									Interfaces[aws.StringValue(iface.NetworkInterfaceId)] = ifaceIn
 							}
 						}
