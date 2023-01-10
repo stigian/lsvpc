@@ -205,7 +205,7 @@ func getDefaultRoute(rtb *ec2.RouteTable) string {
 			}
 		}
 	}
-	return "" //no default route found, which doesn't necessarily mean an error
+	return "" // No default route found, which doesn't necessarily mean an error
 }
 
 func mapRouteTables(vpcs map[string]VPC, routeTables []*ec2.RouteTable) {
@@ -269,8 +269,8 @@ func mapInternetGateways(vpcs map[string]VPC, internetGateways []*ec2.InternetGa
 	}
 }
 
-func mapEgressOnlyInternetGateways(vpcs map[string]VPC, EOIGWs []*ec2.EgressOnlyInternetGateway) {
-	for _, eoigw := range EOIGWs {
+func mapEgressOnlyInternetGateways(vpcs map[string]VPC, eOIGWs []*ec2.EgressOnlyInternetGateway) {
+	for _, eoigw := range eOIGWs {
 		for _, attach := range eoigw.Attachments {
 			if aws.StringValue(attach.State) == "attached" {
 				vpc := vpcs[*attach.VpcId]
@@ -281,8 +281,8 @@ func mapEgressOnlyInternetGateways(vpcs map[string]VPC, EOIGWs []*ec2.EgressOnly
 	}
 }
 
-func mapVPNGateways(vpcs map[string]VPC, VPNGateways []*ec2.VpnGateway) {
-	for _, vpgw := range VPNGateways {
+func mapVPNGateways(vpcs map[string]VPC, vpnGateways []*ec2.VpnGateway) {
+	for _, vpgw := range vpnGateways {
 		for _, attach := range vpgw.VpcAttachments {
 			if aws.StringValue(attach.State) == "attached" {
 				vpc := vpcs[*attach.VpcId]
@@ -293,9 +293,9 @@ func mapVPNGateways(vpcs map[string]VPC, VPNGateways []*ec2.VpnGateway) {
 	}
 }
 
-func mapTransitGatewayVpcAttachments(vpcs map[string]VPC, TransitGatewayVpcAttachments []*ec2.TransitGatewayVpcAttachment, identity *sts.GetCallerIdentityOutput) {
-	for _, tgwatt := range TransitGatewayVpcAttachments {
-		//Transit Gateway vpc attachments are reported for external accounts too, need to omit those to fit in this data model
+func mapTransitGatewayVpcAttachments(vpcs map[string]VPC, transitGatewayVpcAttachments []*ec2.TransitGatewayVpcAttachment, identity *sts.GetCallerIdentityOutput) {
+	for _, tgwatt := range transitGatewayVpcAttachments {
+		// Transit Gateway vpc attachments are reported for external accounts too, need to omit those to fit in this data model
 		if aws.StringValue(tgwatt.VpcOwnerId) == aws.StringValue(identity.Account) {
 			if vpcID := aws.StringValue(tgwatt.VpcId); vpcID != "" {
 				for _, subnet := range tgwatt.SubnetIds {
@@ -313,8 +313,8 @@ func mapTransitGatewayVpcAttachments(vpcs map[string]VPC, TransitGatewayVpcAttac
 	}
 }
 
-func mapVpcPeeringConnections(vpcs map[string]VPC, VpcPeeringConnections []*ec2.VpcPeeringConnection) {
-	for _, peer := range VpcPeeringConnections {
+func mapVpcPeeringConnections(vpcs map[string]VPC, vpcPeeringConnections []*ec2.VpcPeeringConnection) {
+	for _, peer := range vpcPeeringConnections {
 		if aws.StringValue(peer.Status.Code) != "active" {
 			continue
 		}
@@ -346,7 +346,7 @@ func mapVpcPeeringConnections(vpcs map[string]VPC, VpcPeeringConnections []*ec2.
 func mapNetworkInterfaces(vpcs map[string]VPC, networkInterfaces []*ec2.NetworkInterface) {
 	for _, iface := range networkInterfaces {
 		if aws.StringValue(iface.InterfaceType) == "nat_gateway" {
-			continue //nat gateways are already adequately reported
+			continue // Nat gateways are already adequately reported
 		}
 
 		var publicIP *string
@@ -372,7 +372,7 @@ func mapNetworkInterfaces(vpcs map[string]VPC, networkInterfaces []*ec2.NetworkI
 					for endpointID, endpoint := range subnet.InterfaceEndpoints {
 						for _, endpointENIId := range endpoint.RawEndpoint.NetworkInterfaceIds {
 							if ifaceIn.ID == aws.StringValue(endpointENIId) {
-								//network interface id found in endpoint
+								// Network interface id found in endpoint
 								vpcs[vpcID].
 									Subnets[subnetID].
 									InterfaceEndpoints[endpointID].
@@ -382,7 +382,7 @@ func mapNetworkInterfaces(vpcs map[string]VPC, networkInterfaces []*ec2.NetworkI
 					}
 				}
 			}
-			continue //dont duplicate this eni anywhere else
+			continue // Dont duplicate this eni anywhere else
 		}
 
 		if iface.Attachment != nil && aws.StringValue(iface.Attachment.InstanceId) != "" {
@@ -399,7 +399,7 @@ func mapNetworkInterfaces(vpcs map[string]VPC, networkInterfaces []*ec2.NetworkI
 					}
 				}
 			}
-			continue //The interface is already displayed as a part of the instance, no need to duplicate
+			continue // The interface is already displayed as a part of the instance, no need to duplicate
 		}
 
 		vpcs[*iface.VpcId].
@@ -412,7 +412,7 @@ func mapVpcEndpoints(vpcs map[string]VPC, vpcEndpoints []*ec2.VpcEndpoint) {
 	vpcIDs := dumpVpcIds(vpcs)
 	subnetIDs := dumpSubnetIDs(vpcs)
 	for _, endpoint := range vpcEndpoints {
-		//validate vpc and subnet values
+		// Validate vpc and subnet values
 		if _, exists := vpcIDs[aws.StringValue(endpoint.VpcId)]; !exists {
 			fmt.Printf("Warning: undiscovered VPC %v when processing endpoint %v\n",
 				aws.StringValue(endpoint.VpcId),
