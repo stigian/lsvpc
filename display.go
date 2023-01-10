@@ -260,10 +260,10 @@ func printVPCs(vpcs []VPCSorted) {
 				// Its too clunky to directly report SystemStatus and InstanceStatus, lets do it like the console does
 				status := 0
 				if instance.SystemStatus == "ok" {
-					status = status + 1
+					status++
 				}
 				if instance.InstanceStatus == "ok" {
-					status = status + 1
+					status++
 				}
 
 				// Print Instance Info
