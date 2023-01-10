@@ -170,39 +170,40 @@ func mapNatGateways(vpcs map[string]VPC, natGateways []*ec2.NatGateway) {
 
 func getDefaultRoute(rtb *ec2.RouteTable) string {
 	for _, route := range rtb.Routes {
-		if aws.StringValue(route.DestinationCidrBlock) == "0.0.0.0/0" ||
-			aws.StringValue(route.DestinationIpv6CidrBlock) == "::/0" {
+		if !(aws.StringValue(route.DestinationCidrBlock) == "0.0.0.0/0" ||
+			aws.StringValue(route.DestinationIpv6CidrBlock) == "::/0") {
+			continue
+		}
 
-			if dest := aws.StringValue(route.CarrierGatewayId); dest != "" {
-				return dest
-			}
-			if dest := aws.StringValue(route.EgressOnlyInternetGatewayId); dest != "" {
-				return dest
-			}
-			if dest := aws.StringValue(route.GatewayId); dest != "" {
-				return dest
-			}
-			if dest := aws.StringValue(route.InstanceId); dest != "" {
-				return dest
-			}
-			if dest := aws.StringValue(route.LocalGatewayId); dest != "" {
-				return dest
-			}
-			if dest := aws.StringValue(route.NatGatewayId); dest != "" {
-				return dest
-			}
-			if dest := aws.StringValue(route.NetworkInterfaceId); dest != "" {
-				return dest
-			}
-			if dest := aws.StringValue(route.TransitGatewayId); dest != "" {
-				return dest
-			}
-			if dest := aws.StringValue(route.VpcPeeringConnectionId); dest != "" {
-				return dest
-			}
-			if dest := aws.StringValue(route.CoreNetworkArn); dest != "" {
-				return dest
-			}
+		if dest := aws.StringValue(route.CarrierGatewayId); dest != "" {
+			return dest
+		}
+		if dest := aws.StringValue(route.EgressOnlyInternetGatewayId); dest != "" {
+			return dest
+		}
+		if dest := aws.StringValue(route.GatewayId); dest != "" {
+			return dest
+		}
+		if dest := aws.StringValue(route.InstanceId); dest != "" {
+			return dest
+		}
+		if dest := aws.StringValue(route.LocalGatewayId); dest != "" {
+			return dest
+		}
+		if dest := aws.StringValue(route.NatGatewayId); dest != "" {
+			return dest
+		}
+		if dest := aws.StringValue(route.NetworkInterfaceId); dest != "" {
+			return dest
+		}
+		if dest := aws.StringValue(route.TransitGatewayId); dest != "" {
+			return dest
+		}
+		if dest := aws.StringValue(route.VpcPeeringConnectionId); dest != "" {
+			return dest
+		}
+		if dest := aws.StringValue(route.CoreNetworkArn); dest != "" {
+			return dest
 		}
 	}
 	return "" // No default route found, which doesn't necessarily mean an error
@@ -240,7 +241,7 @@ func mapRouteTables(vpcs map[string]VPC, routeTables []*ec2.RouteTable) {
 	// to their explicitly mentioned subnet
 	for _, routeTable := range routeTables {
 		for _, association := range routeTable.Associations {
-			//default route doesn't have subnet ids and will cause a nil dereference
+			// default route doesn't have subnet ids and will cause a nil dereference
 			if aws.StringValue(association.AssociationState.State) != "associated" ||
 				aws.BoolValue(association.Main) {
 				continue
