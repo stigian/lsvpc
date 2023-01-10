@@ -53,7 +53,7 @@ func mapSubnets(vpcs map[string]*VPC, subnets []*ec2.Subnet) {
 
 		vpcs[*v.VpcId].Subnets[*v.SubnetId] = &Subnet{
 			SubnetData: SubnetData{
-				Id:                 aws.StringValue(v.SubnetId),
+				ID:                 aws.StringValue(v.SubnetId),
 				CidrBlock:          aws.StringValue(v.CidrBlock),
 				AvailabilityZone:   aws.StringValue(v.AvailabilityZone),
 				AvailabilityZoneID: aws.StringValue(v.AvailabilityZoneId),
@@ -445,7 +445,7 @@ func mapVpcEndpoints(vpcs map[string]*VPC, vpcEndpoints []*ec2.VpcEndpoint) {
 			for _, rtb := range endpoint.RouteTableIds {
 				for _, subnet := range vpcs[*endpoint.VpcId].Subnets {
 					if subnet.RouteTable.ID == aws.StringValue(rtb) {
-						vpcs[*endpoint.VpcId].Subnets[subnet.Id].GatewayEndpoints[*endpoint.VpcEndpointId] = &GatewayEndpoint{
+						vpcs[*endpoint.VpcId].Subnets[subnet.ID].GatewayEndpoints[*endpoint.VpcEndpointId] = &GatewayEndpoint{
 							ID:          aws.StringValue(endpoint.VpcEndpointId),
 							ServiceName: aws.StringValue(endpoint.ServiceName),
 							Name:        getNameTag(endpoint.Tags),

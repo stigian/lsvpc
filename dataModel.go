@@ -41,7 +41,7 @@ type VPC struct {
 }
 
 type SubnetData struct {
-	Id                 string `json:"id"`
+	ID                 string `json:"id"`
 	CidrBlock          string `json:"cidrBlock"`
 	AvailabilityZone   string `json:"availabilityZone"`
 	AvailabilityZoneID string `json:"availabilityZoneId"`

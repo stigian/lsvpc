@@ -170,7 +170,7 @@ func printVPCs(vpcs []VPCSorted) {
 				"%s%v%v%v%v  %v  %v %v-->%v%v %v\n",
 				indent(4),
 				color.Blue,
-				subnet.Id,
+				subnet.ID,
 				formatName(subnet.Name),
 				color.Reset,
 				subnet.AvailabilityZone,
@@ -205,7 +205,7 @@ func printVPCs(vpcs []VPCSorted) {
 								iface.DNS = expungedDomain
 							}
 						}
-						if iface.SubnetID == subnet.Id {
+						if iface.SubnetID == subnet.ID {
 							fmt.Printf(
 								"%s%v%v %v %v %v %v %v \n",
 								indent(12),
