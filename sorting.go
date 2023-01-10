@@ -40,11 +40,11 @@ func sortVPCs(vpcs map[string]VPC) []VPCSorted {
 
 func sortVPC(vpc VPC) VPCSorted {
 
-	//sort Gateways
+	// Sort Gateways
 	gatewaysSorted := vpc.Gateways
 	sort.Strings(gatewaysSorted)
 
-	//sort subnets
+	// Sort subnets
 	subnetKeys := []string{}
 	for k := range vpc.Subnets {
 		subnetKeys = append(subnetKeys, k)
@@ -56,7 +56,7 @@ func sortVPC(vpc VPC) VPCSorted {
 		subnetsSorted = append(subnetsSorted, sortSubnet(vpc.Subnets[subnetID]))
 	}
 
-	//sort peers
+	// Sort peers
 	peerKeys := []string{}
 	for k := range vpc.Peers {
 		peerKeys = append(peerKeys, k)
@@ -76,7 +76,7 @@ func sortVPC(vpc VPC) VPCSorted {
 }
 
 func sortSubnet(subnet Subnet) SubnetSorted {
-	//sort Instances
+	// Sort Instances
 	instanceKeys := []string{}
 	for k := range subnet.Instances {
 		instanceKeys = append(instanceKeys, k)
@@ -87,7 +87,7 @@ func sortSubnet(subnet Subnet) SubnetSorted {
 		instancesSorted = append(instancesSorted, sortInstance(subnet.Instances[instanceId]))
 	}
 
-	//sort NatGateways
+	// Sort NatGateways
 	natGatewayKeys := []string{}
 	for k := range subnet.NatGateways {
 		natGatewayKeys = append(natGatewayKeys, k)
@@ -98,7 +98,7 @@ func sortSubnet(subnet Subnet) SubnetSorted {
 		natGatewaysSorted = append(natGatewaysSorted, subnet.NatGateways[natGatewayId])
 	}
 
-	//sort TGWAttachments
+	// Sort TGWAttachments
 	transitGatewayKeys := []string{}
 	for k := range subnet.TGWs {
 		transitGatewayKeys = append(transitGatewayKeys, k)
@@ -109,7 +109,7 @@ func sortSubnet(subnet Subnet) SubnetSorted {
 		transitGatewaysSorted = append(transitGatewaysSorted, subnet.TGWs[transitGatewayId])
 	}
 
-	//sort ENIs
+	// Sort ENIs
 	networkInterfaceKeys := []string{}
 	for k := range subnet.ENIs {
 		networkInterfaceKeys = append(networkInterfaceKeys, k)
@@ -120,7 +120,7 @@ func sortSubnet(subnet Subnet) SubnetSorted {
 		networkInterfacesSorted = append(networkInterfacesSorted, subnet.ENIs[networkInterfaceID])
 	}
 
-	//sort InterfaceEndpoints
+	// Sort InterfaceEndpoints
 	interfaceEndpointKeys := []string{}
 	for k := range subnet.InterfaceEndpoints {
 		interfaceEndpointKeys = append(interfaceEndpointKeys, k)
@@ -131,7 +131,7 @@ func sortSubnet(subnet Subnet) SubnetSorted {
 		interfaceEndpointsSorted = append(interfaceEndpointsSorted, sortInterfaceEndpoint(subnet.InterfaceEndpoints[interfaceEndpointID]))
 	}
 
-	//sort GatewayEndpoints
+	// Sort GatewayEndpoints
 	gatewayEndpointKeys := []string{}
 	for k := range subnet.GatewayEndpoints {
 		gatewayEndpointKeys = append(gatewayEndpointKeys, k)
@@ -155,7 +155,7 @@ func sortSubnet(subnet Subnet) SubnetSorted {
 
 func sortInstance(instance Instance) InstanceSorted {
 
-	// sort volumes
+	// Sort volumes
 	volumeKeys := []string{}
 	for k := range instance.Volumes {
 		volumeKeys = append(volumeKeys, k)
@@ -166,7 +166,7 @@ func sortInstance(instance Instance) InstanceSorted {
 		volumesSorted = append(volumesSorted, instance.Volumes[volumeId])
 	}
 
-	// sort network interfaces
+	// Sort network interfaces
 	interfaceKeys := []string{}
 	for k := range instance.Interfaces {
 		interfaceKeys = append(interfaceKeys, k)

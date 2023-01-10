@@ -194,7 +194,7 @@ func credentialsLoaded() bool {
 	}
 
 	if aws.StringValue(sess.Config.Region) == "" {
-		//no default region in profile/credentials, check that AWS_DEFAULT_REGION exists
+		// No default region in profile/credentials, check that AWS_DEFAULT_REGION exists
 		if os.Getenv("AWS_DEFAULT_REGION") == "" {
 			os.Setenv("AWS_DEFAULT_REGION", "us-east-1")
 		}
