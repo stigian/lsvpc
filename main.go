@@ -44,7 +44,7 @@ func populateVPC(region string) (map[string]*VPC, error) {
 	data := RecievedData{}
 	vpcs := make(map[string]*VPC)
 
-	data.wg.Add(15) //nolint: gomnd // Wait groups increase when requests increase
+	data.wg.Add(15) //nolint:gomnd // Wait groups increase when requests increase
 
 	go getIdentity(stsSvc, &data)
 	go getVpcs(svc, &data)
