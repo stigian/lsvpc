@@ -106,14 +106,14 @@ func mapInstances(vpcs map[string]VPC, reservations []*ec2.Reservation) {
 
 func mapInstanceStatuses(vpcs map[string]VPC, statuses []*ec2.InstanceStatus) {
 	for _, status := range statuses {
-		for vpcId, vpc := range vpcs {
+		for vpcID, vpc := range vpcs {
 			for subnetID, subnet := range vpc.Subnets {
 				for instanceId, instance := range subnet.Instances {
 					if aws.StringValue(status.InstanceId) == instanceId {
 						updatedInstance := instance
 						updatedInstance.InstanceStatus = aws.StringValue(status.InstanceStatus.Status)
 						updatedInstance.SystemStatus = aws.StringValue(status.SystemStatus.Status)
-						vpcs[vpcId].
+						vpcs[vpcID].
 							Subnets[subnetID].
 							Instances[instanceId] = updatedInstance
 					}
@@ -127,11 +127,11 @@ func mapVolumes(vpcs map[string]VPC, volumes []*ec2.Volume) {
 	for _, volume := range volumes {
 		for _, attachment := range volume.Attachments {
 			if volInstanceId := aws.StringValue(attachment.InstanceId); volInstanceId != "" {
-				for vpcId, vpc := range vpcs {
+				for vpcID, vpc := range vpcs {
 					for subnetID, subnet := range vpc.Subnets {
 						for instanceId := range subnet.Instances {
 							if volInstanceId == instanceId {
-								vpcs[vpcId].
+								vpcs[vpcID].
 									Subnets[subnetID].
 									Instances[instanceId].
 									Volumes[*volume.VolumeId] = Volume{
@@ -260,10 +260,10 @@ func mapRouteTables(vpcs map[string]VPC, routeTables []*ec2.RouteTable) {
 func mapInternetGateways(vpcs map[string]VPC, internetGateways []*ec2.InternetGateway) {
 	for _, igw := range internetGateways {
 		for _, attachment := range igw.Attachments {
-			if vpcId := aws.StringValue(attachment.VpcId); vpcId != "" {
-				vpc := vpcs[vpcId]
+			if vpcID := aws.StringValue(attachment.VpcId); vpcID != "" {
+				vpc := vpcs[vpcID]
 				vpc.Gateways = append(vpc.Gateways, aws.StringValue(igw.InternetGatewayId))
-				vpcs[vpcId] = vpc
+				vpcs[vpcID] = vpc
 			}
 		}
 	}
@@ -297,10 +297,10 @@ func mapTransitGatewayVpcAttachments(vpcs map[string]VPC, TransitGatewayVpcAttac
 	for _, tgwatt := range TransitGatewayVpcAttachments {
 		//Transit Gateway vpc attachments are reported for external accounts too, need to omit those to fit in this data model
 		if aws.StringValue(tgwatt.VpcOwnerId) == aws.StringValue(identity.Account) {
-			if vpcId := aws.StringValue(tgwatt.VpcId); vpcId != "" {
+			if vpcID := aws.StringValue(tgwatt.VpcId); vpcID != "" {
 				for _, subnet := range tgwatt.SubnetIds {
 					if subnetID := aws.StringValue(subnet); subnetID != "" {
-						vpcs[vpcId].Subnets[subnetID].TGWs[aws.StringValue(tgwatt.TransitGatewayAttachmentId)] = TGWAttachment{
+						vpcs[vpcID].Subnets[subnetID].TGWs[aws.StringValue(tgwatt.TransitGatewayAttachmentId)] = TGWAttachment{
 							AttachmentId:     aws.StringValue(tgwatt.TransitGatewayAttachmentId),
 							TransitGatewayId: aws.StringValue(tgwatt.TransitGatewayId),
 							Name:             getNameTag(tgwatt.Tags),
@@ -367,13 +367,13 @@ func mapNetworkInterfaces(vpcs map[string]VPC, networkInterfaces []*ec2.NetworkI
 		}
 
 		if aws.StringValue(iface.InterfaceType) == "vpc_endpoint" {
-			for vpcId, vpc := range vpcs {
+			for vpcID, vpc := range vpcs {
 				for subnetID, subnet := range vpc.Subnets {
 					for endpointId, endpoint := range subnet.InterfaceEndpoints {
 						for _, endpointENIId := range endpoint.RawEndpoint.NetworkInterfaceIds {
 							if ifaceIn.ID == aws.StringValue(endpointENIId) {
 								//network interface id found in endpoint
-								vpcs[vpcId].
+								vpcs[vpcID].
 									Subnets[subnetID].
 									InterfaceEndpoints[endpointId].
 									Interfaces[aws.StringValue(iface.NetworkInterfaceId)] = ifaceIn
@@ -387,11 +387,11 @@ func mapNetworkInterfaces(vpcs map[string]VPC, networkInterfaces []*ec2.NetworkI
 
 		if iface.Attachment != nil && aws.StringValue(iface.Attachment.InstanceId) != "" {
 			ifaceInstanceId := aws.StringValue(iface.Attachment.InstanceId)
-			for vpcId, vpc := range vpcs {
+			for vpcID, vpc := range vpcs {
 				for subnetID, subnet := range vpc.Subnets {
 					for instanceId := range subnet.Instances {
 						if ifaceInstanceId == instanceId {
-							vpcs[vpcId].
+							vpcs[vpcID].
 								Subnets[subnetID].
 								Instances[instanceId].
 								Interfaces[*iface.NetworkInterfaceId] = ifaceIn
@@ -409,11 +409,11 @@ func mapNetworkInterfaces(vpcs map[string]VPC, networkInterfaces []*ec2.NetworkI
 }
 
 func mapVpcEndpoints(vpcs map[string]VPC, vpcEndpoints []*ec2.VpcEndpoint) {
-	vpcIds := dumpVpcIds(vpcs)
+	vpcIDs := dumpVpcIds(vpcs)
 	subnetIDs := dumpSubnetIDs(vpcs)
 	for _, endpoint := range vpcEndpoints {
 		//validate vpc and subnet values
-		if _, exists := vpcIds[aws.StringValue(endpoint.VpcId)]; !exists {
+		if _, exists := vpcIDs[aws.StringValue(endpoint.VpcId)]; !exists {
 			fmt.Printf("Warning: undiscovered VPC %v when processing endpoint %v\n",
 				aws.StringValue(endpoint.VpcId),
 				aws.StringValue(endpoint.VpcEndpointId))
