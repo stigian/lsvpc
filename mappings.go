@@ -20,7 +20,6 @@ func getNameTag(tags []*ec2.Tag) string {
 }
 
 func mapVpcs(vpcs map[string]*VPC, vpcData []*ec2.Vpc) {
-
 	for _, v := range vpcData {
 
 		var v6cidr *string
@@ -75,7 +74,6 @@ func mapSubnets(vpcs map[string]*VPC, subnets []*ec2.Subnet) {
 func mapInstances(vpcs map[string]*VPC, reservations []*ec2.Reservation) {
 	for _, reservation := range reservations {
 		for _, instance := range reservation.Instances {
-
 			if *instance.State.Name != "terminated" {
 				vpcID := aws.StringValue(instance.VpcId)
 				subnetID := aws.StringValue(instance.SubnetId)
@@ -88,7 +86,7 @@ func mapInstances(vpcs map[string]*VPC, reservations []*ec2.Reservation) {
 							ID:        aws.StringValue(instance.InstanceId),
 							Type:      aws.StringValue(instance.InstanceType),
 							SubnetID:  aws.StringValue(instance.SubnetId),
-							VpcId:     aws.StringValue(instance.VpcId),
+							VpcID:     aws.StringValue(instance.VpcId),
 							State:     aws.StringValue(instance.State.Name),
 							PublicIP:  aws.StringValue(instance.PublicIpAddress),
 							PrivateIP: aws.StringValue(instance.PrivateIpAddress),
@@ -357,9 +355,9 @@ func mapNetworkInterfaces(vpcs map[string]*VPC, networkInterfaces []*ec2.Network
 
 		ifaceIn := NetworkInterface{
 			ID:                  aws.StringValue(iface.NetworkInterfaceId),
-			PrivateIp:           aws.StringValue(iface.PrivateIpAddress),
+			PrivateIP:           aws.StringValue(iface.PrivateIpAddress),
 			MAC:                 aws.StringValue(iface.MacAddress),
-			PublicIp:            aws.StringValue(publicIP),
+			PublicIP:            aws.StringValue(publicIP),
 			Type:                aws.StringValue(iface.InterfaceType),
 			Description:         aws.StringValue(iface.Description),
 			Name:                getNameTag(iface.TagSet),

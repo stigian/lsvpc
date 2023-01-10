@@ -199,8 +199,8 @@ func printVPCs(vpcs []VPCSorted) {
 						// An endpoint can have multiple interfaces in multiple subnets, we only want to display whats relevant to the subnet
 						if Config.HideIP {
 							iface.MAC = expungedMAC
-							iface.PublicIp = expungedIP
-							iface.PrivateIp = expungedIP
+							iface.PublicIP = expungedIP
+							iface.PrivateIP = expungedIP
 							if iface.DNS != "" {
 								iface.DNS = expungedDomain
 							}
@@ -213,11 +213,10 @@ func printVPCs(vpcs []VPCSorted) {
 								formatName(iface.Name),
 								iface.Type,
 								iface.MAC,
-								iface.PublicIp,
-								iface.PrivateIp,
+								iface.PublicIP,
+								iface.PrivateIP,
 								iface.DNS,
 							)
-
 						}
 					}
 				}
@@ -241,8 +240,8 @@ func printVPCs(vpcs []VPCSorted) {
 				iface := subnet.ENIs[ifaceIdx]
 				if Config.HideIP {
 					iface.MAC = expungedMAC
-					iface.PrivateIp = expungedIP
-					iface.PublicIp = expungedIP
+					iface.PrivateIP = expungedIP
+					iface.PublicIP = expungedIP
 					if iface.DNS != "" {
 						iface.DNS = expungedDomain
 					}
@@ -256,8 +255,8 @@ func printVPCs(vpcs []VPCSorted) {
 					color.Reset,
 					iface.Type,
 					iface.MAC,
-					iface.PublicIp,
-					iface.PrivateIp,
+					iface.PublicIP,
+					iface.PrivateIP,
 					iface.DNS,
 					iface.Description,
 				)
@@ -299,8 +298,8 @@ func printVPCs(vpcs []VPCSorted) {
 						iface := instance.Interfaces[ifaceIdx]
 						if Config.HideIP {
 							iface.MAC = expungedMAC
-							iface.PrivateIp = expungedIP
-							iface.PublicIp = expungedIP
+							iface.PrivateIP = expungedIP
+							iface.PublicIP = expungedIP
 							if iface.DNS != "" {
 								iface.DNS = expungedDomain
 							}
@@ -311,7 +310,7 @@ func printVPCs(vpcs []VPCSorted) {
 							iface.ID,
 							formatName(iface.Name),
 							iface.MAC,
-							iface.PrivateIp,
+							iface.PrivateIP,
 							iface.DNS,
 						)
 					}

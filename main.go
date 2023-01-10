@@ -135,7 +135,6 @@ func doAllRegions() {
 			printVPCs(sortVPCs(vpcs.VPCs))
 		}
 	}
-
 }
 
 func doDefaultRegion() {
@@ -242,5 +241,4 @@ func main() {
 	} else {
 		doDefaultRegion()
 	}
-
 }
