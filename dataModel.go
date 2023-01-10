@@ -36,8 +36,8 @@ type VPC struct {
 	VPCData
 	RawVPC   *ec2.Vpc
 	Gateways []string
-	Subnets  map[string]Subnet
-	Peers    map[string]VPCPeer
+	Subnets  map[string]*Subnet
+	Peers    map[string]*VPCPeer
 }
 
 type SubnetData struct {
@@ -63,12 +63,12 @@ type SubnetSorted struct {
 type Subnet struct {
 	SubnetData
 	RawSubnet          *ec2.Subnet
-	Instances          map[string]Instance
-	NatGateways        map[string]NatGateway
-	TGWs               map[string]TGWAttachment
-	ENIs               map[string]NetworkInterface
-	InterfaceEndpoints map[string]InterfaceEndpoint
-	GatewayEndpoints   map[string]GatewayEndpoint
+	Instances          map[string]*Instance
+	NatGateways        map[string]*NatGateway
+	TGWs               map[string]*TGWAttachment
+	ENIs               map[string]*NetworkInterface
+	InterfaceEndpoints map[string]*InterfaceEndpoint
+	GatewayEndpoints   map[string]*GatewayEndpoint
 }
 
 type InstanceData struct {
@@ -93,8 +93,8 @@ type InstanceSorted struct {
 type Instance struct {
 	InstanceData
 	RawEc2     *ec2.Instance
-	Volumes    map[string]Volume
-	Interfaces map[string]NetworkInterface
+	Volumes    map[string]*Volume
+	Interfaces map[string]*NetworkInterface
 }
 
 type NetworkInterface struct {
@@ -158,7 +158,7 @@ type InterfaceEndpointData struct {
 
 type InterfaceEndpoint struct {
 	InterfaceEndpointData
-	Interfaces map[string]NetworkInterface
+	Interfaces map[string]*NetworkInterface
 }
 
 type InterfaceEndpointSorted struct {
