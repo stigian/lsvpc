@@ -16,10 +16,10 @@ import (
 )
 
 type lsvpcConfig struct {
+	regionOverride string
 	noColor        bool
 	noSpace        bool
 	allRegions     bool
-	regionOverride string
 	Color          bool
 	jsonOutput     bool
 	Verbose        bool
