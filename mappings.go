@@ -79,11 +79,11 @@ func mapInstances(vpcs map[string]VPC, reservations []*ec2.Reservation) {
 			if *instance.State.Name != "terminated" {
 				vpcID := aws.StringValue(instance.VpcId)
 				subnetID := aws.StringValue(instance.SubnetId)
-				instanceId := aws.StringValue(instance.InstanceId)
+				instanceID := aws.StringValue(instance.InstanceId)
 
-				if vpcID != "" && subnetID != "" && instanceId != "" {
+				if vpcID != "" && subnetID != "" && instanceID != "" {
 
-					vpcs[vpcID].Subnets[subnetID].Instances[instanceId] = Instance{
+					vpcs[vpcID].Subnets[subnetID].Instances[instanceID] = Instance{
 						InstanceData: InstanceData{
 							ID:        aws.StringValue(instance.InstanceId),
 							Type:      aws.StringValue(instance.InstanceType),
@@ -108,14 +108,14 @@ func mapInstanceStatuses(vpcs map[string]VPC, statuses []*ec2.InstanceStatus) {
 	for _, status := range statuses {
 		for vpcID, vpc := range vpcs {
 			for subnetID, subnet := range vpc.Subnets {
-				for instanceId, instance := range subnet.Instances {
-					if aws.StringValue(status.InstanceId) == instanceId {
+				for instanceID, instance := range subnet.Instances {
+					if aws.StringValue(status.InstanceId) == instanceID {
 						updatedInstance := instance
 						updatedInstance.InstanceStatus = aws.StringValue(status.InstanceStatus.Status)
 						updatedInstance.SystemStatus = aws.StringValue(status.SystemStatus.Status)
 						vpcs[vpcID].
 							Subnets[subnetID].
-							Instances[instanceId] = updatedInstance
+							Instances[instanceID] = updatedInstance
 					}
 				}
 			}
@@ -126,14 +126,14 @@ func mapInstanceStatuses(vpcs map[string]VPC, statuses []*ec2.InstanceStatus) {
 func mapVolumes(vpcs map[string]VPC, volumes []*ec2.Volume) {
 	for _, volume := range volumes {
 		for _, attachment := range volume.Attachments {
-			if volInstanceId := aws.StringValue(attachment.InstanceId); volInstanceId != "" {
+			if volInstanceID := aws.StringValue(attachment.InstanceId); volInstanceID != "" {
 				for vpcID, vpc := range vpcs {
 					for subnetID, subnet := range vpc.Subnets {
-						for instanceId := range subnet.Instances {
-							if volInstanceId == instanceId {
+						for instanceID := range subnet.Instances {
+							if volInstanceID == instanceID {
 								vpcs[vpcID].
 									Subnets[subnetID].
-									Instances[instanceId].
+									Instances[instanceID].
 									Volumes[*volume.VolumeId] = Volume{
 									ID:         aws.StringValue(volume.VolumeId),
 									DeviceName: aws.StringValue(attachment.Device),
@@ -386,14 +386,14 @@ func mapNetworkInterfaces(vpcs map[string]VPC, networkInterfaces []*ec2.NetworkI
 		}
 
 		if iface.Attachment != nil && aws.StringValue(iface.Attachment.InstanceId) != "" {
-			ifaceInstanceId := aws.StringValue(iface.Attachment.InstanceId)
+			ifaceInstanceID := aws.StringValue(iface.Attachment.InstanceId)
 			for vpcID, vpc := range vpcs {
 				for subnetID, subnet := range vpc.Subnets {
-					for instanceId := range subnet.Instances {
-						if ifaceInstanceId == instanceId {
+					for instanceID := range subnet.Instances {
+						if ifaceInstanceID == instanceID {
 							vpcs[vpcID].
 								Subnets[subnetID].
-								Instances[instanceId].
+								Instances[instanceID].
 								Interfaces[*iface.NetworkInterfaceId] = ifaceIn
 						}
 					}
