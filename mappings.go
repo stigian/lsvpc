@@ -19,7 +19,7 @@ func getNameTag(tags []*ec2.Tag) string {
 	return aws.StringValue(name)
 }
 
-func mapVpcs(vpcs map[string]VPC, vpcData []*ec2.Vpc) {
+func mapVpcs(vpcs map[string]*VPC, vpcData []*ec2.Vpc) {
 
 	for _, v := range vpcData {
 
@@ -32,7 +32,7 @@ func mapVpcs(vpcs map[string]VPC, vpcData []*ec2.Vpc) {
 			}
 		}
 
-		vpcs[aws.StringValue(v.VpcId)] = VPC{
+		vpcs[aws.StringValue(v.VpcId)] = &VPC{
 			VPCData: VPCData{
 				ID:            aws.StringValue(v.VpcId),
 				IsDefault:     aws.BoolValue(v.IsDefault),
@@ -47,7 +47,7 @@ func mapVpcs(vpcs map[string]VPC, vpcData []*ec2.Vpc) {
 	}
 }
 
-func mapSubnets(vpcs map[string]VPC, subnets []*ec2.Subnet) {
+func mapSubnets(vpcs map[string]*VPC, subnets []*ec2.Subnet) {
 	for _, v := range subnets {
 		isPublic := aws.BoolValue(v.MapCustomerOwnedIpOnLaunch) || aws.BoolValue(v.MapPublicIpOnLaunch)
 
@@ -72,7 +72,7 @@ func mapSubnets(vpcs map[string]VPC, subnets []*ec2.Subnet) {
 	}
 }
 
-func mapInstances(vpcs map[string]VPC, reservations []*ec2.Reservation) {
+func mapInstances(vpcs map[string]*VPC, reservations []*ec2.Reservation) {
 	for _, reservation := range reservations {
 		for _, instance := range reservation.Instances {
 
@@ -104,7 +104,7 @@ func mapInstances(vpcs map[string]VPC, reservations []*ec2.Reservation) {
 	}
 }
 
-func mapInstanceStatuses(vpcs map[string]VPC, statuses []*ec2.InstanceStatus) {
+func mapInstanceStatuses(vpcs map[string]*VPC, statuses []*ec2.InstanceStatus) {
 	for _, status := range statuses {
 		for vpcID, vpc := range vpcs {
 			for subnetID, subnet := range vpc.Subnets {
@@ -123,7 +123,7 @@ func mapInstanceStatuses(vpcs map[string]VPC, statuses []*ec2.InstanceStatus) {
 	}
 }
 
-func mapVolumes(vpcs map[string]VPC, volumes []*ec2.Volume) {
+func mapVolumes(vpcs map[string]*VPC, volumes []*ec2.Volume) {
 	for _, volume := range volumes {
 		for _, attachment := range volume.Attachments {
 			if volInstanceID := aws.StringValue(attachment.InstanceId); volInstanceID != "" {
@@ -151,7 +151,7 @@ func mapVolumes(vpcs map[string]VPC, volumes []*ec2.Volume) {
 	}
 }
 
-func mapNatGateways(vpcs map[string]VPC, natGateways []*ec2.NatGateway) {
+func mapNatGateways(vpcs map[string]*VPC, natGateways []*ec2.NatGateway) {
 	for _, gateway := range natGateways {
 		if aws.StringValue(gateway.State) == "deleted" {
 			continue
@@ -209,7 +209,7 @@ func getDefaultRoute(rtb *ec2.RouteTable) string {
 	return "" // No default route found, which doesn't necessarily mean an error
 }
 
-func mapRouteTables(vpcs map[string]VPC, routeTables []*ec2.RouteTable) {
+func mapRouteTables(vpcs map[string]*VPC, routeTables []*ec2.RouteTable) {
 	// AWS doesn't actually have explicit queryable associations of route
 	// tables to subnets. if no other route tables say they are associated
 	// with a subnet, then that subnet is assumed to be on the default route table.
@@ -258,7 +258,7 @@ func mapRouteTables(vpcs map[string]VPC, routeTables []*ec2.RouteTable) {
 	}
 }
 
-func mapInternetGateways(vpcs map[string]VPC, internetGateways []*ec2.InternetGateway) {
+func mapInternetGateways(vpcs map[string]*VPC, internetGateways []*ec2.InternetGateway) {
 	for _, igw := range internetGateways {
 		for _, attachment := range igw.Attachments {
 			if vpcID := aws.StringValue(attachment.VpcId); vpcID != "" {
@@ -270,7 +270,7 @@ func mapInternetGateways(vpcs map[string]VPC, internetGateways []*ec2.InternetGa
 	}
 }
 
-func mapEgressOnlyInternetGateways(vpcs map[string]VPC, eOIGWs []*ec2.EgressOnlyInternetGateway) {
+func mapEgressOnlyInternetGateways(vpcs map[string]*VPC, eOIGWs []*ec2.EgressOnlyInternetGateway) {
 	for _, eoigw := range eOIGWs {
 		for _, attach := range eoigw.Attachments {
 			if aws.StringValue(attach.State) == "attached" {
@@ -282,7 +282,7 @@ func mapEgressOnlyInternetGateways(vpcs map[string]VPC, eOIGWs []*ec2.EgressOnly
 	}
 }
 
-func mapVPNGateways(vpcs map[string]VPC, vpnGateways []*ec2.VpnGateway) {
+func mapVPNGateways(vpcs map[string]*VPC, vpnGateways []*ec2.VpnGateway) {
 	for _, vpgw := range vpnGateways {
 		for _, attach := range vpgw.VpcAttachments {
 			if aws.StringValue(attach.State) == "attached" {
@@ -294,7 +294,7 @@ func mapVPNGateways(vpcs map[string]VPC, vpnGateways []*ec2.VpnGateway) {
 	}
 }
 
-func mapTransitGatewayVpcAttachments(vpcs map[string]VPC, transitGatewayVpcAttachments []*ec2.TransitGatewayVpcAttachment, identity *sts.GetCallerIdentityOutput) {
+func mapTransitGatewayVpcAttachments(vpcs map[string]*VPC, transitGatewayVpcAttachments []*ec2.TransitGatewayVpcAttachment, identity *sts.GetCallerIdentityOutput) {
 	for _, tgwatt := range transitGatewayVpcAttachments {
 		// Transit Gateway vpc attachments are reported for external accounts too, need to omit those to fit in this data model
 		if aws.StringValue(tgwatt.VpcOwnerId) == aws.StringValue(identity.Account) {
@@ -314,7 +314,7 @@ func mapTransitGatewayVpcAttachments(vpcs map[string]VPC, transitGatewayVpcAttac
 	}
 }
 
-func mapVpcPeeringConnections(vpcs map[string]VPC, vpcPeeringConnections []*ec2.VpcPeeringConnection) {
+func mapVpcPeeringConnections(vpcs map[string]*VPC, vpcPeeringConnections []*ec2.VpcPeeringConnection) {
 	for _, peer := range vpcPeeringConnections {
 		if aws.StringValue(peer.Status.Code) != "active" {
 			continue
@@ -344,7 +344,7 @@ func mapVpcPeeringConnections(vpcs map[string]VPC, vpcPeeringConnections []*ec2.
 	}
 }
 
-func mapNetworkInterfaces(vpcs map[string]VPC, networkInterfaces []*ec2.NetworkInterface) {
+func mapNetworkInterfaces(vpcs map[string]*VPC, networkInterfaces []*ec2.NetworkInterface) {
 	for _, iface := range networkInterfaces {
 		if aws.StringValue(iface.InterfaceType) == "nat_gateway" {
 			continue // Nat gateways are already adequately reported
@@ -409,7 +409,7 @@ func mapNetworkInterfaces(vpcs map[string]VPC, networkInterfaces []*ec2.NetworkI
 	}
 }
 
-func mapVpcEndpoints(vpcs map[string]VPC, vpcEndpoints []*ec2.VpcEndpoint) {
+func mapVpcEndpoints(vpcs map[string]*VPC, vpcEndpoints []*ec2.VpcEndpoint) {
 	vpcIDs := dumpVpcIds(vpcs)
 	subnetIDs := dumpSubnetIDs(vpcs)
 	for _, endpoint := range vpcEndpoints {
@@ -458,7 +458,7 @@ func mapVpcEndpoints(vpcs map[string]VPC, vpcEndpoints []*ec2.VpcEndpoint) {
 	}
 }
 
-func dumpVpcIds(vpcs map[string]VPC) map[string]bool {
+func dumpVpcIds(vpcs map[string]*VPC) map[string]bool {
 	keys := make(map[string]bool)
 	for vpcID := range vpcs {
 		keys[vpcID] = true
@@ -466,7 +466,7 @@ func dumpVpcIds(vpcs map[string]VPC) map[string]bool {
 	return keys
 }
 
-func dumpSubnetIDs(vpcs map[string]VPC) map[string]bool {
+func dumpSubnetIDs(vpcs map[string]*VPC) map[string]bool {
 	keys := make(map[string]bool)
 
 	for _, vpc := range vpcs {

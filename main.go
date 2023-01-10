@@ -29,7 +29,7 @@ type lsvpcConfig struct {
 
 var Config lsvpcConfig
 
-func populateVPC(region string) (map[string]VPC, error) {
+func populateVPC(region string) (map[string]*VPC, error) {
 	sess := session.Must(session.NewSessionWithOptions(
 		session.Options{
 			SharedConfigState: session.SharedConfigEnable,
@@ -42,7 +42,7 @@ func populateVPC(region string) (map[string]VPC, error) {
 	svc := ec2.New(sess)
 	stsSvc := sts.New(sess)
 	var data RecievedData
-	vpcs := make(map[string]VPC)
+	vpcs := make(map[string]*VPC)
 
 	data.wg.Add(15)
 	go getIdentity(stsSvc, &data)
@@ -65,7 +65,7 @@ func populateVPC(region string) (map[string]VPC, error) {
 
 	// This isn't exhaustive error reporting, but all we really care about is if anything failed at all
 	if data.Error != nil {
-		return map[string]VPC{}, fmt.Errorf("failed to populate VPCs: %v", data.Error.Error())
+		return map[string]*VPC{}, fmt.Errorf("failed to populate VPCs: %v", data.Error.Error())
 	}
 
 	mapVpcs(vpcs, data.Vpcs)

@@ -9,7 +9,7 @@ import (
 )
 
 type RegionData struct {
-	VPCs map[string]VPC
+	VPCs map[string]*VPC
 }
 
 type RegionDataSorted struct {

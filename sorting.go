@@ -22,7 +22,7 @@ func sortRegionData(regionData map[string]RegionData) []RegionDataSorted {
 	return regionDataSorted
 }
 
-func sortVPCs(vpcs map[string]VPC) []VPCSorted {
+func sortVPCs(vpcs map[string]*VPC) []VPCSorted {
 
 	vpcKeys := []string{}
 	for k := range vpcs {
@@ -38,7 +38,7 @@ func sortVPCs(vpcs map[string]VPC) []VPCSorted {
 	return vpcsSorted
 }
 
-func sortVPC(vpc VPC) VPCSorted {
+func sortVPC(vpc *VPC) VPCSorted {
 
 	// Sort Gateways
 	gatewaysSorted := vpc.Gateways
