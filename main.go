@@ -41,10 +41,11 @@ func populateVPC(region string) (map[string]*VPC, error) {
 
 	svc := ec2.New(sess)
 	stsSvc := sts.New(sess)
-	var data RecievedData
+	data := RecievedData{}
 	vpcs := make(map[string]*VPC)
 
 	data.wg.Add(15)
+
 	go getIdentity(stsSvc, &data)
 	go getVpcs(svc, &data)
 	go getSubnets(svc, &data)
@@ -88,23 +89,29 @@ func populateVPC(region string) (map[string]*VPC, error) {
 
 func getRegionData(fullData map[string]RegionData, region string, wg *sync.WaitGroup, mu *sync.Mutex) {
 	defer wg.Done()
+
 	vpcs, err := populateVPC(region)
 	if err != nil {
 		return
 	}
+
 	mu.Lock()
+
 	fullData[region] = RegionData{
 		VPCs: vpcs,
 	}
+
 	mu.Unlock()
 }
 
 func doSpecificRegion() {
 	region := Config.regionOverride
+
 	vpcs, err := populateVPC(region)
 	if err != nil {
 		return
 	}
+
 	if Config.jsonOutput {
 		printVPCsJSON(sortVPCs(vpcs))
 	} else {
@@ -122,6 +129,7 @@ func doAllRegions() {
 
 	for _, region := range regions {
 		wg.Add(1)
+
 		go getRegionData(fullData, region, &wg, &mu)
 	}
 
@@ -143,10 +151,12 @@ func doDefaultRegion() {
 	}))
 
 	currentRegion := aws.StringValue(sess.Config.Region)
+
 	vpcs, err := populateVPC(currentRegion)
 	if err != nil {
 		panic(fmt.Sprintf("populateVPC failed: %v", err.Error()))
 	}
+
 	if Config.jsonOutput {
 		printVPCsJSON(sortVPCs(vpcs))
 	} else {
@@ -175,6 +185,7 @@ func stdoutIsPipe() bool {
 	}
 
 	mode := info.Mode()
+
 	return mode&fs.ModeNamedPipe != 0
 }
 
@@ -205,11 +216,13 @@ func credentialsLoaded() bool {
 func validateRegion(region string) bool {
 	regions := getRegions()
 	isValid := false
+
 	for _, reg := range regions {
 		if region == reg {
 			isValid = true
 		}
 	}
+
 	return isValid
 }
 

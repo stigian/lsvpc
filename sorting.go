@@ -23,7 +23,6 @@ func sortRegionData(regionData map[string]RegionData) []RegionDataSorted {
 }
 
 func sortVPCs(vpcs map[string]*VPC) []VPCSorted {
-
 	vpcKeys := []string{}
 	for k := range vpcs {
 		vpcKeys = append(vpcKeys, k)
@@ -39,7 +38,6 @@ func sortVPCs(vpcs map[string]*VPC) []VPCSorted {
 }
 
 func sortVPC(vpc *VPC) VPCSorted {
-
 	// Sort Gateways
 	gatewaysSorted := vpc.Gateways
 	sort.Strings(gatewaysSorted)
@@ -154,7 +152,6 @@ func sortSubnet(subnet *Subnet) *SubnetSorted {
 }
 
 func sortInstance(instance *Instance) *InstanceSorted {
-
 	// Sort volumes
 	volumeKeys := []string{}
 	for k := range instance.Volumes {
@@ -182,7 +179,6 @@ func sortInstance(instance *Instance) *InstanceSorted {
 		Volumes:      volumesSorted,
 		Interfaces:   interfacesSorted,
 	}
-
 }
 
 func sortInterfaceEndpoint(endpoint *InterfaceEndpoint) *InterfaceEndpointSorted {

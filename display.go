@@ -109,6 +109,7 @@ func printVPCs(vpcs []VPCSorted) {
 				vpc.IPv6CidrBlock = expungedV6CIDR
 			}
 		}
+
 		fmt.Printf(
 			"%v %v -- ",
 			vpc.CidrBlock,
@@ -128,14 +129,18 @@ func printVPCs(vpcs []VPCSorted) {
 
 		// Print Peers
 		peersExist := false
+
 		for peerIdx := range vpc.Peers {
 			peer := vpc.Peers[peerIdx]
 			direction := "peer-->"
 			vpcOperand := peer.Accepter
+			peersExist = true
+
 			if peer.Accepter == vpc.ID {
 				direction = "<--peer"
 				vpcOperand = peer.Requester
 			}
+
 			fmt.Printf(
 				"%s%v%v%v%v %v %v%v%v\n",
 				indent(4),
@@ -148,8 +153,8 @@ func printVPCs(vpcs []VPCSorted) {
 				vpcOperand,
 				color.Reset,
 			)
-			peersExist = true
 		}
+
 		if peersExist {
 			lineFeed()
 		}
@@ -163,9 +168,11 @@ func printVPCs(vpcs []VPCSorted) {
 			if subnet.Public {
 				public = "Public"
 			}
+
 			if Config.HideIP {
 				subnet.CidrBlock = expungedCIDR
 			}
+
 			fmt.Printf(
 				"%s%v%v%v%v  %v  %v %v-->%v%v %v\n",
 				indent(4),
@@ -185,6 +192,7 @@ func printVPCs(vpcs []VPCSorted) {
 			if Config.Verbose {
 				for interfaceEndpointIdx := range subnet.InterfaceEndpoints {
 					interfaceEndpoint := subnet.InterfaceEndpoints[interfaceEndpointIdx]
+
 					fmt.Printf(
 						"%s%v%v%v%v interface--> %v\n",
 						indent(8),
@@ -194,6 +202,7 @@ func printVPCs(vpcs []VPCSorted) {
 						color.Reset,
 						interfaceEndpoint.ServiceName,
 					)
+
 					for ifaceIdx := range interfaceEndpoint.Interfaces {
 						iface := interfaceEndpoint.Interfaces[ifaceIdx]
 						// An endpoint can have multiple interfaces in multiple subnets, we only want to display whats relevant to the subnet
@@ -201,10 +210,12 @@ func printVPCs(vpcs []VPCSorted) {
 							iface.MAC = expungedMAC
 							iface.PublicIP = expungedIP
 							iface.PrivateIP = expungedIP
+
 							if iface.DNS != "" {
 								iface.DNS = expungedDomain
 							}
 						}
+
 						if iface.SubnetID == subnet.ID {
 							fmt.Printf(
 								"%s%v%v %v %v %v %v %v \n",
@@ -238,14 +249,17 @@ func printVPCs(vpcs []VPCSorted) {
 			// Print Interfaces
 			for ifaceIdx := range subnet.ENIs {
 				iface := subnet.ENIs[ifaceIdx]
+
 				if Config.HideIP {
 					iface.MAC = expungedMAC
 					iface.PrivateIP = expungedIP
 					iface.PublicIP = expungedIP
+
 					if iface.DNS != "" {
 						iface.DNS = expungedDomain
 					}
 				}
+
 				fmt.Printf(
 					"%s%v%v%v%v %v %v %v %v %v : %v\n",
 					indent(8),
@@ -266,9 +280,11 @@ func printVPCs(vpcs []VPCSorted) {
 				instance := subnet.Instances[instanceIdx]
 				// Its too clunky to directly report SystemStatus and InstanceStatus, lets do it like the console does
 				status := 0
+
 				if instance.SystemStatus == "ok" {
 					status++
 				}
+
 				if instance.InstanceStatus == "ok" {
 					status++
 				}
@@ -278,6 +294,7 @@ func printVPCs(vpcs []VPCSorted) {
 					instance.PublicIP = expungedIP
 					instance.PrivateIP = expungedIP
 				}
+
 				fmt.Printf(
 					"%s%v%s%v%v %v -- %v (%v/2) -- %v -- %v\n",
 					indent(8),
@@ -296,14 +313,17 @@ func printVPCs(vpcs []VPCSorted) {
 				if Config.Verbose {
 					for ifaceIdx := range instance.Interfaces {
 						iface := instance.Interfaces[ifaceIdx]
+
 						if Config.HideIP {
 							iface.MAC = expungedMAC
 							iface.PrivateIP = expungedIP
 							iface.PublicIP = expungedIP
+
 							if iface.DNS != "" {
 								iface.DNS = expungedDomain
 							}
 						}
+
 						fmt.Printf(
 							"%s%v%v  %v  %v  %v\n",
 							indent(12),
@@ -334,10 +354,12 @@ func printVPCs(vpcs []VPCSorted) {
 			// Print Nat Gateways
 			for natGatewayIdx := range subnet.NatGateways {
 				natGateway := subnet.NatGateways[natGatewayIdx]
+
 				if Config.HideIP {
 					natGateway.PrivateIP = expungedIP
 					natGateway.PublicIP = expungedIP
 				}
+
 				fmt.Printf(
 					"%s%v%v%v%v  %v  %v  %v  %v\n",
 					indent(8),
