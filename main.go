@@ -158,7 +158,7 @@ func doDefaultRegion() {
 func init() {
 	flag.BoolVar(&Config.noColor, "nocolor", false, "Suppresses color printing of listing")
 	flag.BoolVar(&Config.Color, "color", false, "Force color output, even through pipe")
-	flag.BoolVar(&Config.noSpace, "nospace", false, "Supresses line-spacing of items")
+	flag.BoolVar(&Config.noSpace, "nospace", false, "Suppresses line-spacing of items")
 	flag.BoolVar(&Config.allRegions, "all", false, "Fetches and prints data on all regions")
 	flag.BoolVar(&Config.allRegions, "a", false, "Fetches and prints data on all regions (abbrev.)")
 	flag.StringVar(&Config.regionOverride, "region", "", "Specify region (default: profile default region)")
