@@ -52,8 +52,8 @@ func sortVPC(vpc VPC) VPCSorted {
 	sort.Strings(subnetKeys)
 
 	subnetsSorted := []SubnetSorted{}
-	for _, subnetId := range subnetKeys {
-		subnetsSorted = append(subnetsSorted, sortSubnet(vpc.Subnets[subnetId]))
+	for _, subnetID := range subnetKeys {
+		subnetsSorted = append(subnetsSorted, sortSubnet(vpc.Subnets[subnetID]))
 	}
 
 	//sort peers
