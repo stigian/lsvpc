@@ -82,7 +82,7 @@ func printVPCs(vpcs []VPCSorted) {
 		fmt.Printf(
 			"%v%v%v%v ",
 			color.Green,
-			vpc.Id,
+			vpc.ID,
 			formatName(vpc.Name),
 			color.Reset,
 		)
@@ -123,7 +123,7 @@ func printVPCs(vpcs []VPCSorted) {
 		for _, peer := range vpc.Peers {
 			direction := "peer-->"
 			vpcOperand := peer.Accepter
-			if peer.Accepter == vpc.Id {
+			if peer.Accepter == vpc.ID {
 				direction = "<--peer"
 				vpcOperand = peer.Requester
 			}
@@ -131,7 +131,7 @@ func printVPCs(vpcs []VPCSorted) {
 				"%s%v%v%v%v %v %v%v%v\n",
 				indent(4),
 				color.Cyan,
-				peer.Id,
+				peer.ID,
 				formatName(peer.Name),
 				color.Reset,
 				direction,
@@ -178,7 +178,7 @@ func printVPCs(vpcs []VPCSorted) {
 						"%s%v%v%v%v interface--> %v\n",
 						indent(8),
 						color.Cyan,
-						interfaceEndpoint.Id,
+						interfaceEndpoint.ID,
 						formatName(interfaceEndpoint.Name),
 						color.Reset,
 						interfaceEndpoint.ServiceName,
@@ -197,7 +197,7 @@ func printVPCs(vpcs []VPCSorted) {
 							fmt.Printf(
 								"%s%v%v %v %v %v %v %v \n",
 								indent(12),
-								iface.Id,
+								iface.ID,
 								formatName(iface.Name),
 								iface.Type,
 								iface.MAC,
@@ -216,7 +216,7 @@ func printVPCs(vpcs []VPCSorted) {
 					"%s%v%v%v%v gateway--> %v\n",
 					indent(8),
 					color.Cyan,
-					gatewayEndpoint.Id,
+					gatewayEndpoint.ID,
 					formatName(gatewayEndpoint.Name),
 					color.Reset,
 					gatewayEndpoint.ServiceName,
@@ -237,7 +237,7 @@ func printVPCs(vpcs []VPCSorted) {
 					"%s%v%v%v%v %v %v %v %v %v : %v\n",
 					indent(8),
 					color.Cyan,
-					iface.Id,
+					iface.ID,
 					formatName(iface.Name),
 					color.Reset,
 					iface.Type,
@@ -268,7 +268,7 @@ func printVPCs(vpcs []VPCSorted) {
 					"%s%v%s%v%v %v -- %v (%v/2) -- %v -- %v\n",
 					indent(8),
 					color.Cyan,
-					instance.Id,
+					instance.ID,
 					formatName(instance.Name),
 					color.Reset,
 					instance.Type,
@@ -292,7 +292,7 @@ func printVPCs(vpcs []VPCSorted) {
 						fmt.Printf(
 							"%s%v%v  %v  %v  %v\n",
 							indent(12),
-							iface.Id,
+							iface.ID,
 							formatName(iface.Name),
 							iface.MAC,
 							iface.PrivateIp,
@@ -305,7 +305,7 @@ func printVPCs(vpcs []VPCSorted) {
 						fmt.Printf(
 							"%s%v%v  %v  %v  %v GiB\n",
 							indent(12),
-							volume.Id,
+							volume.ID,
 							formatName(volume.Name),
 							volume.VolumeType,
 							volume.DeviceName,
@@ -325,7 +325,7 @@ func printVPCs(vpcs []VPCSorted) {
 					"%s%v%v%v%v  %v  %v  %v  %v\n",
 					indent(8),
 					color.Cyan,
-					natGateway.Id,
+					natGateway.ID,
 					formatName(natGateway.Name),
 					color.Reset,
 					natGateway.Type,

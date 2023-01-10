@@ -18,7 +18,7 @@ type RegionDataSorted struct {
 }
 
 type VPCData struct {
-	Id            string `json:"id"`
+	ID            string `json:"id"`
 	IsDefault     bool   `json:"isDefault"`
 	CidrBlock     string `json:"cidrBlock"`
 	IPv6CidrBlock string `json:"iPv6CidrBlock"`
@@ -72,7 +72,7 @@ type Subnet struct {
 }
 
 type InstanceData struct {
-	Id             string `json:"id"`
+	ID             string `json:"id"`
 	Type           string `json:"type"`
 	SubnetID       string `json:"subnetId"`
 	VpcId          string `json:"vpcId"`
@@ -98,7 +98,7 @@ type Instance struct {
 }
 
 type NetworkInterface struct {
-	Id                  string                `json:"id"`
+	ID                  string                `json:"id"`
 	PrivateIp           string                `json:"privateIp"`
 	MAC                 string                `json:"mAC"`
 	DNS                 string                `json:"dNS"`
@@ -111,7 +111,7 @@ type NetworkInterface struct {
 }
 
 type Volume struct {
-	Id         string      `json:"id"`
+	ID         string      `json:"id"`
 	DeviceName string      `json:"deviceName"`
 	Size       int64       `json:"size"`
 	VolumeType string      `json:"volumeType"`
@@ -119,7 +119,7 @@ type Volume struct {
 	RawVolume  *ec2.Volume `json:"-"`
 }
 type NatGateway struct {
-	Id            string          `json:"id"`
+	ID            string          `json:"id"`
 	PrivateIP     string          `json:"privateIP"`
 	PublicIP      string          `json:"publicIP"`
 	State         string          `json:"state"`
@@ -129,7 +129,7 @@ type NatGateway struct {
 }
 
 type RouteTable struct {
-	Id       string          `json:"id"`
+	ID       string          `json:"id"`
 	Default  string          `json:"default"`
 	RawRoute *ec2.RouteTable `json:"-"`
 }
@@ -142,7 +142,7 @@ type TGWAttachment struct {
 }
 
 type VPCPeer struct {
-	Id        string                    `json:"id"`
+	ID        string                    `json:"id"`
 	Requester string                    `json:"requester"`
 	Accepter  string                    `json:"accepter"`
 	Name      string                    `json:"name"`
@@ -150,7 +150,7 @@ type VPCPeer struct {
 }
 
 type InterfaceEndpointData struct {
-	Id          string           `json:"id"`
+	ID          string           `json:"id"`
 	ServiceName string           `json:"serviceName"`
 	Name        string           `json:"name"`
 	RawEndpoint *ec2.VpcEndpoint `json:"-"`
@@ -167,7 +167,7 @@ type InterfaceEndpointSorted struct {
 }
 
 type GatewayEndpoint struct {
-	Id          string           `json:"id"`
+	ID          string           `json:"id"`
 	ServiceName string           `json:"serviceName"`
 	Name        string           `json:"name"`
 	RawEndpoint *ec2.VpcEndpoint `json:"-"`
