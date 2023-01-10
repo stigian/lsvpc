@@ -193,7 +193,7 @@ func printVPCs(vpcs []VPCSorted) {
 								iface.DNS = "xxxx.xxxx.xxxx"
 							}
 						}
-						if iface.SubnetId == subnet.Id {
+						if iface.SubnetID == subnet.Id {
 							fmt.Printf(
 								"%s%v%v %v %v %v %v %v \n",
 								indent(12),

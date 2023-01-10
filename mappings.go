@@ -78,16 +78,16 @@ func mapInstances(vpcs map[string]VPC, reservations []*ec2.Reservation) {
 
 			if *instance.State.Name != "terminated" {
 				vpcId := aws.StringValue(instance.VpcId)
-				subnetId := aws.StringValue(instance.SubnetId)
+				subnetID := aws.StringValue(instance.SubnetId)
 				instanceId := aws.StringValue(instance.InstanceId)
 
-				if vpcId != "" && subnetId != "" && instanceId != "" {
+				if vpcId != "" && subnetID != "" && instanceId != "" {
 
-					vpcs[vpcId].Subnets[subnetId].Instances[instanceId] = Instance{
+					vpcs[vpcId].Subnets[subnetID].Instances[instanceId] = Instance{
 						InstanceData: InstanceData{
 							Id:        aws.StringValue(instance.InstanceId),
 							Type:      aws.StringValue(instance.InstanceType),
-							SubnetId:  aws.StringValue(instance.SubnetId),
+							SubnetID:  aws.StringValue(instance.SubnetId),
 							VpcId:     aws.StringValue(instance.VpcId),
 							State:     aws.StringValue(instance.State.Name),
 							PublicIP:  aws.StringValue(instance.PublicIpAddress),
@@ -107,14 +107,14 @@ func mapInstances(vpcs map[string]VPC, reservations []*ec2.Reservation) {
 func mapInstanceStatuses(vpcs map[string]VPC, statuses []*ec2.InstanceStatus) {
 	for _, status := range statuses {
 		for vpcId, vpc := range vpcs {
-			for subnetId, subnet := range vpc.Subnets {
+			for subnetID, subnet := range vpc.Subnets {
 				for instanceId, instance := range subnet.Instances {
 					if aws.StringValue(status.InstanceId) == instanceId {
 						updatedInstance := instance
 						updatedInstance.InstanceStatus = aws.StringValue(status.InstanceStatus.Status)
 						updatedInstance.SystemStatus = aws.StringValue(status.SystemStatus.Status)
 						vpcs[vpcId].
-							Subnets[subnetId].
+							Subnets[subnetID].
 							Instances[instanceId] = updatedInstance
 					}
 				}
@@ -128,11 +128,11 @@ func mapVolumes(vpcs map[string]VPC, volumes []*ec2.Volume) {
 		for _, attachment := range volume.Attachments {
 			if volInstanceId := aws.StringValue(attachment.InstanceId); volInstanceId != "" {
 				for vpcId, vpc := range vpcs {
-					for subnetId, subnet := range vpc.Subnets {
+					for subnetID, subnet := range vpc.Subnets {
 						for instanceId := range subnet.Instances {
 							if volInstanceId == instanceId {
 								vpcs[vpcId].
-									Subnets[subnetId].
+									Subnets[subnetID].
 									Instances[instanceId].
 									Volumes[*volume.VolumeId] = Volume{
 									Id:         aws.StringValue(volume.VolumeId),
@@ -299,8 +299,8 @@ func mapTransitGatewayVpcAttachments(vpcs map[string]VPC, TransitGatewayVpcAttac
 		if aws.StringValue(tgwatt.VpcOwnerId) == aws.StringValue(identity.Account) {
 			if vpcId := aws.StringValue(tgwatt.VpcId); vpcId != "" {
 				for _, subnet := range tgwatt.SubnetIds {
-					if subnetId := aws.StringValue(subnet); subnetId != "" {
-						vpcs[vpcId].Subnets[subnetId].TGWs[aws.StringValue(tgwatt.TransitGatewayAttachmentId)] = TGWAttachment{
+					if subnetID := aws.StringValue(subnet); subnetID != "" {
+						vpcs[vpcId].Subnets[subnetID].TGWs[aws.StringValue(tgwatt.TransitGatewayAttachmentId)] = TGWAttachment{
 							AttachmentId:     aws.StringValue(tgwatt.TransitGatewayAttachmentId),
 							TransitGatewayId: aws.StringValue(tgwatt.TransitGatewayId),
 							Name:             getNameTag(tgwatt.Tags),
@@ -362,19 +362,19 @@ func mapNetworkInterfaces(vpcs map[string]VPC, networkInterfaces []*ec2.NetworkI
 			Type:                aws.StringValue(iface.InterfaceType),
 			Description:         aws.StringValue(iface.Description),
 			Name:                getNameTag(iface.TagSet),
-			SubnetId:            aws.StringValue(iface.SubnetId),
+			SubnetID:            aws.StringValue(iface.SubnetId),
 			RawNetworkInterface: iface,
 		}
 
 		if aws.StringValue(iface.InterfaceType) == "vpc_endpoint" {
 			for vpcId, vpc := range vpcs {
-				for subnetId, subnet := range vpc.Subnets {
+				for subnetID, subnet := range vpc.Subnets {
 					for endpointId, endpoint := range subnet.InterfaceEndpoints {
 						for _, endpointENIId := range endpoint.RawEndpoint.NetworkInterfaceIds {
 							if ifaceIn.Id == aws.StringValue(endpointENIId) {
 								//network interface id found in endpoint
 								vpcs[vpcId].
-									Subnets[subnetId].
+									Subnets[subnetID].
 									InterfaceEndpoints[endpointId].
 									Interfaces[aws.StringValue(iface.NetworkInterfaceId)] = ifaceIn
 							}
@@ -388,11 +388,11 @@ func mapNetworkInterfaces(vpcs map[string]VPC, networkInterfaces []*ec2.NetworkI
 		if iface.Attachment != nil && aws.StringValue(iface.Attachment.InstanceId) != "" {
 			ifaceInstanceId := aws.StringValue(iface.Attachment.InstanceId)
 			for vpcId, vpc := range vpcs {
-				for subnetId, subnet := range vpc.Subnets {
+				for subnetID, subnet := range vpc.Subnets {
 					for instanceId := range subnet.Instances {
 						if ifaceInstanceId == instanceId {
 							vpcs[vpcId].
-								Subnets[subnetId].
+								Subnets[subnetID].
 								Instances[instanceId].
 								Interfaces[*iface.NetworkInterfaceId] = ifaceIn
 						}
@@ -410,7 +410,7 @@ func mapNetworkInterfaces(vpcs map[string]VPC, networkInterfaces []*ec2.NetworkI
 
 func mapVpcEndpoints(vpcs map[string]VPC, vpcEndpoints []*ec2.VpcEndpoint) {
 	vpcIds := dumpVpcIds(vpcs)
-	subnetIds := dumpSubnetIds(vpcs)
+	subnetIDs := dumpSubnetIDs(vpcs)
 	for _, endpoint := range vpcEndpoints {
 		//validate vpc and subnet values
 		if _, exists := vpcIds[aws.StringValue(endpoint.VpcId)]; !exists {
@@ -422,7 +422,7 @@ func mapVpcEndpoints(vpcs map[string]VPC, vpcEndpoints []*ec2.VpcEndpoint) {
 
 		if aws.StringValue(endpoint.VpcEndpointType) == "Interface" {
 			for _, subnet := range endpoint.SubnetIds {
-				if _, exists := subnetIds[aws.StringValue(subnet)]; !exists {
+				if _, exists := subnetIDs[aws.StringValue(subnet)]; !exists {
 					fmt.Printf("Warning: undiscovered subnet %v when processing endpoint %v\n",
 						aws.StringValue(subnet),
 						aws.StringValue(endpoint.VpcEndpointId))
@@ -465,12 +465,12 @@ func dumpVpcIds(vpcs map[string]VPC) map[string]bool {
 	return keys
 }
 
-func dumpSubnetIds(vpcs map[string]VPC) map[string]bool {
+func dumpSubnetIDs(vpcs map[string]VPC) map[string]bool {
 	keys := make(map[string]bool)
 
 	for _, vpc := range vpcs {
-		for subnetId := range vpc.Subnets {
-			keys[subnetId] = true
+		for subnetID := range vpc.Subnets {
+			keys[subnetID] = true
 		}
 	}
 	return keys

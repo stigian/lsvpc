@@ -74,7 +74,7 @@ type Subnet struct {
 type InstanceData struct {
 	Id             string `json:"id"`
 	Type           string `json:"type"`
-	SubnetId       string `json:"subnetId"`
+	SubnetID       string `json:"subnetId"`
 	VpcId          string `json:"vpcId"`
 	State          string `json:"state"`
 	PublicIP       string `json:"publicIP"`
@@ -106,7 +106,7 @@ type NetworkInterface struct {
 	Description         string                `json:"description"`
 	PublicIp            string                `json:"publicIp"`
 	Name                string                `json:"name"`
-	SubnetId            string                `json:"subnetId"` // we're just accounting for this for display purposes
+	SubnetID            string                `json:"subnetId"` // we're just accounting for this for display purposes
 	RawNetworkInterface *ec2.NetworkInterface `json:"-"`
 }
 
