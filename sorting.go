@@ -63,8 +63,8 @@ func sortVPC(vpc VPC) VPCSorted {
 	}
 	sort.Strings(peerKeys)
 	peersSorted := []VPCPeer{}
-	for _, peerId := range peerKeys {
-		peersSorted = append(peersSorted, vpc.Peers[peerId])
+	for _, peerID := range peerKeys {
+		peersSorted = append(peersSorted, vpc.Peers[peerID])
 	}
 
 	return VPCSorted{
