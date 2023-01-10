@@ -229,15 +229,18 @@ func main() {
 		os.Exit(1)
 	}
 
+	// exit if region override is not valid
+	if Config.regionOverride != "" && !validateRegion(Config.regionOverride) {
+		fmt.Printf("Region: '%v' is not valid\n", Config.regionOverride)
+		os.Exit(1)
+	}
+
 	if Config.allRegions {
 		doAllRegions()
 	} else if Config.regionOverride != "" {
-		if !validateRegion(Config.regionOverride) {
-			fmt.Printf("Region: '%v' is not valid\n", Config.regionOverride)
-			os.Exit(1)
-		}
 		doSpecificRegion()
 	} else {
 		doDefaultRegion()
 	}
+
 }
