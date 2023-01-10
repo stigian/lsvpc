@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	nameTruncate   = 20 //max size a Name tag can be before its truncated with a "..." at the end
+	nameTruncate   = 20 // Max size a Name tag can be before its truncated with a "..." at the end
 	expungedIP     = "xxx.xxx.xxx.xxx"
 	expungedDomain = "xxxx.xxxx.xxxx"
 	expungedMAC    = "xx:xx:xx:xx:xx:xx"
@@ -47,7 +47,7 @@ func formatName(name string) string {
 	if name == "" {
 		return ""
 	}
-	//Names can be up to 255 utf8 runes, we should truncate it
+	// Names can be up to 255 utf8 runes, we should truncate it
 	runes := []rune(name)
 	if Config.Truncate {
 		if len(runes) > nameTruncate {
@@ -83,7 +83,7 @@ func printVPCs(vpcs []VPCSorted) {
 		color.White = "\033[37m"
 	}
 
-	//sort the keys
+	// sort the keys
 	for _, vpc := range vpcs {
 		// Print VPC
 		fmt.Printf(
@@ -178,7 +178,7 @@ func printVPCs(vpcs []VPCSorted) {
 				public,
 			)
 
-			//Print Endpoints
+			// Print Endpoints
 			if Config.Verbose {
 				for _, interfaceEndpoint := range subnet.InterfaceEndpoints {
 					fmt.Printf(
@@ -191,7 +191,7 @@ func printVPCs(vpcs []VPCSorted) {
 						interfaceEndpoint.ServiceName,
 					)
 					for _, iface := range interfaceEndpoint.Interfaces {
-						//an endpoint can have multiple interfaces in multiple subnets, we only want to display whats relevant to the subnet
+						// An endpoint can have multiple interfaces in multiple subnets, we only want to display whats relevant to the subnet
 						if Config.HideIP {
 							iface.MAC = expungedMAC
 							iface.PublicIp = expungedIP
@@ -322,7 +322,7 @@ func printVPCs(vpcs []VPCSorted) {
 				}
 			}
 
-			//Print Nat Gateways
+			// Print Nat Gateways
 			for _, natGateway := range subnet.NatGateways {
 				if Config.HideIP {
 					natGateway.PrivateIP = expungedIP
@@ -342,7 +342,7 @@ func printVPCs(vpcs []VPCSorted) {
 				)
 			}
 
-			//Print Transit Gateway Attachments
+			// Print Transit Gateway Attachments
 			for _, tgw := range subnet.TGWs {
 				fmt.Printf(
 					"%s%v%v%v%v ---> %v%v%v\n",
