@@ -16,6 +16,7 @@ const (
 	expungedV6CIDR = "xxxx::xxxx/xx"
 )
 
+// Indent by number of spaces
 func indent(num int) string {
 	sb := strings.Builder{}
 
@@ -51,7 +52,7 @@ func formatName(name string) string {
 	runes := []rune(name)
 	if Config.Truncate {
 		if len(runes) > nameTruncate {
-			runes = runes[:(nameTruncate - 1 - 3)]
+			runes = runes[:(nameTruncate - 1 - 3)] //nolint:gomnd // this takes the lastrun, and gives 3 spaces for ellipses
 			runes = append(runes, []rune("...")...)
 		}
 	}
@@ -143,7 +144,7 @@ func printVPCs(vpcs []VPCSorted) {
 
 			fmt.Printf(
 				"%s%v%v%v%v %v %v%v%v\n",
-				indent(4),
+				indent(4), //nolint:gomnd // not a magic number, spaces to indent by
 				color.Cyan,
 				peer.ID,
 				formatName(peer.Name),
@@ -175,7 +176,7 @@ func printVPCs(vpcs []VPCSorted) {
 
 			fmt.Printf(
 				"%s%v%v%v%v  %v  %v %v-->%v%v %v\n",
-				indent(4),
+				indent(4), //nolint:gomnd // not a magic number, spaces to indent by
 				color.Blue,
 				subnet.ID,
 				formatName(subnet.Name),
@@ -195,7 +196,7 @@ func printVPCs(vpcs []VPCSorted) {
 
 					fmt.Printf(
 						"%s%v%v%v%v interface--> %v\n",
-						indent(8),
+						indent(8), //nolint:gomnd // not a magic number, spaces to indent by
 						color.Cyan,
 						interfaceEndpoint.ID,
 						formatName(interfaceEndpoint.Name),
@@ -219,7 +220,7 @@ func printVPCs(vpcs []VPCSorted) {
 						if iface.SubnetID == subnet.ID {
 							fmt.Printf(
 								"%s%v%v %v %v %v %v %v \n",
-								indent(12),
+								indent(12), //nolint:gomnd // not a magic number, spaces to indent by
 								iface.ID,
 								formatName(iface.Name),
 								iface.Type,
@@ -237,7 +238,7 @@ func printVPCs(vpcs []VPCSorted) {
 				gatewayEndpoint := subnet.GatewayEndpoints[gatewayEndpointIdx]
 				fmt.Printf(
 					"%s%v%v%v%v gateway--> %v\n",
-					indent(8),
+					indent(8), //nolint:gomnd // not a magic number, spaces to indent by
 					color.Cyan,
 					gatewayEndpoint.ID,
 					formatName(gatewayEndpoint.Name),
@@ -262,7 +263,7 @@ func printVPCs(vpcs []VPCSorted) {
 
 				fmt.Printf(
 					"%s%v%v%v%v %v %v %v %v %v : %v\n",
-					indent(8),
+					indent(8), //nolint:gomnd // not a magic number, spaces to indent by
 					color.Cyan,
 					iface.ID,
 					formatName(iface.Name),
@@ -297,7 +298,7 @@ func printVPCs(vpcs []VPCSorted) {
 
 				fmt.Printf(
 					"%s%v%s%v%v %v -- %v (%v/2) -- %v -- %v\n",
-					indent(8),
+					indent(8), //nolint:gomnd // not a magic number, spaces to indent by
 					color.Cyan,
 					instance.ID,
 					formatName(instance.Name),
@@ -326,7 +327,7 @@ func printVPCs(vpcs []VPCSorted) {
 
 						fmt.Printf(
 							"%s%v%v  %v  %v  %v\n",
-							indent(12),
+							indent(12), //nolint:gomnd // not a magic number, spaces to indent by
 							iface.ID,
 							formatName(iface.Name),
 							iface.MAC,
@@ -340,7 +341,7 @@ func printVPCs(vpcs []VPCSorted) {
 						volume := instance.Volumes[volumeIdx]
 						fmt.Printf(
 							"%s%v%v  %v  %v  %v GiB\n",
-							indent(12),
+							indent(12), //nolint:gomnd // not a magic number, spaces to indent by
 							volume.ID,
 							formatName(volume.Name),
 							volume.VolumeType,
@@ -362,7 +363,7 @@ func printVPCs(vpcs []VPCSorted) {
 
 				fmt.Printf(
 					"%s%v%v%v%v  %v  %v  %v  %v\n",
-					indent(8),
+					indent(8), //nolint:gomnd // not a magic number, spaces to indent by
 					color.Cyan,
 					natGateway.ID,
 					formatName(natGateway.Name),
@@ -379,7 +380,7 @@ func printVPCs(vpcs []VPCSorted) {
 				tgw := subnet.TGWs[tgwIdx]
 				fmt.Printf(
 					"%s%v%v%v%v ---> %v%v%v\n",
-					indent(8),
+					indent(8), //nolint:gomnd // not a magic number, spaces to indent by
 					color.Cyan,
 					tgw.AttachmentID,
 					formatName(tgw.Name),
