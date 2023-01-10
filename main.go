@@ -44,7 +44,7 @@ func populateVPC(region string) (map[string]*VPC, error) {
 	data := RecievedData{}
 	vpcs := make(map[string]*VPC)
 
-	data.wg.Add(15)
+	data.wg.Add(15) //nolint: gomnd // Wait groups increase when requests increase
 
 	go getIdentity(stsSvc, &data)
 	go getVpcs(svc, &data)
@@ -247,11 +247,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	if Config.allRegions {
+	switch {
+	case Config.allRegions:
 		doAllRegions()
-	} else if Config.regionOverride != "" {
+	case Config.regionOverride != "":
 		doSpecificRegion()
-	} else {
+	default:
 		doDefaultRegion()
 	}
 }
