@@ -127,8 +127,8 @@ func sortSubnet(subnet Subnet) SubnetSorted {
 	}
 	sort.Strings(interfaceEndpointKeys)
 	interfaceEndpointsSorted := []InterfaceEndpointSorted{}
-	for _, interfaceEndpointId := range interfaceEndpointKeys {
-		interfaceEndpointsSorted = append(interfaceEndpointsSorted, sortInterfaceEndpoint(subnet.InterfaceEndpoints[interfaceEndpointId]))
+	for _, interfaceEndpointID := range interfaceEndpointKeys {
+		interfaceEndpointsSorted = append(interfaceEndpointsSorted, sortInterfaceEndpoint(subnet.InterfaceEndpoints[interfaceEndpointID]))
 	}
 
 	//sort GatewayEndpoints
