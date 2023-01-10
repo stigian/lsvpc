@@ -7,7 +7,14 @@ import (
 	"strings"
 )
 
-const nameTruncate = 20 //max size a Name tag can be before its truncated with a "..." at the end
+const (
+	nameTruncate   = 20 //max size a Name tag can be before its truncated with a "..." at the end
+	expungedIP     = "xxx.xxx.xxx.xxx"
+	expungedDomain = "xxxx.xxxx.xxxx"
+	expungedMAC    = "xx:xx:xx:xx:xx:xx"
+	expungedCIDR   = "xxx.xxx.xxx.xxx/xx"
+	expungedV6CIDR = "xxxx::xxxx/xx"
+)
 
 func indent(num int) string {
 	sb := strings.Builder{}
@@ -96,9 +103,9 @@ func printVPCs(vpcs []VPCSorted) {
 		}
 
 		if Config.HideIP {
-			vpc.CidrBlock = "xxx.xxx.xxx.xxx/xx"
+			vpc.CidrBlock = expungedCIDR
 			if vpc.IPv6CidrBlock != "" {
-				vpc.IPv6CidrBlock = "xxxx::xxxx/xx"
+				vpc.IPv6CidrBlock = expungedV6CIDR
 			}
 		}
 		fmt.Printf(
@@ -154,7 +161,7 @@ func printVPCs(vpcs []VPCSorted) {
 				public = "Public"
 			}
 			if Config.HideIP {
-				subnet.CidrBlock = "xxx.xxx.xxx.xxx/xx"
+				subnet.CidrBlock = expungedCIDR
 			}
 			fmt.Printf(
 				"%s%v%v%v%v  %v  %v %v-->%v%v %v\n",
@@ -186,11 +193,11 @@ func printVPCs(vpcs []VPCSorted) {
 					for _, iface := range interfaceEndpoint.Interfaces {
 						//an endpoint can have multiple interfaces in multiple subnets, we only want to display whats relevant to the subnet
 						if Config.HideIP {
-							iface.MAC = "xx:xx:xx:xx:xx:xx"
-							iface.PublicIp = "xxx.xxx.xxx.xxx"
-							iface.PrivateIp = "xxx.xxx.xxx.xxx"
+							iface.MAC = expungedMAC
+							iface.PublicIp = expungedIP
+							iface.PrivateIp = expungedIP
 							if iface.DNS != "" {
-								iface.DNS = "xxxx.xxxx.xxxx"
+								iface.DNS = expungedDomain
 							}
 						}
 						if iface.SubnetID == subnet.Id {
@@ -226,11 +233,11 @@ func printVPCs(vpcs []VPCSorted) {
 			// Print Interfaces
 			for _, iface := range subnet.ENIs {
 				if Config.HideIP {
-					iface.MAC = "xx:xx:xx:xx:xx:xx"
-					iface.PrivateIp = "xxx.xxx.xxx.xxx"
-					iface.PublicIp = "xxx.xxx.xxx.xxx"
+					iface.MAC = expungedMAC
+					iface.PrivateIp = expungedIP
+					iface.PublicIp = expungedIP
 					if iface.DNS != "" {
-						iface.DNS = "xxxx.xxxx.xxxx"
+						iface.DNS = expungedDomain
 					}
 				}
 				fmt.Printf(
@@ -261,8 +268,8 @@ func printVPCs(vpcs []VPCSorted) {
 
 				// Print Instance Info
 				if Config.HideIP {
-					instance.PublicIP = "xxx.xxx.xxx.xxx"
-					instance.PrivateIP = "xxx.xxx.xxx.xxx"
+					instance.PublicIP = expungedIP
+					instance.PrivateIP = expungedIP
 				}
 				fmt.Printf(
 					"%s%v%s%v%v %v -- %v (%v/2) -- %v -- %v\n",
@@ -282,11 +289,11 @@ func printVPCs(vpcs []VPCSorted) {
 				if Config.Verbose {
 					for _, iface := range instance.Interfaces {
 						if Config.HideIP {
-							iface.MAC = "xx:xx:xx:xx:xx:xx"
-							iface.PrivateIp = "xxx.xxx.xxx.xxx"
-							iface.PublicIp = "xxx.xxx.xxx.xxx"
+							iface.MAC = expungedMAC
+							iface.PrivateIp = expungedIP
+							iface.PublicIp = expungedIP
 							if iface.DNS != "" {
-								iface.DNS = "xxxx.xxxx.xxxx"
+								iface.DNS = expungedDomain
 							}
 						}
 						fmt.Printf(
@@ -318,8 +325,8 @@ func printVPCs(vpcs []VPCSorted) {
 			//Print Nat Gateways
 			for _, natGateway := range subnet.NatGateways {
 				if Config.HideIP {
-					natGateway.PrivateIP = "xxx.xxx.xxx.xxx"
-					natGateway.PublicIP = "xxx.xxx.xxx.xxx"
+					natGateway.PrivateIP = expungedIP
+					natGateway.PublicIP = expungedIP
 				}
 				fmt.Printf(
 					"%s%v%v%v%v  %v  %v  %v  %v\n",
