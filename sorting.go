@@ -2,22 +2,43 @@ package main
 
 import (
 	"sort"
+	"sync"
 )
 
-func sortRegionData(regionData map[string]RegionData) []RegionDataSorted {
+func asyncSortRegion(vpcs map[string]*VPC, region string, res map[string]*RegionDataSorted, wg *sync.WaitGroup, mu *sync.Mutex) {
+	defer wg.Done()
+
+	regionDataSorted := &RegionDataSorted{
+		VPCs:   sortVPCs(vpcs),
+		Region: region,
+	}
+
+	mu.Lock()
+	res[region] = regionDataSorted
+	mu.Unlock()
+}
+
+func sortRegionData(regionData map[string]RegionData) []*RegionDataSorted {
 	regionKeys := []string{}
 	for k := range regionData {
 		regionKeys = append(regionKeys, k)
 	}
 
 	sort.Strings(regionKeys)
+	mu := sync.Mutex{}
+	var wg sync.WaitGroup
 
-	regionDataSorted := []RegionDataSorted{}
+	regionDataInterstitial := make(map[string]*RegionDataSorted)
 	for _, region := range regionKeys {
-		regionDataSorted = append(regionDataSorted, RegionDataSorted{
-			Region: region,
-			VPCs:   sortVPCs(regionData[region].VPCs),
-		})
+		wg.Add(1)
+		go asyncSortRegion(regionData[region].VPCs, region, regionDataInterstitial, &wg, &mu)
+	}
+
+	wg.Wait()
+
+	regionDataSorted := []*RegionDataSorted{}
+	for _, region := range regionKeys {
+		regionDataSorted = append(regionDataSorted, regionDataInterstitial[region])
 	}
 
 	return regionDataSorted

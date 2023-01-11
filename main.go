@@ -135,12 +135,15 @@ func doAllRegions() {
 
 	wg.Wait()
 
+	regionDataSorted := sortRegionData(fullData)
+
 	if Config.jsonOutput {
-		printRegionsJSON(sortRegionData(fullData))
+		printRegionsJSON(regionDataSorted)
 	} else {
-		for region, vpcs := range fullData {
-			fmt.Printf("===%v===\n", region)
-			printVPCs(sortVPCs(vpcs.VPCs))
+		for _, region := range regionDataSorted {
+			fmt.Printf("===%v===\n", region.Region)
+			printVPCs(region.VPCs)
+
 		}
 	}
 }
