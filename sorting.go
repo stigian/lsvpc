@@ -20,17 +20,20 @@ func asyncSortRegion(vpcs map[string]*VPC, region string, res map[string]*Region
 
 func sortRegionData(regionData map[string]RegionData) []*RegionDataSorted {
 	regionKeys := []string{}
+	mu := sync.Mutex{}
+	wg := sync.WaitGroup{}
+
 	for k := range regionData {
 		regionKeys = append(regionKeys, k)
 	}
 
 	sort.Strings(regionKeys)
-	mu := sync.Mutex{}
-	var wg sync.WaitGroup
 
 	regionDataInterstitial := make(map[string]*RegionDataSorted)
+
 	for _, region := range regionKeys {
 		wg.Add(1)
+
 		go asyncSortRegion(regionData[region].VPCs, region, regionDataInterstitial, &wg, &mu)
 	}
 

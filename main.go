@@ -143,7 +143,6 @@ func doAllRegions() {
 		for _, region := range regionDataSorted {
 			fmt.Printf("===%v===\n", region.Region)
 			printVPCs(region.VPCs)
-
 		}
 	}
 }
