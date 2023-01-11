@@ -12,17 +12,21 @@ import (
 
 func getIdentity(svc *sts.STS, data *RecievedData) {
 	defer data.wg.Done()
+
 	out, err := svc.GetCallerIdentity(&sts.GetCallerIdentityInput{})
+
 	if err != nil {
 		data.mu.Lock()
 		data.Error = err
 		data.mu.Unlock()
 	}
+
 	data.Identity = out
 }
 
 func getVpcs(svc *ec2.EC2, data *RecievedData) {
 	defer data.wg.Done()
+
 	vpcs := []*ec2.Vpc{}
 	err := svc.DescribeVpcsPages(
 		&ec2.DescribeVpcsInput{},
@@ -37,11 +41,13 @@ func getVpcs(svc *ec2.EC2, data *RecievedData) {
 		data.Error = err
 		data.mu.Unlock()
 	}
+
 	data.Vpcs = vpcs
 }
 
 func getSubnets(svc *ec2.EC2, data *RecievedData) {
 	defer data.wg.Done()
+
 	subnets := []*ec2.Subnet{}
 	err := svc.DescribeSubnetsPages(
 		&ec2.DescribeSubnetsInput{},
@@ -62,6 +68,7 @@ func getSubnets(svc *ec2.EC2, data *RecievedData) {
 
 func getInstances(svc *ec2.EC2, data *RecievedData) {
 	defer data.wg.Done()
+
 	instances := []*ec2.Reservation{}
 	err := svc.DescribeInstancesPages(
 		&ec2.DescribeInstancesInput{},
@@ -70,6 +77,7 @@ func getInstances(svc *ec2.EC2, data *RecievedData) {
 			return !lastPage
 		},
 	)
+
 	if err != nil {
 		data.mu.Lock()
 		data.Error = err
@@ -81,6 +89,7 @@ func getInstances(svc *ec2.EC2, data *RecievedData) {
 
 func getInstanceStatuses(svc *ec2.EC2, data *RecievedData) {
 	defer data.wg.Done()
+
 	statuses := []*ec2.InstanceStatus{}
 	err := svc.DescribeInstanceStatusPages(
 		&ec2.DescribeInstanceStatusInput{},
@@ -101,6 +110,7 @@ func getInstanceStatuses(svc *ec2.EC2, data *RecievedData) {
 
 func getNatGatways(svc *ec2.EC2, data *RecievedData) {
 	defer data.wg.Done()
+
 	natGateways := []*ec2.NatGateway{}
 
 	err := svc.DescribeNatGatewaysPages(
@@ -121,6 +131,7 @@ func getNatGatways(svc *ec2.EC2, data *RecievedData) {
 
 func getRouteTables(svc *ec2.EC2, data *RecievedData) {
 	defer data.wg.Done()
+
 	routeTables := []*ec2.RouteTable{}
 
 	err := svc.DescribeRouteTablesPages(
@@ -142,6 +153,7 @@ func getRouteTables(svc *ec2.EC2, data *RecievedData) {
 
 func getInternetGateways(svc *ec2.EC2, data *RecievedData) {
 	defer data.wg.Done()
+
 	internetGateways := []*ec2.InternetGateway{}
 
 	err := svc.DescribeInternetGatewaysPages(
@@ -162,6 +174,7 @@ func getInternetGateways(svc *ec2.EC2, data *RecievedData) {
 
 func getEgressOnlyInternetGateways(svc *ec2.EC2, data *RecievedData) {
 	defer data.wg.Done()
+
 	EOIGWs := []*ec2.EgressOnlyInternetGateway{}
 
 	err := svc.DescribeEgressOnlyInternetGatewaysPages(
@@ -183,6 +196,7 @@ func getEgressOnlyInternetGateways(svc *ec2.EC2, data *RecievedData) {
 
 func getVPNGateways(svc *ec2.EC2, data *RecievedData) {
 	defer data.wg.Done()
+
 	out, err := svc.DescribeVpnGateways(&ec2.DescribeVpnGatewaysInput{})
 
 	if err != nil {
@@ -196,6 +210,7 @@ func getVPNGateways(svc *ec2.EC2, data *RecievedData) {
 
 func getTransitGatewayVpcAttachments(svc *ec2.EC2, data *RecievedData) {
 	defer data.wg.Done()
+
 	TGWatt := []*ec2.TransitGatewayVpcAttachment{}
 
 	err := svc.DescribeTransitGatewayVpcAttachmentsPages(
@@ -211,11 +226,13 @@ func getTransitGatewayVpcAttachments(svc *ec2.EC2, data *RecievedData) {
 		data.Error = err
 		data.mu.Unlock()
 	}
+
 	data.TransitGateways = TGWatt
 }
 
 func getVpcPeeringConnections(svc *ec2.EC2, data *RecievedData) {
 	defer data.wg.Done()
+
 	peers := []*ec2.VpcPeeringConnection{}
 
 	err := svc.DescribeVpcPeeringConnectionsPages(
@@ -236,6 +253,7 @@ func getVpcPeeringConnections(svc *ec2.EC2, data *RecievedData) {
 
 func getNetworkInterfaces(svc *ec2.EC2, data *RecievedData) {
 	defer data.wg.Done()
+
 	ifaces := []*ec2.NetworkInterface{}
 
 	err := svc.DescribeNetworkInterfacesPages(
@@ -257,6 +275,7 @@ func getNetworkInterfaces(svc *ec2.EC2, data *RecievedData) {
 
 func getVpcEndpoints(svc *ec2.EC2, data *RecievedData) {
 	defer data.wg.Done()
+
 	endpoints := []*ec2.VpcEndpoint{}
 
 	err := svc.DescribeVpcEndpointsPages(
@@ -278,6 +297,7 @@ func getVpcEndpoints(svc *ec2.EC2, data *RecievedData) {
 
 func getVolumes(svc *ec2.EC2, data *RecievedData) {
 	defer data.wg.Done()
+
 	volumes := []*ec2.Volume{}
 
 	err := svc.DescribeVolumesPages(
@@ -287,11 +307,13 @@ func getVolumes(svc *ec2.EC2, data *RecievedData) {
 			return !lastPage
 		},
 	)
+
 	if err != nil {
 		data.mu.Lock()
 		data.Error = err
 		data.mu.Unlock()
 	}
+
 	data.Volumes = volumes
 }
 
@@ -301,6 +323,7 @@ func getRegions() []string {
 	}))
 	svc := ec2.New(sess)
 	regions := []string{}
+
 	res, err := svc.DescribeRegions(&ec2.DescribeRegionsInput{})
 	if err != nil {
 		panic(fmt.Sprintf("Could not get regions: %v", err.Error()))

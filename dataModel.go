@@ -9,73 +9,73 @@ import (
 )
 
 type RegionData struct {
-	VPCs map[string]VPC
+	VPCs map[string]*VPC
 }
 
 type RegionDataSorted struct {
 	Region string `json:"region"`
-	VPCs   []VPCSorted
+	VPCs   []*VPCSorted
 }
 
 type VPCData struct {
-	Id            string `json:"id"`
-	IsDefault     bool   `json:"isDefault"`
+	ID            string `json:"id"`
 	CidrBlock     string `json:"cidrBlock"`
 	IPv6CidrBlock string `json:"iPv6CidrBlock"`
 	Name          string `json:"name"`
+	IsDefault     bool   `json:"isDefault"`
 }
 
 type VPCSorted struct {
 	VPCData
-	Gateways []string       `json:"gateways,omitempty"`
-	Subnets  []SubnetSorted `json:"subnets,omitempty"`
-	Peers    []VPCPeer      `json:"peers,omitempty"`
+	Gateways []string        `json:"gateways,omitempty"`
+	Subnets  []*SubnetSorted `json:"subnets,omitempty"`
+	Peers    []*VPCPeer      `json:"peers,omitempty"`
 }
 
 type VPC struct {
 	VPCData
 	RawVPC   *ec2.Vpc
+	Subnets  map[string]*Subnet
+	Peers    map[string]*VPCPeer
 	Gateways []string
-	Subnets  map[string]Subnet
-	Peers    map[string]VPCPeer
 }
 
 type SubnetData struct {
-	Id                 string `json:"id"`
+	RouteTable         *RouteTable
+	ID                 string `json:"id"`
 	CidrBlock          string `json:"cidrBlock"`
 	AvailabilityZone   string `json:"availabilityZone"`
-	AvailabilityZoneId string `json:"availabilityZoneId"`
-	Public             bool   `json:"public"`
+	AvailabilityZoneID string `json:"availabilityZoneId"`
 	Name               string `json:"name"`
-	RouteTable         *RouteTable
+	Public             bool   `json:"public"`
 }
 
 type SubnetSorted struct {
 	SubnetData
-	Instances          []InstanceSorted          `json:"instances,omitempty"`
-	NatGateways        []NatGateway              `json:"natGateways,omitempty"`
-	TGWs               []TGWAttachment           `json:"tgws,omitempty"`
-	ENIs               []NetworkInterface        `json:"enis,omitempty"`
-	InterfaceEndpoints []InterfaceEndpointSorted `json:"interfaceEndpoints,omitempty"`
-	GatewayEndpoints   []GatewayEndpoint         `json:"gatewayEndpoints,omitempty"`
+	Instances          []*InstanceSorted          `json:"instances,omitempty"`
+	NatGateways        []*NatGateway              `json:"natGateways,omitempty"`
+	TGWs               []*TGWAttachment           `json:"tgws,omitempty"`
+	ENIs               []*NetworkInterface        `json:"enis,omitempty"`
+	InterfaceEndpoints []*InterfaceEndpointSorted `json:"interfaceEndpoints,omitempty"`
+	GatewayEndpoints   []*GatewayEndpoint         `json:"gatewayEndpoints,omitempty"`
 }
 
 type Subnet struct {
-	SubnetData
 	RawSubnet          *ec2.Subnet
-	Instances          map[string]Instance
-	NatGateways        map[string]NatGateway
-	TGWs               map[string]TGWAttachment
-	ENIs               map[string]NetworkInterface
-	InterfaceEndpoints map[string]InterfaceEndpoint
-	GatewayEndpoints   map[string]GatewayEndpoint
+	Instances          map[string]*Instance
+	NatGateways        map[string]*NatGateway
+	TGWs               map[string]*TGWAttachment
+	ENIs               map[string]*NetworkInterface
+	InterfaceEndpoints map[string]*InterfaceEndpoint
+	GatewayEndpoints   map[string]*GatewayEndpoint
+	SubnetData
 }
 
 type InstanceData struct {
-	Id             string `json:"id"`
+	ID             string `json:"id"`
 	Type           string `json:"type"`
-	SubnetId       string `json:"subnetId"`
-	VpcId          string `json:"vpcId"`
+	SubnetID       string `json:"subnetId"`
+	VpcID          string `json:"vpcId"`
 	State          string `json:"state"`
 	PublicIP       string `json:"publicIP"`
 	PrivateIP      string `json:"privateIP"`
@@ -86,96 +86,95 @@ type InstanceData struct {
 
 type InstanceSorted struct {
 	InstanceData
-	Volumes    []Volume           `json:"volumes,omitempty"`
-	Interfaces []NetworkInterface `json:"interfaces,omitempty"`
+	Volumes    []*Volume           `json:"volumes,omitempty"`
+	Interfaces []*NetworkInterface `json:"interfaces,omitempty"`
 }
 
 type Instance struct {
-	InstanceData
+	Volumes    map[string]*Volume
+	Interfaces map[string]*NetworkInterface
 	RawEc2     *ec2.Instance
-	Volumes    map[string]Volume
-	Interfaces map[string]NetworkInterface
+	InstanceData
 }
 
 type NetworkInterface struct {
-	Id                  string                `json:"id"`
-	PrivateIp           string                `json:"privateIp"`
+	RawNetworkInterface *ec2.NetworkInterface `json:"-"`
+	ID                  string                `json:"id"`
+	PrivateIP           string                `json:"privateIp"`
 	MAC                 string                `json:"mAC"`
 	DNS                 string                `json:"dNS"`
 	Type                string                `json:"type"`
 	Description         string                `json:"description"`
-	PublicIp            string                `json:"publicIp"`
+	PublicIP            string                `json:"publicIp"`
 	Name                string                `json:"name"`
-	SubnetId            string                `json:"subnetId"` // we're just accounting for this for display purposes
-	RawNetworkInterface *ec2.NetworkInterface `json:"-"`
+	SubnetID            string                `json:"subnetId"` // we're just accounting for this for display purposes
 }
 
 type Volume struct {
-	Id         string      `json:"id"`
+	RawVolume  *ec2.Volume `json:"-"`
+	ID         string      `json:"id"`
 	DeviceName string      `json:"deviceName"`
-	Size       int64       `json:"size"`
 	VolumeType string      `json:"volumeType"`
 	Name       string      `json:"name"`
-	RawVolume  *ec2.Volume `json:"-"`
+	Size       int64       `json:"size"`
 }
 type NatGateway struct {
-	Id            string          `json:"id"`
+	RawNatGateway *ec2.NatGateway `json:"-"`
+	ID            string          `json:"id"`
 	PrivateIP     string          `json:"privateIP"`
 	PublicIP      string          `json:"publicIP"`
 	State         string          `json:"state"`
 	Type          string          `json:"type"`
 	Name          string          `json:"name"`
-	RawNatGateway *ec2.NatGateway `json:"-"`
 }
 
 type RouteTable struct {
-	Id       string          `json:"id"`
-	Default  string          `json:"default"`
 	RawRoute *ec2.RouteTable `json:"-"`
+	ID       string          `json:"id"`
+	Default  string          `json:"default"`
 }
 
 type TGWAttachment struct {
-	AttachmentId     string                           `json:"attachmentId"`
-	TransitGatewayId string                           `json:"transitGatewayId"`
-	Name             string                           `json:"name"`
 	RawAttachment    *ec2.TransitGatewayVpcAttachment `json:"-"`
+	AttachmentID     string                           `json:"attachmentId"`
+	TransitGatewayID string                           `json:"transitGatewayId"`
+	Name             string                           `json:"name"`
 }
 
 type VPCPeer struct {
-	Id        string                    `json:"id"`
+	RawPeer   *ec2.VpcPeeringConnection `json:"-"`
+	ID        string                    `json:"id"`
 	Requester string                    `json:"requester"`
 	Accepter  string                    `json:"accepter"`
 	Name      string                    `json:"name"`
-	RawPeer   *ec2.VpcPeeringConnection `json:"-"`
 }
 
 type InterfaceEndpointData struct {
-	Id          string           `json:"id"`
+	RawEndpoint *ec2.VpcEndpoint `json:"-"`
+	ID          string           `json:"id"`
 	ServiceName string           `json:"serviceName"`
 	Name        string           `json:"name"`
-	RawEndpoint *ec2.VpcEndpoint `json:"-"`
 }
 
 type InterfaceEndpoint struct {
+	Interfaces map[string]*NetworkInterface
 	InterfaceEndpointData
-	Interfaces map[string]NetworkInterface
 }
 
 type InterfaceEndpointSorted struct {
 	InterfaceEndpointData
-	Interfaces []NetworkInterface
+	Interfaces []*NetworkInterface
 }
 
 type GatewayEndpoint struct {
-	Id          string           `json:"id"`
+	RawEndpoint *ec2.VpcEndpoint `json:"-"`
+	ID          string           `json:"id"`
 	ServiceName string           `json:"serviceName"`
 	Name        string           `json:"name"`
-	RawEndpoint *ec2.VpcEndpoint `json:"-"`
 }
 
 type RecievedData struct {
-	wg                 sync.WaitGroup
-	mu                 sync.Mutex
+	Error              error
 	Identity           *sts.GetCallerIdentityOutput
 	Vpcs               []*ec2.Vpc
 	Subnets            []*ec2.Subnet
@@ -191,5 +190,6 @@ type RecievedData struct {
 	NetworkInterfaces  []*ec2.NetworkInterface
 	VPCEndpoints       []*ec2.VpcEndpoint
 	Volumes            []*ec2.Volume
-	Error              error
+	wg                 sync.WaitGroup
+	mu                 sync.Mutex
 }

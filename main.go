@@ -16,10 +16,10 @@ import (
 )
 
 type lsvpcConfig struct {
+	regionOverride string
 	noColor        bool
 	noSpace        bool
 	allRegions     bool
-	regionOverride string
 	Color          bool
 	jsonOutput     bool
 	Verbose        bool
@@ -29,7 +29,7 @@ type lsvpcConfig struct {
 
 var Config lsvpcConfig
 
-func populateVPC(region string) (map[string]VPC, error) {
+func populateVPC(region string) (map[string]*VPC, error) {
 	sess := session.Must(session.NewSessionWithOptions(
 		session.Options{
 			SharedConfigState: session.SharedConfigEnable,
@@ -41,10 +41,11 @@ func populateVPC(region string) (map[string]VPC, error) {
 
 	svc := ec2.New(sess)
 	stsSvc := sts.New(sess)
-	var data RecievedData
-	vpcs := make(map[string]VPC)
+	data := RecievedData{}
+	vpcs := make(map[string]*VPC)
 
-	data.wg.Add(15)
+	data.wg.Add(15) //nolint:gomnd // Wait groups increase when requests increase
+
 	go getIdentity(stsSvc, &data)
 	go getVpcs(svc, &data)
 	go getSubnets(svc, &data)
@@ -65,7 +66,7 @@ func populateVPC(region string) (map[string]VPC, error) {
 
 	// This isn't exhaustive error reporting, but all we really care about is if anything failed at all
 	if data.Error != nil {
-		return map[string]VPC{}, fmt.Errorf("failed to populate VPCs: %v", data.Error.Error())
+		return map[string]*VPC{}, fmt.Errorf("failed to populate VPCs: %v", data.Error.Error())
 	}
 
 	mapVpcs(vpcs, data.Vpcs)
@@ -88,23 +89,29 @@ func populateVPC(region string) (map[string]VPC, error) {
 
 func getRegionData(fullData map[string]RegionData, region string, wg *sync.WaitGroup, mu *sync.Mutex) {
 	defer wg.Done()
+
 	vpcs, err := populateVPC(region)
 	if err != nil {
 		return
 	}
+
 	mu.Lock()
+
 	fullData[region] = RegionData{
 		VPCs: vpcs,
 	}
+
 	mu.Unlock()
 }
 
 func doSpecificRegion() {
 	region := Config.regionOverride
+
 	vpcs, err := populateVPC(region)
 	if err != nil {
 		return
 	}
+
 	if Config.jsonOutput {
 		printVPCsJSON(sortVPCs(vpcs))
 	} else {
@@ -122,6 +129,7 @@ func doAllRegions() {
 
 	for _, region := range regions {
 		wg.Add(1)
+
 		go getRegionData(fullData, region, &wg, &mu)
 	}
 
@@ -135,7 +143,6 @@ func doAllRegions() {
 			printVPCs(sortVPCs(vpcs.VPCs))
 		}
 	}
-
 }
 
 func doDefaultRegion() {
@@ -144,10 +151,12 @@ func doDefaultRegion() {
 	}))
 
 	currentRegion := aws.StringValue(sess.Config.Region)
+
 	vpcs, err := populateVPC(currentRegion)
 	if err != nil {
 		panic(fmt.Sprintf("populateVPC failed: %v", err.Error()))
 	}
+
 	if Config.jsonOutput {
 		printVPCsJSON(sortVPCs(vpcs))
 	} else {
@@ -158,7 +167,7 @@ func doDefaultRegion() {
 func init() {
 	flag.BoolVar(&Config.noColor, "nocolor", false, "Suppresses color printing of listing")
 	flag.BoolVar(&Config.Color, "color", false, "Force color output, even through pipe")
-	flag.BoolVar(&Config.noSpace, "nospace", false, "Supresses line-spacing of items")
+	flag.BoolVar(&Config.noSpace, "nospace", false, "Suppresses line-spacing of items")
 	flag.BoolVar(&Config.allRegions, "all", false, "Fetches and prints data on all regions")
 	flag.BoolVar(&Config.allRegions, "a", false, "Fetches and prints data on all regions (abbrev.)")
 	flag.StringVar(&Config.regionOverride, "region", "", "Specify region (default: profile default region)")
@@ -176,6 +185,7 @@ func stdoutIsPipe() bool {
 	}
 
 	mode := info.Mode()
+
 	return mode&fs.ModeNamedPipe != 0
 }
 
@@ -194,7 +204,7 @@ func credentialsLoaded() bool {
 	}
 
 	if aws.StringValue(sess.Config.Region) == "" {
-		//no default region in profile/credentials, check that AWS_DEFAULT_REGION exists
+		// No default region in profile/credentials, check that AWS_DEFAULT_REGION exists
 		if os.Getenv("AWS_DEFAULT_REGION") == "" {
 			os.Setenv("AWS_DEFAULT_REGION", "us-east-1")
 		}
@@ -206,11 +216,13 @@ func credentialsLoaded() bool {
 func validateRegion(region string) bool {
 	regions := getRegions()
 	isValid := false
+
 	for _, reg := range regions {
 		if region == reg {
 			isValid = true
 		}
 	}
+
 	return isValid
 }
 
@@ -229,15 +241,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	if Config.allRegions {
+	// exit if region override is not valid
+	if Config.regionOverride != "" && !validateRegion(Config.regionOverride) {
+		fmt.Printf("Region: '%v' is not valid\n", Config.regionOverride)
+		os.Exit(1)
+	}
+
+	switch {
+	case Config.allRegions:
 		doAllRegions()
-	} else if Config.regionOverride != "" {
-		if !validateRegion(Config.regionOverride) {
-			fmt.Printf("Region: '%v' is not valid\n", Config.regionOverride)
-			os.Exit(1)
-		}
+	case Config.regionOverride != "":
 		doSpecificRegion()
-	} else {
+	default:
 		doDefaultRegion()
 	}
 }

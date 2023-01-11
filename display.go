@@ -7,8 +7,16 @@ import (
 	"strings"
 )
 
-const nameTruncate = 20 //max size a Name tag can be before its truncated with a "..." at the end
+const (
+	nameTruncate   = 20 // Max size a Name tag can be before its truncated with a "..." at the end
+	expungedIP     = "xxx.xxx.xxx.xxx"
+	expungedDomain = "xxxx.xxxx.xxxx"
+	expungedMAC    = "xx:xx:xx:xx:xx:xx"
+	expungedCIDR   = "xxx.xxx.xxx.xxx/xx"
+	expungedV6CIDR = "xxxx::xxxx/xx"
+)
 
+// Indent by number of spaces
 func indent(num int) string {
 	sb := strings.Builder{}
 
@@ -30,6 +38,8 @@ type colorPalette struct {
 	White  string
 }
 
+var color colorPalette
+
 func lineFeed() {
 	if !Config.noSpace {
 		fmt.Println()
@@ -40,11 +50,11 @@ func formatName(name string) string {
 	if name == "" {
 		return ""
 	}
-	//Names can be up to 255 utf8 runes, we should truncate it
+	// Names can be up to 255 utf8 runes, we should truncate it
 	runes := []rune(name)
 	if Config.Truncate {
 		if len(runes) > nameTruncate {
-			runes = runes[:(nameTruncate - 1 - 3)]
+			runes = runes[:(nameTruncate - 1 - 3)] //nolint:gomnd // this takes the lastrun, and gives 3 spaces for ellipses
 			runes = append(runes, []rune("...")...)
 		}
 	}
@@ -57,14 +67,282 @@ func printRegionsJSON(regions []RegionDataSorted) {
 	fmt.Printf("%v", string(export))
 }
 
-func printVPCsJSON(vpcs []VPCSorted) {
+func printVPCsJSON(vpcs []*VPCSorted) {
 	export, _ := json.Marshal(vpcs)
 	fmt.Printf("%v", string(export))
 }
 
-func printVPCs(vpcs []VPCSorted) {
-	color := colorPalette{}
+func printVPC(vpc *VPCSorted) {
+	fmt.Printf(
+		"%v%v%v%v ",
+		color.Green,
+		vpc.ID,
+		formatName(vpc.Name),
+		color.Reset,
+	)
 
+	if vpc.IsDefault {
+		fmt.Printf(
+			"%v(default)%v ",
+			color.Yellow,
+			color.Reset,
+		)
+	}
+
+	if Config.HideIP {
+		vpc.CidrBlock = expungedCIDR
+		if vpc.IPv6CidrBlock != "" {
+			vpc.IPv6CidrBlock = expungedV6CIDR
+		}
+	}
+
+	fmt.Printf(
+		"%v %v -- ",
+		vpc.CidrBlock,
+		vpc.IPv6CidrBlock,
+	)
+}
+
+func printGateway(gateway string) {
+	fmt.Printf(
+		"%v%v%v ",
+		color.Yellow,
+		gateway,
+		color.Reset,
+	)
+}
+
+func printPeer(peer *VPCPeer, vpc *VPCSorted) {
+	direction := "peer-->"
+	vpcOperand := peer.Accepter
+
+	if peer.Accepter == vpc.ID {
+		direction = "<--peer"
+		vpcOperand = peer.Requester
+	}
+
+	fmt.Printf(
+		"%s%v%v%v%v %v %v%v%v\n",
+		indent(4), //nolint:gomnd // not a magic number, spaces to indent by
+		color.Cyan,
+		peer.ID,
+		formatName(peer.Name),
+		color.Reset,
+		direction,
+		color.Green,
+		vpcOperand,
+		color.Reset,
+	)
+}
+
+func printSubnet(subnet *SubnetSorted) {
+	// Print Subnet Info
+	public := "Private"
+	if subnet.Public {
+		public = "Public"
+	}
+
+	if Config.HideIP {
+		subnet.CidrBlock = expungedCIDR
+	}
+
+	fmt.Printf(
+		"%s%v%v%v%v  %v  %v %v-->%v%v %v\n",
+		indent(4), //nolint:gomnd // not a magic number, spaces to indent by
+		color.Blue,
+		subnet.ID,
+		formatName(subnet.Name),
+		color.Reset,
+		subnet.AvailabilityZone,
+		subnet.CidrBlock,
+		color.Yellow,
+		subnet.RouteTable.Default,
+		color.Reset,
+		public,
+	)
+}
+
+func printInterfaceEndpoint(interfaceEndpoint *InterfaceEndpointSorted, subnet *SubnetSorted) {
+	fmt.Printf(
+		"%s%v%v%v%v interface--> %v\n",
+		indent(8), //nolint:gomnd // not a magic number, spaces to indent by
+		color.Cyan,
+		interfaceEndpoint.ID,
+		formatName(interfaceEndpoint.Name),
+		color.Reset,
+		interfaceEndpoint.ServiceName,
+	)
+
+	for ifaceIdx := range interfaceEndpoint.Interfaces {
+		iface := interfaceEndpoint.Interfaces[ifaceIdx]
+		// An endpoint can have multiple interfaces in multiple subnets, we only want to display whats relevant to the subnet
+		if Config.HideIP {
+			iface.MAC = expungedMAC
+			iface.PublicIP = expungedIP
+			iface.PrivateIP = expungedIP
+
+			if iface.DNS != "" {
+				iface.DNS = expungedDomain
+			}
+		}
+
+		if iface.SubnetID == subnet.ID {
+			fmt.Printf(
+				"%s%v%v %v %v %v %v %v \n",
+				indent(12), //nolint:gomnd // not a magic number, spaces to indent by
+				iface.ID,
+				formatName(iface.Name),
+				iface.Type,
+				iface.MAC,
+				iface.PublicIP,
+				iface.PrivateIP,
+				iface.DNS,
+			)
+		}
+	}
+}
+
+func printGatewayEndpoint(gatewayEndpoint *GatewayEndpoint) {
+	fmt.Printf(
+		"%s%v%v%v%v gateway--> %v\n",
+		indent(8), //nolint:gomnd // not a magic number, spaces to indent by
+		color.Cyan,
+		gatewayEndpoint.ID,
+		formatName(gatewayEndpoint.Name),
+		color.Reset,
+		gatewayEndpoint.ServiceName,
+	)
+}
+
+func printNetworkInterface(iface *NetworkInterface) {
+	if Config.HideIP {
+		iface.MAC = expungedMAC
+		iface.PrivateIP = expungedIP
+		iface.PublicIP = expungedIP
+
+		if iface.DNS != "" {
+			iface.DNS = expungedDomain
+		}
+	}
+
+	fmt.Printf(
+		"%s%v%v%v%v %v %v %v %v %v : %v\n",
+		indent(8), //nolint:gomnd // not a magic number, spaces to indent by
+		color.Cyan,
+		iface.ID,
+		formatName(iface.Name),
+		color.Reset,
+		iface.Type,
+		iface.MAC,
+		iface.PublicIP,
+		iface.PrivateIP,
+		iface.DNS,
+		iface.Description,
+	)
+}
+
+func printInstance(instance *InstanceSorted) {
+	// Its too clunky to directly report SystemStatus and InstanceStatus, lets do it like the console does
+	status := 0
+
+	if instance.SystemStatus == "ok" {
+		status++
+	}
+
+	if instance.InstanceStatus == "ok" {
+		status++
+	}
+
+	// Print Instance Info
+	if Config.HideIP {
+		instance.PublicIP = expungedIP
+		instance.PrivateIP = expungedIP
+	}
+
+	fmt.Printf(
+		"%s%v%s%v%v %v -- %v (%v/2) -- %v -- %v\n",
+		indent(8), //nolint:gomnd // not a magic number, spaces to indent by
+		color.Cyan,
+		instance.ID,
+		formatName(instance.Name),
+		color.Reset,
+		instance.Type,
+		instance.State,
+		status,
+		instance.PublicIP,
+		instance.PrivateIP,
+	)
+}
+
+func printInstanceInterface(iface *NetworkInterface) {
+	if Config.HideIP {
+		iface.MAC = expungedMAC
+		iface.PrivateIP = expungedIP
+		iface.PublicIP = expungedIP
+
+		if iface.DNS != "" {
+			iface.DNS = expungedDomain
+		}
+	}
+
+	fmt.Printf(
+		"%s%v%v  %v  %v  %v\n",
+		indent(12), //nolint:gomnd // not a magic number, spaces to indent by
+		iface.ID,
+		formatName(iface.Name),
+		iface.MAC,
+		iface.PrivateIP,
+		iface.DNS,
+	)
+}
+
+func printInstanceVolume(volume *Volume) {
+	fmt.Printf(
+		"%s%v%v  %v  %v  %v GiB\n",
+		indent(12), //nolint:gomnd // not a magic number, spaces to indent by
+		volume.ID,
+		formatName(volume.Name),
+		volume.VolumeType,
+		volume.DeviceName,
+		volume.Size,
+	)
+}
+
+func printNatGateway(natGateway *NatGateway) {
+	if Config.HideIP {
+		natGateway.PrivateIP = expungedIP
+		natGateway.PublicIP = expungedIP
+	}
+
+	fmt.Printf(
+		"%s%v%v%v%v  %v  %v  %v  %v\n",
+		indent(8), //nolint:gomnd // not a magic number, spaces to indent by
+		color.Cyan,
+		natGateway.ID,
+		formatName(natGateway.Name),
+		color.Reset,
+		natGateway.Type,
+		natGateway.State,
+		natGateway.PublicIP,
+		natGateway.PrivateIP,
+	)
+}
+
+func printTGWAttachment(tgw *TGWAttachment) {
+	fmt.Printf(
+		"%s%v%v%v%v ---> %v%v%v\n",
+		indent(8), //nolint:gomnd // not a magic number, spaces to indent by
+		color.Cyan,
+		tgw.AttachmentID,
+		formatName(tgw.Name),
+		color.Reset,
+		color.Yellow,
+		tgw.TransitGatewayID,
+		color.Reset,
+	)
+}
+
+func printVPCs(vpcs []*VPCSorted) {
 	if !Config.noColor {
 		color.Reset = "\033[0m"
 		color.Red = "\033[31m"
@@ -76,278 +354,86 @@ func printVPCs(vpcs []VPCSorted) {
 		color.White = "\033[37m"
 	}
 
-	//sort the keys
-	for _, vpc := range vpcs {
+	// sort the keys
+	for vpcIdx := range vpcs {
+		vpc := vpcs[vpcIdx]
 		// Print VPC
-		fmt.Printf(
-			"%v%v%v%v ",
-			color.Green,
-			vpc.Id,
-			formatName(vpc.Name),
-			color.Reset,
-		)
+		printVPC(vpc)
 
-		if vpc.IsDefault {
-			fmt.Printf(
-				"%v(default)%v ",
-				color.Yellow,
-				color.Reset,
-			)
-		}
-
-		if Config.HideIP {
-			vpc.CidrBlock = "xxx.xxx.xxx.xxx/xx"
-			if vpc.IPv6CidrBlock != "" {
-				vpc.IPv6CidrBlock = "xxxx::xxxx/xx"
-			}
-		}
-		fmt.Printf(
-			"%v %v -- ",
-			vpc.CidrBlock,
-			vpc.IPv6CidrBlock,
-		)
 		// Print gateways set to VPC
 		for _, gateway := range vpc.Gateways {
-			fmt.Printf(
-				"%v%v%v ",
-				color.Yellow,
-				gateway,
-				color.Reset,
-			)
+			printGateway(gateway)
 		}
 
-		fmt.Printf("\n")
+		fmt.Printf("\n") // this linefeed is non-configurable
 
 		// Print Peers
 		peersExist := false
-		for _, peer := range vpc.Peers {
-			direction := "peer-->"
-			vpcOperand := peer.Accepter
-			if peer.Accepter == vpc.Id {
-				direction = "<--peer"
-				vpcOperand = peer.Requester
-			}
-			fmt.Printf(
-				"%s%v%v%v%v %v %v%v%v\n",
-				indent(4),
-				color.Cyan,
-				peer.Id,
-				formatName(peer.Name),
-				color.Reset,
-				direction,
-				color.Green,
-				vpcOperand,
-				color.Reset,
-			)
+
+		for peerIdx := range vpc.Peers {
 			peersExist = true
+			peer := vpc.Peers[peerIdx]
+			printPeer(peer, vpc)
 		}
+
 		if peersExist {
 			lineFeed()
 		}
 
 		// Print Subnets
-		for _, subnet := range vpc.Subnets {
+		for subnetIdx := range vpc.Subnets {
+			subnet := vpc.Subnets[subnetIdx]
+			printSubnet(subnet)
 
-			// Print Subnet Info
-			public := "Private"
-			if subnet.Public {
-				public = "Public"
-			}
-			if Config.HideIP {
-				subnet.CidrBlock = "xxx.xxx.xxx.xxx/xx"
-			}
-			fmt.Printf(
-				"%s%v%v%v%v  %v  %v %v-->%v%v %v\n",
-				indent(4),
-				color.Blue,
-				subnet.Id,
-				formatName(subnet.Name),
-				color.Reset,
-				subnet.AvailabilityZone,
-				subnet.CidrBlock,
-				color.Yellow,
-				subnet.RouteTable.Default,
-				color.Reset,
-				public,
-			)
-
-			//Print Endpoints
+			// Print Endpoints
 			if Config.Verbose {
-				for _, interfaceEndpoint := range subnet.InterfaceEndpoints {
-					fmt.Printf(
-						"%s%v%v%v%v interface--> %v\n",
-						indent(8),
-						color.Cyan,
-						interfaceEndpoint.Id,
-						formatName(interfaceEndpoint.Name),
-						color.Reset,
-						interfaceEndpoint.ServiceName,
-					)
-					for _, iface := range interfaceEndpoint.Interfaces {
-						//an endpoint can have multiple interfaces in multiple subnets, we only want to display whats relevant to the subnet
-						if Config.HideIP {
-							iface.MAC = "xx:xx:xx:xx:xx:xx"
-							iface.PublicIp = "xxx.xxx.xxx.xxx"
-							iface.PrivateIp = "xxx.xxx.xxx.xxx"
-							if iface.DNS != "" {
-								iface.DNS = "xxxx.xxxx.xxxx"
-							}
-						}
-						if iface.SubnetId == subnet.Id {
-							fmt.Printf(
-								"%s%v%v %v %v %v %v %v \n",
-								indent(12),
-								iface.Id,
-								formatName(iface.Name),
-								iface.Type,
-								iface.MAC,
-								iface.PublicIp,
-								iface.PrivateIp,
-								iface.DNS,
-							)
-
-						}
-					}
+				for interfaceEndpointIdx := range subnet.InterfaceEndpoints {
+					interfaceEndpoint := subnet.InterfaceEndpoints[interfaceEndpointIdx]
+					printInterfaceEndpoint(interfaceEndpoint, subnet)
 				}
 			}
 
-			for _, gatewayEndpoint := range subnet.GatewayEndpoints {
-				fmt.Printf(
-					"%s%v%v%v%v gateway--> %v\n",
-					indent(8),
-					color.Cyan,
-					gatewayEndpoint.Id,
-					formatName(gatewayEndpoint.Name),
-					color.Reset,
-					gatewayEndpoint.ServiceName,
-				)
+			for gatewayEndpointIdx := range subnet.GatewayEndpoints {
+				gatewayEndpoint := subnet.GatewayEndpoints[gatewayEndpointIdx]
+				printGatewayEndpoint(gatewayEndpoint)
 			}
 
 			// Print Interfaces
-			for _, iface := range subnet.ENIs {
-				if Config.HideIP {
-					iface.MAC = "xx:xx:xx:xx:xx:xx"
-					iface.PrivateIp = "xxx.xxx.xxx.xxx"
-					iface.PublicIp = "xxx.xxx.xxx.xxx"
-					if iface.DNS != "" {
-						iface.DNS = "xxxx.xxxx.xxxx"
-					}
-				}
-				fmt.Printf(
-					"%s%v%v%v%v %v %v %v %v %v : %v\n",
-					indent(8),
-					color.Cyan,
-					iface.Id,
-					formatName(iface.Name),
-					color.Reset,
-					iface.Type,
-					iface.MAC,
-					iface.PublicIp,
-					iface.PrivateIp,
-					iface.DNS,
-					iface.Description,
-				)
+			for ifaceIdx := range subnet.ENIs {
+				iface := subnet.ENIs[ifaceIdx]
+				printNetworkInterface(iface)
 			}
+
 			// Print EC2 Instances
-			for _, instance := range subnet.Instances {
-				// Its too clunky to directly report SystemStatus and InstanceStatus, lets do it like the console does
-				status := 0
-				if instance.SystemStatus == "ok" {
-					status = status + 1
-				}
-				if instance.InstanceStatus == "ok" {
-					status = status + 1
-				}
+			for instanceIdx := range subnet.Instances {
+				instance := subnet.Instances[instanceIdx]
+				printInstance(instance)
 
-				// Print Instance Info
-				if Config.HideIP {
-					instance.PublicIP = "xxx.xxx.xxx.xxx"
-					instance.PrivateIP = "xxx.xxx.xxx.xxx"
-				}
-				fmt.Printf(
-					"%s%v%s%v%v %v -- %v (%v/2) -- %v -- %v\n",
-					indent(8),
-					color.Cyan,
-					instance.Id,
-					formatName(instance.Name),
-					color.Reset,
-					instance.Type,
-					instance.State,
-					status,
-					instance.PublicIP,
-					instance.PrivateIP,
-				)
-
-				// Print Instance Interfaces
 				if Config.Verbose {
-					for _, iface := range instance.Interfaces {
-						if Config.HideIP {
-							iface.MAC = "xx:xx:xx:xx:xx:xx"
-							iface.PrivateIp = "xxx.xxx.xxx.xxx"
-							iface.PublicIp = "xxx.xxx.xxx.xxx"
-							if iface.DNS != "" {
-								iface.DNS = "xxxx.xxxx.xxxx"
-							}
-						}
-						fmt.Printf(
-							"%s%v%v  %v  %v  %v\n",
-							indent(12),
-							iface.Id,
-							formatName(iface.Name),
-							iface.MAC,
-							iface.PrivateIp,
-							iface.DNS,
-						)
+					// Print Instance Interfaces
+					for ifaceIdx := range instance.Interfaces {
+						iface := instance.Interfaces[ifaceIdx]
+						printInstanceInterface(iface)
 					}
 
 					// Print Instance Volumes
-					for _, volume := range instance.Volumes {
-						fmt.Printf(
-							"%s%v%v  %v  %v  %v GiB\n",
-							indent(12),
-							volume.Id,
-							formatName(volume.Name),
-							volume.VolumeType,
-							volume.DeviceName,
-							volume.Size,
-						)
+					for volumeIdx := range instance.Volumes {
+						volume := instance.Volumes[volumeIdx]
+						printInstanceVolume(volume)
 					}
 				}
 			}
 
-			//Print Nat Gateways
-			for _, natGateway := range subnet.NatGateways {
-				if Config.HideIP {
-					natGateway.PrivateIP = "xxx.xxx.xxx.xxx"
-					natGateway.PublicIP = "xxx.xxx.xxx.xxx"
-				}
-				fmt.Printf(
-					"%s%v%v%v%v  %v  %v  %v  %v\n",
-					indent(8),
-					color.Cyan,
-					natGateway.Id,
-					formatName(natGateway.Name),
-					color.Reset,
-					natGateway.Type,
-					natGateway.State,
-					natGateway.PublicIP,
-					natGateway.PrivateIP,
-				)
+			// Print Nat Gateways
+			for natGatewayIdx := range subnet.NatGateways {
+				natGateway := subnet.NatGateways[natGatewayIdx]
+				printNatGateway(natGateway)
 			}
 
-			//Print Transit Gateway Attachments
-			for _, tgw := range subnet.TGWs {
-				fmt.Printf(
-					"%s%v%v%v%v ---> %v%v%v\n",
-					indent(8),
-					color.Cyan,
-					tgw.AttachmentId,
-					formatName(tgw.Name),
-					color.Reset,
-					color.Yellow,
-					tgw.TransitGatewayId,
-					color.Reset,
-				)
+			// Print Transit Gateway Attachments
+			for tgwIdx := range subnet.TGWs {
+				tgw := subnet.TGWs[tgwIdx]
+				printTGWAttachment(tgw)
 			}
 
 			lineFeed()
