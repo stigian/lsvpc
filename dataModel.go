@@ -14,7 +14,7 @@ type RegionData struct {
 
 type RegionDataSorted struct {
 	Region string `json:"region"`
-	VPCs   []VPCSorted
+	VPCs   []*VPCSorted
 }
 
 type VPCData struct {
@@ -86,8 +86,8 @@ type InstanceData struct {
 
 type InstanceSorted struct {
 	InstanceData
-	Volumes    []Volume           `json:"volumes,omitempty"`
-	Interfaces []NetworkInterface `json:"interfaces,omitempty"`
+	Volumes    []*Volume           `json:"volumes,omitempty"`
+	Interfaces []*NetworkInterface `json:"interfaces,omitempty"`
 }
 
 type Instance struct {
