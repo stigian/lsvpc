@@ -273,6 +273,28 @@ func getNetworkInterfaces(svc *ec2.EC2, data *RecievedData) {
 	data.NetworkInterfaces = ifaces
 }
 
+func getSecurityGroups(svc *ec2.EC2, data *RecievedData) {
+	defer data.wg.Done()
+
+	sgs := []*ec2.SecurityGroup{}
+
+	err := svc.DescribeSecurityGroupsPages(
+		&ec2.DescribeSecurityGroupsInput{},
+		func(page *ec2.DescribeSecurityGroupsOutput, lastPage bool) bool {
+			sgs = append(sgs, page.SecurityGroups...)
+			return !lastPage
+		},
+	)
+
+	if err != nil {
+		data.mu.Lock()
+		data.Error = err
+		data.mu.Unlock()
+	}
+
+	data.SecurityGroups = sgs
+}
+
 func getVpcEndpoints(svc *ec2.EC2, data *RecievedData) {
 	defer data.wg.Done()
 

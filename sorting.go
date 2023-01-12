@@ -214,9 +214,9 @@ func sortInstance(instance *Instance) *InstanceSorted {
 
 	sort.Strings(interfaceKeys)
 
-	interfacesSorted := []*NetworkInterface{}
+	interfacesSorted := []*NetworkInterfaceSorted{}
 	for _, interfaceID := range interfaceKeys {
-		interfacesSorted = append(interfacesSorted, instance.Interfaces[interfaceID])
+		interfacesSorted = append(interfacesSorted, sortNetworkInterface(instance.Interfaces[interfaceID]))
 	}
 
 	return &InstanceSorted{
@@ -234,13 +234,53 @@ func sortInterfaceEndpoint(endpoint *InterfaceEndpoint) *InterfaceEndpointSorted
 
 	sort.Strings(ifaceKeys)
 
-	interfacesSorted := []*NetworkInterface{}
+	interfacesSorted := []*NetworkInterfaceSorted{}
 	for _, interfaceID := range ifaceKeys {
-		interfacesSorted = append(interfacesSorted, endpoint.Interfaces[interfaceID])
+		interfacesSorted = append(interfacesSorted, sortNetworkInterface(endpoint.Interfaces[interfaceID]))
 	}
 
 	return &InterfaceEndpointSorted{
 		InterfaceEndpointData: endpoint.InterfaceEndpointData,
 		Interfaces:            interfacesSorted,
 	}
+}
+
+func sortNetworkInterface(iface *NetworkInterface) *NetworkInterfaceSorted {
+	groupKeys := []string{}
+	for k := range iface.Groups {
+		groupKeys = append(groupKeys, k)
+	}
+
+	sort.Strings(groupKeys)
+
+	groupsSorted := []*SecurityGroup{}
+	for _, groupID := range groupKeys {
+		groupsSorted = append(groupsSorted, iface.Groups[groupID])
+	}
+
+	return &NetworkInterfaceSorted{
+		NetworkInterfaceData: iface.NetworkInterfaceData,
+		Groups:               groupsSorted,
+	}
+}
+
+func sortNatGateway(ng *NatGateway) *NatGatewaySorted {
+
+	ifaceKeys := []string{}
+	for k := range ng.Interfaces {
+		ifaceKeys = append(ifaceKeys, k)
+	}
+
+	sort.Strings(ifaceKeys)
+
+	ifaceSorted := []*NetworkInterfaceSorted{}
+	for _, ifaceID := range ifaceKeys {
+		ifaceSorted = append(ifaceSorted, sortNetworkInterface(ng.Interfaces[ifaceID]))
+	}
+
+	return &NatGatewaySorted{
+		NatGatewayData: ng.NatGatewayData,
+		Interfaces:     ifaceSorted,
+	}
+
 }

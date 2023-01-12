@@ -156,13 +156,16 @@ func mapNatGateways(vpcs map[string]*VPC, natGateways []*ec2.NatGateway) {
 		}
 
 		vpcs[*gateway.VpcId].Subnets[*gateway.SubnetId].NatGateways[*gateway.NatGatewayId] = &NatGateway{
-			ID:            aws.StringValue(gateway.NatGatewayId),
-			PrivateIP:     aws.StringValue(gateway.NatGatewayAddresses[0].PrivateIp),
-			PublicIP:      aws.StringValue(gateway.NatGatewayAddresses[0].PublicIp),
-			State:         aws.StringValue(gateway.State),
-			Type:          aws.StringValue(gateway.ConnectivityType),
-			Name:          getNameTag(gateway.Tags),
-			RawNatGateway: gateway,
+			NatGatewayData: NatGatewayData{
+				ID:            aws.StringValue(gateway.NatGatewayId),
+				PrivateIP:     aws.StringValue(gateway.NatGatewayAddresses[0].PrivateIp),
+				PublicIP:      aws.StringValue(gateway.NatGatewayAddresses[0].PublicIp),
+				State:         aws.StringValue(gateway.State),
+				Type:          aws.StringValue(gateway.ConnectivityType),
+				Name:          getNameTag(gateway.Tags),
+				RawNatGateway: gateway,
+			},
+			Interfaces: make(map[string]*NetworkInterface),
 		}
 	}
 }
@@ -358,9 +361,6 @@ func mapVpcPeeringConnections(vpcs map[string]*VPC, vpcPeeringConnections []*ec2
 
 func mapNetworkInterfaces(vpcs map[string]*VPC, networkInterfaces []*ec2.NetworkInterface) {
 	for _, iface := range networkInterfaces {
-		if aws.StringValue(iface.InterfaceType) == "nat_gateway" {
-			continue // Nat gateways are already adequately reported
-		}
 
 		var publicIP *string
 		if iface.Association != nil {
@@ -368,15 +368,33 @@ func mapNetworkInterfaces(vpcs map[string]*VPC, networkInterfaces []*ec2.Network
 		}
 
 		ifaceIn := NetworkInterface{
-			ID:                  aws.StringValue(iface.NetworkInterfaceId),
-			PrivateIP:           aws.StringValue(iface.PrivateIpAddress),
-			MAC:                 aws.StringValue(iface.MacAddress),
-			PublicIP:            aws.StringValue(publicIP),
-			Type:                aws.StringValue(iface.InterfaceType),
-			Description:         aws.StringValue(iface.Description),
-			Name:                getNameTag(iface.TagSet),
-			SubnetID:            aws.StringValue(iface.SubnetId),
-			RawNetworkInterface: iface,
+			NetworkInterfaceData: NetworkInterfaceData{
+				ID:                  aws.StringValue(iface.NetworkInterfaceId),
+				PrivateIP:           aws.StringValue(iface.PrivateIpAddress),
+				MAC:                 aws.StringValue(iface.MacAddress),
+				PublicIP:            aws.StringValue(publicIP),
+				Type:                aws.StringValue(iface.InterfaceType),
+				Description:         aws.StringValue(iface.Description),
+				Name:                getNameTag(iface.TagSet),
+				SubnetID:            aws.StringValue(iface.SubnetId),
+				RawNetworkInterface: iface,
+			},
+			Groups: make(map[string]*SecurityGroup),
+		}
+
+		if ifaceIn.Type == "nat_gateway" {
+			for vpcID, vpc := range vpcs {
+				for subnetID, subnet := range vpc.Subnets {
+					for natGatewayID, natGateway := range subnet.NatGateways {
+						for _, natGatewayAddress := range natGateway.RawNatGateway.NatGatewayAddresses {
+							if aws.StringValue(natGatewayAddress.NetworkInterfaceId) == ifaceIn.ID {
+								vpcs[vpcID].Subnets[subnetID].NatGateways[natGatewayID].Interfaces[ifaceIn.ID] = &ifaceIn
+							}
+						}
+					}
+				}
+			}
+			continue
 		}
 
 		if aws.StringValue(iface.InterfaceType) == "vpc_endpoint" {
@@ -421,6 +439,150 @@ func mapNetworkInterfaces(vpcs map[string]*VPC, networkInterfaces []*ec2.Network
 		vpcs[*iface.VpcId].
 			Subnets[*iface.SubnetId].
 			ENIs[*iface.NetworkInterfaceId] = &ifaceIn
+	}
+}
+
+func mapSecurityGroups(vpcs map[string]*VPC, securityGroups []*ec2.SecurityGroup) {
+
+	for _, securityGroup := range securityGroups {
+
+		InboundRules := []*SecurityGroupRule{}
+
+		for _, inboundRule := range securityGroup.IpPermissions {
+
+			IPR := []*IpRange{}
+			for _, iprange := range inboundRule.IpRanges {
+				IPR = append(IPR, &IpRange{
+					CidrIP:      aws.StringValue(iprange.CidrIp),
+					Description: aws.StringValue(iprange.Description),
+				})
+			}
+
+			IPR6 := []*Ipv6Range{}
+			for _, ipv6range := range inboundRule.Ipv6Ranges {
+				IPR6 = append(IPR6, &Ipv6Range{
+					CidrIPV6:    aws.StringValue(ipv6range.CidrIpv6),
+					Description: aws.StringValue(ipv6range.Description),
+				})
+			}
+
+			InboundRules = append(InboundRules, &SecurityGroupRule{
+				FromPort:   aws.Int64Value(inboundRule.FromPort),
+				ToPort:     aws.Int64Value(inboundRule.ToPort),
+				IpProtocol: aws.StringValue(inboundRule.IpProtocol),
+				IpRanges:   IPR,
+				Ipv6Ranges: IPR6,
+			})
+		}
+
+		OutboundRules := []*SecurityGroupRule{}
+
+		for _, outboundRule := range securityGroup.IpPermissionsEgress {
+
+			IPR := []*IpRange{}
+			for _, iprange := range outboundRule.IpRanges {
+				IPR = append(IPR, &IpRange{
+					CidrIP:      aws.StringValue(iprange.CidrIp),
+					Description: aws.StringValue(iprange.Description),
+				})
+			}
+
+			IPR6 := []*Ipv6Range{}
+			for _, ipv6range := range outboundRule.Ipv6Ranges {
+				IPR6 = append(IPR6, &Ipv6Range{
+					CidrIPV6:    aws.StringValue(ipv6range.CidrIpv6),
+					Description: aws.StringValue(ipv6range.Description),
+				})
+			}
+
+			OutboundRules = append(OutboundRules, &SecurityGroupRule{
+				FromPort:   aws.Int64Value(outboundRule.FromPort),
+				ToPort:     aws.Int64Value(outboundRule.ToPort),
+				IpProtocol: aws.StringValue(outboundRule.IpProtocol),
+				IpRanges:   IPR,
+				Ipv6Ranges: IPR6,
+			})
+		}
+
+		securityGroupIn := &SecurityGroup{
+			Description:         aws.StringValue(securityGroup.Description),
+			GroupID:             aws.StringValue(securityGroup.GroupId),
+			GroupName:           aws.StringValue(securityGroup.GroupName),
+			IpPermissions:       InboundRules,
+			IpPermissionsEgress: OutboundRules,
+			TagName:             getNameTag(securityGroup.Tags),
+			RawSecurityGroup:    securityGroup,
+		}
+
+		// check instance interfaces
+		for vpcID, vpc := range vpcs {
+			for subnetID, subnet := range vpc.Subnets {
+				for instanceID, instance := range subnet.Instances {
+					for interfaceID, iface := range instance.Interfaces {
+						for _, group := range iface.RawNetworkInterface.Groups {
+							if aws.StringValue(group.GroupId) == securityGroupIn.GroupID {
+								vpcs[vpcID].
+									Subnets[subnetID].
+									Instances[instanceID].
+									Interfaces[interfaceID].
+									Groups[securityGroupIn.GroupID] = securityGroupIn
+							}
+						}
+					}
+				}
+			}
+		}
+
+		// check ENIs
+		for vpcID, vpc := range vpcs {
+			for subnetID, subnet := range vpc.Subnets {
+				for ifaceID, iface := range subnet.ENIs {
+					for _, group := range iface.RawNetworkInterface.Groups {
+						if aws.StringValue(group.GroupId) == securityGroupIn.GroupID {
+							vpcs[vpcID].
+								Subnets[subnetID].ENIs[ifaceID].Groups[securityGroupIn.GroupID] = securityGroupIn
+
+						}
+					}
+				}
+			}
+		}
+
+		// Check Interface Endpoints
+		for vpcID, vpc := range vpcs {
+			for subnetID, subnet := range vpc.Subnets {
+				for endpointID, endpoint := range subnet.InterfaceEndpoints {
+					for ifaceID, iface := range endpoint.Interfaces {
+						for _, group := range iface.RawNetworkInterface.Groups {
+							if aws.StringValue(group.GroupId) == securityGroupIn.GroupID {
+								vpcs[vpcID].
+									Subnets[subnetID].
+									InterfaceEndpoints[endpointID].
+									Interfaces[ifaceID].
+									Groups[securityGroupIn.GroupID] = securityGroupIn
+							}
+						}
+					}
+				}
+			}
+		}
+
+		// Check NAT Gateways
+		for vpcID, vpc := range vpcs {
+			for subnetID, subnet := range vpc.Subnets {
+				for natGatewayID, natGateway := range subnet.NatGateways {
+					for ifaceID, iface := range natGateway.Interfaces {
+						for _, group := range iface.RawNetworkInterface.Groups {
+							if aws.StringValue(group.GroupId) == securityGroupIn.GroupID {
+								fmt.Printf("found nat gateway\n")
+								vpcs[vpcID].Subnets[subnetID].NatGateways[natGatewayID].Interfaces[ifaceID].Groups[securityGroupIn.GroupID] = securityGroupIn
+							}
+						}
+					}
+				}
+			}
+		}
+
 	}
 }
 

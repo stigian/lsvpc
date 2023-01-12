@@ -44,7 +44,7 @@ func populateVPC(region string) (map[string]*VPC, error) {
 	data := RecievedData{}
 	vpcs := make(map[string]*VPC)
 
-	data.wg.Add(15) //nolint:gomnd // Wait groups increase when requests increase
+	data.wg.Add(16) //nolint:gomnd // Wait groups increase when requests increase
 
 	go getIdentity(stsSvc, &data)
 	go getVpcs(svc, &data)
@@ -60,6 +60,7 @@ func populateVPC(region string) (map[string]*VPC, error) {
 	go getTransitGatewayVpcAttachments(svc, &data)
 	go getVpcPeeringConnections(svc, &data)
 	go getNetworkInterfaces(svc, &data)
+	go getSecurityGroups(svc, &data)
 	go getVpcEndpoints(svc, &data)
 
 	data.wg.Wait()
@@ -83,6 +84,7 @@ func populateVPC(region string) (map[string]*VPC, error) {
 	mapVpcPeeringConnections(vpcs, data.PeeringConnections)
 	mapVpcEndpoints(vpcs, data.VPCEndpoints)
 	mapNetworkInterfaces(vpcs, data.NetworkInterfaces)
+	mapSecurityGroups(vpcs, data.SecurityGroups)
 
 	return vpcs, nil
 }
