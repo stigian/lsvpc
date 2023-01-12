@@ -111,8 +111,8 @@ type NetworkInterfaceData struct {
 }
 
 type NetworkInterface struct {
-	NetworkInterfaceData
 	Groups map[string]*SecurityGroup `json:"groups"`
+	NetworkInterfaceData
 }
 
 type NetworkInterfaceSorted struct {
@@ -121,29 +121,29 @@ type NetworkInterfaceSorted struct {
 }
 
 type SecurityGroup struct {
+	RawSecurityGroup    *ec2.SecurityGroup   `json:"-"`
 	Description         string               `json:"description"`
 	GroupID             string               `json:"groupId"`
 	GroupName           string               `json:"groupName"`
-	IpPermissions       []*SecurityGroupRule `json:"ipPermissions"`
-	IpPermissionsEgress []*SecurityGroupRule `json:"ipPermissionsEgress"`
 	TagName             string               `json:"tagName"`
-	RawSecurityGroup    *ec2.SecurityGroup   `json:"-"`
+	IPPermissions       []*SecurityGroupRule `json:"ipPermissions"`
+	IPPermissionsEgress []*SecurityGroupRule `json:"ipPermissionsEgress"`
 }
 
 type SecurityGroupRule struct {
+	IPProtocol string       `json:"ipProtocol"`
+	IPRanges   []*IPRange   `json:"ipRanges"`
+	IPv6Ranges []*IPv6Range `json:"ipv6Ranges"`
 	FromPort   int64        `json:"fromPort"`
 	ToPort     int64        `json:"toPort"`
-	IpProtocol string       `json:"ipProtocol"`
-	IpRanges   []*IpRange   `json:"ipRanges"`
-	Ipv6Ranges []*Ipv6Range `json:"ipv6Ranges"`
 }
 
-type IpRange struct {
+type IPRange struct {
 	CidrIP      string `json:"cidrIp"`
 	Description string `json:"description"`
 }
 
-type Ipv6Range struct {
+type IPv6Range struct {
 	CidrIPV6    string `json:"cidrIpv6"`
 	Description string `json:"description"`
 }
@@ -165,8 +165,8 @@ type NatGatewayData struct {
 	Name          string          `json:"name"`
 }
 type NatGateway struct {
-	NatGatewayData
 	Interfaces map[string]*NetworkInterface `json:"interfaces"`
+	NatGatewayData
 }
 
 type NatGatewaySorted struct {

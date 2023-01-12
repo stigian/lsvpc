@@ -265,7 +265,6 @@ func sortNetworkInterface(iface *NetworkInterface) *NetworkInterfaceSorted {
 }
 
 func sortNatGateway(ng *NatGateway) *NatGatewaySorted {
-
 	ifaceKeys := []string{}
 	for k := range ng.Interfaces {
 		ifaceKeys = append(ifaceKeys, k)
@@ -282,5 +281,4 @@ func sortNatGateway(ng *NatGateway) *NatGatewaySorted {
 		NatGatewayData: ng.NatGatewayData,
 		Interfaces:     ifaceSorted,
 	}
-
 }

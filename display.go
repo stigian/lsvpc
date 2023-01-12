@@ -199,9 +199,10 @@ func printInterfaceEndpoint(interfaceEndpoint *InterfaceEndpointSorted, subnet *
 				iface.DNS,
 			)
 		}
+
 		if Config.Verbose {
 			for _, group := range iface.Groups {
-				printSecurityGroup(group, 16)
+				printSecurityGroup(group, 16) //nolint:gomnd // not a magic number, spaces to indent by
 			}
 		}
 	}
@@ -247,7 +248,7 @@ func printNetworkInterface(iface *NetworkInterface) {
 
 	if Config.Verbose {
 		for _, group := range iface.Groups {
-			printSecurityGroup(group, 12)
+			printSecurityGroup(group, 12) //nolint:gomnd // not a magic number, spaces to indent by
 		}
 	}
 }
@@ -307,9 +308,10 @@ func printInstanceInterface(iface *NetworkInterfaceSorted) {
 		iface.PrivateIP,
 		iface.DNS,
 	)
+
 	if Config.Verbose {
 		for _, group := range iface.Groups {
-			printSecurityGroup(group, 16)
+			printSecurityGroup(group, 16) //nolint:gomnd // not a magic number, spaces to indent by
 		}
 	}
 }
@@ -348,7 +350,7 @@ func printNatGateway(natGateway *NatGateway) {
 	if Config.Verbose {
 		for _, iface := range natGateway.Interfaces {
 			for _, group := range iface.Groups {
-				printSecurityGroup(group, 12)
+				printSecurityGroup(group, 12) //nolint:gomnd // not a magic number, spaces to indent by
 			}
 		}
 	}
@@ -372,7 +374,7 @@ func printRules(rules []*SecurityGroupRule, ind int, ingress bool) {
 	for _, rule := range rules {
 		portRange := fmt.Sprintf("%v-%v", rule.FromPort, rule.ToPort)
 		direction := "inbound"
-		proto := rule.IpProtocol
+		proto := rule.IPProtocol
 
 		if !ingress {
 			direction = "outbound"
@@ -382,12 +384,12 @@ func printRules(rules []*SecurityGroupRule, ind int, ingress bool) {
 			portRange = fmt.Sprintf("%v", rule.FromPort)
 		}
 
-		if rule.IpProtocol == "-1" {
+		if rule.IPProtocol == "-1" {
 			proto = "all"
 			portRange = ""
 		}
 
-		if rule.IpProtocol == "icmp" || rule.IpProtocol == "icmpv6" {
+		if rule.IPProtocol == "icmp" || rule.IPProtocol == "icmpv6" {
 			if rule.FromPort == -1 || rule.ToPort == -1 {
 				portRange = "all"
 			}
@@ -395,7 +397,7 @@ func printRules(rules []*SecurityGroupRule, ind int, ingress bool) {
 
 		fmt.Printf(
 			"%s%v%v %v%v %v%v%v ",
-			indent(ind+4),
+			indent(ind+4), //nolint:gomnd // not a magic number, spaces to indent by
 			color.Blue,
 			direction,
 			color.Cyan,
@@ -405,13 +407,15 @@ func printRules(rules []*SecurityGroupRule, ind int, ingress bool) {
 			color.Reset,
 		)
 
-		for _, ipRange := range rule.IpRanges {
+		for _, ipRange := range rule.IPRanges {
 			// There should only be one cidr range per rule, but the api permits more.
 			fmt.Printf("%v ", ipRange.CidrIP)
 		}
-		for _, ipRange := range rule.Ipv6Ranges {
+
+		for _, ipRange := range rule.IPv6Ranges {
 			fmt.Printf("%v ", ipRange.CidrIPV6)
 		}
+
 		fmt.Printf("\n")
 	}
 }
@@ -425,8 +429,8 @@ func printSecurityGroup(sg *SecurityGroup, ind int) {
 		color.Reset,
 		sg.GroupName,
 	)
-	printRules(sg.IpPermissions, ind, true)
-	printRules(sg.IpPermissionsEgress, ind, false)
+	printRules(sg.IPPermissions, ind, true)
+	printRules(sg.IPPermissionsEgress, ind, false)
 }
 
 func printVPCs(vpcs []*VPCSorted) {
