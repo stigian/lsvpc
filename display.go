@@ -62,7 +62,7 @@ func formatName(name string) string {
 	return fmt.Sprintf(" [%s]", string(runes))
 }
 
-func printRegionsJSON(regions []RegionDataSorted) {
+func printRegionsJSON(regions []*RegionDataSorted) {
 	export, _ := json.Marshal(regions)
 	fmt.Printf("%v", string(export))
 }
