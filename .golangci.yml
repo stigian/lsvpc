@@ -58,3 +58,4 @@ linters:
 run:
   issues-exit-code: 1
   concurrency: 2
+  timeout: 5m

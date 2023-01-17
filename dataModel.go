@@ -86,8 +86,8 @@ type InstanceData struct {
 
 type InstanceSorted struct {
 	InstanceData
-	Volumes    []*Volume           `json:"volumes,omitempty"`
-	Interfaces []*NetworkInterface `json:"interfaces,omitempty"`
+	Volumes    []*Volume                 `json:"volumes,omitempty"`
+	Interfaces []*NetworkInterfaceSorted `json:"interfaces,omitempty"`
 }
 
 type Instance struct {
@@ -97,7 +97,7 @@ type Instance struct {
 	InstanceData
 }
 
-type NetworkInterface struct {
+type NetworkInterfaceData struct {
 	RawNetworkInterface *ec2.NetworkInterface `json:"-"`
 	ID                  string                `json:"id"`
 	PrivateIP           string                `json:"privateIp"`
@@ -110,6 +110,43 @@ type NetworkInterface struct {
 	SubnetID            string                `json:"subnetId"` // we're just accounting for this for display purposes
 }
 
+type NetworkInterface struct {
+	Groups map[string]*SecurityGroup `json:"groups"`
+	NetworkInterfaceData
+}
+
+type NetworkInterfaceSorted struct {
+	NetworkInterfaceData
+	Groups []*SecurityGroup `json:"groups"`
+}
+
+type SecurityGroup struct {
+	RawSecurityGroup    *ec2.SecurityGroup   `json:"-"`
+	Description         string               `json:"description"`
+	GroupID             string               `json:"groupId"`
+	GroupName           string               `json:"groupName"`
+	TagName             string               `json:"tagName"`
+	IPPermissions       []*SecurityGroupRule `json:"ipPermissions"`
+	IPPermissionsEgress []*SecurityGroupRule `json:"ipPermissionsEgress"`
+}
+
+type SecurityGroupRule struct {
+	IPProtocol string       `json:"ipProtocol"`
+	IPRanges   []*IPRange   `json:"ipRanges"`
+	IPv6Ranges []*IPv6Range `json:"ipv6Ranges"`
+	FromPort   int64        `json:"fromPort"`
+	ToPort     int64        `json:"toPort"`
+}
+
+type IPRange struct {
+	CidrIP      string `json:"cidrIp"`
+	Description string `json:"description"`
+}
+
+type IPv6Range struct {
+	CidrIPV6    string `json:"cidrIpv6"`
+	Description string `json:"description"`
+}
 type Volume struct {
 	RawVolume  *ec2.Volume `json:"-"`
 	ID         string      `json:"id"`
@@ -118,7 +155,7 @@ type Volume struct {
 	Name       string      `json:"name"`
 	Size       int64       `json:"size"`
 }
-type NatGateway struct {
+type NatGatewayData struct {
 	RawNatGateway *ec2.NatGateway `json:"-"`
 	ID            string          `json:"id"`
 	PrivateIP     string          `json:"privateIP"`
@@ -126,6 +163,15 @@ type NatGateway struct {
 	State         string          `json:"state"`
 	Type          string          `json:"type"`
 	Name          string          `json:"name"`
+}
+type NatGateway struct {
+	Interfaces map[string]*NetworkInterface `json:"interfaces"`
+	NatGatewayData
+}
+
+type NatGatewaySorted struct {
+	NatGatewayData
+	Interfaces []*NetworkInterfaceSorted `json:"interfaces"`
 }
 
 type RouteTable struct {
@@ -163,7 +209,7 @@ type InterfaceEndpoint struct {
 
 type InterfaceEndpointSorted struct {
 	InterfaceEndpointData
-	Interfaces []*NetworkInterface
+	Interfaces []*NetworkInterfaceSorted
 }
 
 type GatewayEndpoint struct {
@@ -188,6 +234,7 @@ type RecievedData struct {
 	TransitGateways    []*ec2.TransitGatewayVpcAttachment
 	PeeringConnections []*ec2.VpcPeeringConnection
 	NetworkInterfaces  []*ec2.NetworkInterface
+	SecurityGroups     []*ec2.SecurityGroup
 	VPCEndpoints       []*ec2.VpcEndpoint
 	Volumes            []*ec2.Volume
 	wg                 sync.WaitGroup

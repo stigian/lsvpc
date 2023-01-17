@@ -199,6 +199,12 @@ func printInterfaceEndpoint(interfaceEndpoint *InterfaceEndpointSorted, subnet *
 				iface.DNS,
 			)
 		}
+
+		if Config.Verbose {
+			for _, group := range iface.Groups {
+				printSecurityGroup(group, 16) //nolint:gomnd // not a magic number, spaces to indent by
+			}
+		}
 	}
 }
 
@@ -239,6 +245,12 @@ func printNetworkInterface(iface *NetworkInterface) {
 		iface.DNS,
 		iface.Description,
 	)
+
+	if Config.Verbose {
+		for _, group := range iface.Groups {
+			printSecurityGroup(group, 12) //nolint:gomnd // not a magic number, spaces to indent by
+		}
+	}
 }
 
 func printInstance(instance *InstanceSorted) {
@@ -274,7 +286,7 @@ func printInstance(instance *InstanceSorted) {
 	)
 }
 
-func printInstanceInterface(iface *NetworkInterface) {
+func printInstanceInterface(iface *NetworkInterfaceSorted) {
 	if Config.HideIP {
 		iface.MAC = expungedMAC
 		iface.PrivateIP = expungedIP
@@ -286,14 +298,22 @@ func printInstanceInterface(iface *NetworkInterface) {
 	}
 
 	fmt.Printf(
-		"%s%v%v  %v  %v  %v\n",
+		"%s%v%v%v%v  %v  %v  %v\n",
 		indent(12), //nolint:gomnd // not a magic number, spaces to indent by
+		color.Cyan,
 		iface.ID,
+		color.Reset,
 		formatName(iface.Name),
 		iface.MAC,
 		iface.PrivateIP,
 		iface.DNS,
 	)
+
+	if Config.Verbose {
+		for _, group := range iface.Groups {
+			printSecurityGroup(group, 16) //nolint:gomnd // not a magic number, spaces to indent by
+		}
+	}
 }
 
 func printInstanceVolume(volume *Volume) {
@@ -326,6 +346,14 @@ func printNatGateway(natGateway *NatGateway) {
 		natGateway.PublicIP,
 		natGateway.PrivateIP,
 	)
+
+	if Config.Verbose {
+		for _, iface := range natGateway.Interfaces {
+			for _, group := range iface.Groups {
+				printSecurityGroup(group, 12) //nolint:gomnd // not a magic number, spaces to indent by
+			}
+		}
+	}
 }
 
 func printTGWAttachment(tgw *TGWAttachment) {
@@ -340,6 +368,69 @@ func printTGWAttachment(tgw *TGWAttachment) {
 		tgw.TransitGatewayID,
 		color.Reset,
 	)
+}
+
+func printRules(rules []*SecurityGroupRule, ind int, ingress bool) {
+	for _, rule := range rules {
+		portRange := fmt.Sprintf("%v-%v", rule.FromPort, rule.ToPort)
+		direction := "inbound"
+		proto := rule.IPProtocol
+
+		if !ingress {
+			direction = "outbound"
+		}
+
+		if rule.FromPort == rule.ToPort {
+			portRange = fmt.Sprintf("%v", rule.FromPort)
+		}
+
+		if rule.IPProtocol == "-1" {
+			proto = "all"
+			portRange = ""
+		}
+
+		if rule.IPProtocol == "icmp" || rule.IPProtocol == "icmpv6" {
+			if rule.FromPort == -1 || rule.ToPort == -1 {
+				portRange = "all"
+			}
+		}
+
+		fmt.Printf(
+			"%s%v%v %v%v %v%v%v ",
+			indent(ind+4), //nolint:gomnd // not a magic number, spaces to indent by
+			color.Blue,
+			direction,
+			color.Cyan,
+			proto,
+			color.Yellow,
+			portRange,
+			color.Reset,
+		)
+
+		for _, ipRange := range rule.IPRanges {
+			// There should only be one cidr range per rule, but the api permits more.
+			fmt.Printf("%v ", ipRange.CidrIP)
+		}
+
+		for _, ipRange := range rule.IPv6Ranges {
+			fmt.Printf("%v ", ipRange.CidrIPV6)
+		}
+
+		fmt.Printf("\n")
+	}
+}
+
+func printSecurityGroup(sg *SecurityGroup, ind int) {
+	fmt.Printf(
+		"%s%v%v%v %v\n",
+		indent(ind),
+		color.Cyan,
+		sg.GroupID,
+		color.Reset,
+		sg.GroupName,
+	)
+	printRules(sg.IPPermissions, ind, true)
+	printRules(sg.IPPermissionsEgress, ind, false)
 }
 
 func printVPCs(vpcs []*VPCSorted) {
