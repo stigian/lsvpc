@@ -88,5 +88,7 @@ Executing **lsvpc** with no arguments produces a colored readout of vpc resource
 `-r, -region` - Specify a region to print data for.
 
 `-j`          - Output data in JSON
+
 `-t`          - Truncate name tags
+
 `-v`          - Output verbose information about assets in vpcs
