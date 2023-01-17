@@ -14,6 +14,14 @@ To produce a live-updating display of the status of your vpcs:
 
 # Installation and running
 
+## Go Install
+
+With [golang](https://go.dev/doc/install) installed, you may simply call:
+
+```bash 
+go install github.com/stigian/lsvpc@v1.0.8
+```
+
 ## From Source
 
 ```
@@ -35,25 +43,6 @@ sudo env "PATH=$PATH" make install
 
 which will install the `lsvpc` binary into /usr/local/bin/
 
-
-## Fetching with *go get*
-
-Alternatively, you don't need to actually clone this source, and with golang installed, you may simply call:
-
-```bash
-go get github.com/tjames-stig/lsvpc
-sudo GOBIN=/usr/local/bin/ go install github.com/tjames-stig/lsvpc
-```
-
-to install **lsvpc** into **/usr/local/bin/**. **GOBIN** can be set to be the value of where you want the executable to be installed
-
-Or you may simply tell go to run the binary using the repository path:
-
-```
-go run github.com/tjames-stig/lsvpc
-```
-
-
 # Usage
 
 ## Configuration and Permissions
@@ -72,6 +61,7 @@ ec2:DescribeNatGateways
 ec2:DescribeNetworkInterfaces
 ec2:DescribeRegions
 ec2:DescribeRouteTables
+ec2:DescribeSecurityGroups
 ec2:DescribeSubnets
 ec2:DescribeTransitGatewayVpcAttachments
 ec2:DescribeVolumes
@@ -97,3 +87,6 @@ Executing **lsvpc** with no arguments produces a colored readout of vpc resource
 
 `-r, -region` - Specify a region to print data for.
 
+`-j`          - Output data in JSON
+`-t`          - Truncate name tags
+`-v`          - Output verbose information about assets in vpcs
