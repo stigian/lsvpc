@@ -153,6 +153,8 @@ type Volume struct {
 	DeviceName string      `json:"deviceName"`
 	VolumeType string      `json:"volumeType"`
 	Name       string      `json:"name"`
+	Encrypted  bool        `json:"encrypted"`
+	KMSKeyId   string      `json:"kmsKeyId"`
 	Size       int64       `json:"size"`
 }
 type NatGatewayData struct {

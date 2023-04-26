@@ -317,14 +317,26 @@ func printInstanceInterface(iface *NetworkInterfaceSorted) {
 }
 
 func printInstanceVolume(volume *Volume) {
+	encryption := "[ ]"
+	if volume.Encrypted {
+		encryption = fmt.Sprintf(
+			"%s%v %v%s",
+			color.Yellow,
+			"[E]",
+			strings.Split(volume.KMSKeyId, "/")[1],
+			color.Reset,
+		)
+	}
+
 	fmt.Printf(
-		"%s%v%v  %v  %v  %v GiB\n",
+		"%s%v%v  %v  %v  %v GiB %s\n",
 		indent(12), //nolint:gomnd // not a magic number, spaces to indent by
 		volume.ID,
 		formatName(volume.Name),
 		volume.VolumeType,
 		volume.DeviceName,
 		volume.Size,
+		encryption,
 	)
 }
 

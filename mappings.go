@@ -137,6 +137,8 @@ func mapVolumes(vpcs map[string]*VPC, volumes []*ec2.Volume) {
 									DeviceName: aws.StringValue(attachment.Device),
 									Size:       aws.Int64Value(volume.Size),
 									VolumeType: aws.StringValue(volume.VolumeType),
+									Encrypted:  aws.BoolValue(volume.Encrypted),
+									KMSKeyId:   aws.StringValue(volume.KmsKeyId),
 									RawVolume:  volume,
 									Name:       getNameTag(volume.Tags),
 								}
