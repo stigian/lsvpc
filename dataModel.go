@@ -223,22 +223,94 @@ type GatewayEndpoint struct {
 
 type RecievedData struct {
 	Error              error
-	Identity           *sts.GetCallerIdentityOutput
-	Vpcs               []*ec2.Vpc
-	Subnets            []*ec2.Subnet
-	Instances          []*ec2.Reservation
-	InstanceStatuses   []*ec2.InstanceStatus
-	NatGateways        []*ec2.NatGateway
-	RouteTables        []*ec2.RouteTable
-	InternetGateways   []*ec2.InternetGateway
-	EOInternetGateways []*ec2.EgressOnlyInternetGateway
-	VPNGateways        []*ec2.VpnGateway
 	TransitGateways    []*ec2.TransitGatewayVpcAttachment
 	PeeringConnections []*ec2.VpcPeeringConnection
 	NetworkInterfaces  []*ec2.NetworkInterface
 	SecurityGroups     []*ec2.SecurityGroup
 	VPCEndpoints       []*ec2.VpcEndpoint
-	Volumes            []*ec2.Volume
 	wg                 sync.WaitGroup
 	mu                 sync.Mutex
+}
+
+type AWSFetch struct {
+	Identity           chan GetIdentityOutput
+	Vpcs               chan GetVpcsOutput
+	Subnets            chan GetSubnetsOutput
+	Instances          chan GetInstancesOutput
+	InstanceStatuses   chan GetInstanceStatusOutput
+	Volumes            chan GetVolumesOutput
+	NatGateways        chan GetNatGatewaysOutput
+	RouteTables        chan GetRouteTablesOutput
+	InternetGateways   chan GetInternetGatewaysOutput
+	EOInternetGateways chan GetEgressOnlyInternetGatewaysOutput
+	VPNGateways        chan GetVPNGatewaysOutput
+}
+
+func (a *AWSFetch) Make() {
+	a.Identity = make(chan GetIdentityOutput)
+	a.Vpcs = make(chan GetVpcsOutput)
+	a.Subnets = make(chan GetSubnetsOutput)
+	a.Instances = make(chan GetInstancesOutput)
+	a.InstanceStatuses = make(chan GetInstanceStatusOutput)
+	a.Volumes = make(chan GetVolumesOutput)
+	a.NatGateways = make(chan GetNatGatewaysOutput)
+	a.RouteTables = make(chan GetRouteTablesOutput)
+	a.InternetGateways = make(chan GetInternetGatewaysOutput)
+	a.EOInternetGateways = make(chan GetEgressOnlyInternetGatewaysOutput)
+	a.VPNGateways = make(chan GetVPNGatewaysOutput)
+}
+
+type GetIdentityOutput struct {
+	Identity *sts.GetCallerIdentityOutput
+	Err      error
+}
+
+type GetVpcsOutput struct {
+	Err  error
+	Vpcs []*ec2.Vpc
+}
+
+type GetSubnetsOutput struct {
+	Subnets []*ec2.Subnet
+	Err     error
+}
+
+type GetInstancesOutput struct {
+	Instances []*ec2.Reservation
+	Err       error
+}
+
+type GetInstanceStatusOutput struct {
+	InstanceStatuses []*ec2.InstanceStatus
+	Err              error
+}
+
+type GetVolumesOutput struct {
+	Volumes []*ec2.Volume
+	Err     error
+}
+
+type GetNatGatewaysOutput struct {
+	NatGateways []*ec2.NatGateway
+	Err         error
+}
+
+type GetRouteTablesOutput struct {
+	RouteTables []*ec2.RouteTable
+	Err         error
+}
+
+type GetInternetGatewaysOutput struct {
+	InternetGateways []*ec2.InternetGateway
+	Err              error
+}
+
+type GetEgressOnlyInternetGatewaysOutput struct {
+	EOInternetGateways []*ec2.EgressOnlyInternetGateway
+	Err                error
+}
+
+type GetVPNGatewaysOutput struct {
+	VPNGateways []*ec2.VpnGateway
+	Err         error
 }

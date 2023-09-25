@@ -10,23 +10,18 @@ import (
 	"github.com/aws/aws-sdk-go/service/sts"
 )
 
-func getIdentity(svc *sts.STS, data *RecievedData) {
-	defer data.wg.Done()
+func getIdentity(svc *sts.STS, out chan GetIdentityOutput) {
+	defer close(out)
+	res, err := svc.GetCallerIdentity(&sts.GetCallerIdentityInput{})
 
-	out, err := svc.GetCallerIdentity(&sts.GetCallerIdentityInput{})
-
-	if err != nil {
-		data.mu.Lock()
-		data.Error = err
-		data.mu.Unlock()
+	out <- GetIdentityOutput{
+		Identity: res,
+		Err:      err,
 	}
-
-	data.Identity = out
 }
 
-func getVpcs(svc *ec2.EC2, data *RecievedData) {
-	defer data.wg.Done()
-
+func getVpcs(svc *ec2.EC2, out chan GetVpcsOutput) {
+	defer close(out)
 	vpcs := []*ec2.Vpc{}
 	err := svc.DescribeVpcsPages(
 		&ec2.DescribeVpcsInput{},
@@ -36,18 +31,14 @@ func getVpcs(svc *ec2.EC2, data *RecievedData) {
 		},
 	)
 
-	if err != nil {
-		data.mu.Lock()
-		data.Error = err
-		data.mu.Unlock()
+	out <- GetVpcsOutput{
+		Err:  err,
+		Vpcs: vpcs,
 	}
-
-	data.Vpcs = vpcs
 }
 
-func getSubnets(svc *ec2.EC2, data *RecievedData) {
-	defer data.wg.Done()
-
+func getSubnets(svc *ec2.EC2, out chan GetSubnetsOutput) {
+	defer close(out)
 	subnets := []*ec2.Subnet{}
 	err := svc.DescribeSubnetsPages(
 		&ec2.DescribeSubnetsInput{},
@@ -57,18 +48,14 @@ func getSubnets(svc *ec2.EC2, data *RecievedData) {
 		},
 	)
 
-	if err != nil {
-		data.mu.Lock()
-		data.Error = err
-		data.mu.Unlock()
+	out <- GetSubnetsOutput{
+		Subnets: subnets,
+		Err:     err,
 	}
-
-	data.Subnets = subnets
 }
 
-func getInstances(svc *ec2.EC2, data *RecievedData) {
-	defer data.wg.Done()
-
+func getInstances(svc *ec2.EC2, out chan GetInstancesOutput) {
+	defer close(out)
 	instances := []*ec2.Reservation{}
 	err := svc.DescribeInstancesPages(
 		&ec2.DescribeInstancesInput{},
@@ -77,19 +64,14 @@ func getInstances(svc *ec2.EC2, data *RecievedData) {
 			return !lastPage
 		},
 	)
-
-	if err != nil {
-		data.mu.Lock()
-		data.Error = err
-		data.mu.Unlock()
+	out <- GetInstancesOutput{
+		Instances: instances,
+		Err:       err,
 	}
-
-	data.Instances = instances
 }
 
-func getInstanceStatuses(svc *ec2.EC2, data *RecievedData) {
-	defer data.wg.Done()
-
+func getInstanceStatuses(svc *ec2.EC2, out chan GetInstanceStatusOutput) {
+	defer close(out)
 	statuses := []*ec2.InstanceStatus{}
 	err := svc.DescribeInstanceStatusPages(
 		&ec2.DescribeInstanceStatusInput{},
@@ -99,18 +81,14 @@ func getInstanceStatuses(svc *ec2.EC2, data *RecievedData) {
 		},
 	)
 
-	if err != nil {
-		data.mu.Lock()
-		data.Error = err
-		data.mu.Unlock()
+	out <- GetInstanceStatusOutput{
+		InstanceStatuses: statuses,
+		Err:              err,
 	}
-
-	data.InstanceStatuses = statuses
 }
 
-func getNatGatways(svc *ec2.EC2, data *RecievedData) {
-	defer data.wg.Done()
-
+func getNatGatways(svc *ec2.EC2, out chan GetNatGatewaysOutput) {
+	defer close(out)
 	natGateways := []*ec2.NatGateway{}
 
 	err := svc.DescribeNatGatewaysPages(
@@ -120,18 +98,14 @@ func getNatGatways(svc *ec2.EC2, data *RecievedData) {
 			return !lastPage
 		},
 	)
-	if err != nil {
-		data.mu.Lock()
-		data.Error = err
-		data.mu.Unlock()
+	out <- GetNatGatewaysOutput{
+		NatGateways: natGateways,
+		Err:         err,
 	}
-
-	data.NatGateways = natGateways
 }
 
-func getRouteTables(svc *ec2.EC2, data *RecievedData) {
-	defer data.wg.Done()
-
+func getRouteTables(svc *ec2.EC2, out chan GetRouteTablesOutput) {
+	defer close(out)
 	routeTables := []*ec2.RouteTable{}
 
 	err := svc.DescribeRouteTablesPages(
@@ -141,21 +115,15 @@ func getRouteTables(svc *ec2.EC2, data *RecievedData) {
 			return !lastPage
 		},
 	)
-
-	if err != nil {
-		data.mu.Lock()
-		data.Error = err
-		data.mu.Unlock()
+	out <- GetRouteTablesOutput{
+		RouteTables: routeTables,
+		Err:         err,
 	}
-
-	data.RouteTables = routeTables
 }
 
-func getInternetGateways(svc *ec2.EC2, data *RecievedData) {
-	defer data.wg.Done()
-
+func getInternetGateways(svc *ec2.EC2, out chan GetInternetGatewaysOutput) {
+	defer close(out)
 	internetGateways := []*ec2.InternetGateway{}
-
 	err := svc.DescribeInternetGatewaysPages(
 		&ec2.DescribeInternetGatewaysInput{},
 		func(page *ec2.DescribeInternetGatewaysOutput, lastPage bool) bool {
@@ -163,17 +131,15 @@ func getInternetGateways(svc *ec2.EC2, data *RecievedData) {
 			return !lastPage
 		},
 	)
-	if err != nil {
-		data.mu.Lock()
-		data.Error = err
-		data.mu.Unlock()
-	}
 
-	data.InternetGateways = internetGateways
+	out <- GetInternetGatewaysOutput{
+		InternetGateways: internetGateways,
+		Err:              err,
+	}
 }
 
-func getEgressOnlyInternetGateways(svc *ec2.EC2, data *RecievedData) {
-	defer data.wg.Done()
+func getEgressOnlyInternetGateways(svc *ec2.EC2, out chan GetEgressOnlyInternetGatewaysOutput) {
+	defer close(out)
 
 	EOIGWs := []*ec2.EgressOnlyInternetGateway{}
 
@@ -184,28 +150,20 @@ func getEgressOnlyInternetGateways(svc *ec2.EC2, data *RecievedData) {
 			return !lastPage
 		},
 	)
-
-	if err != nil {
-		data.mu.Lock()
-		data.Error = err
-		data.mu.Unlock()
+	out <- GetEgressOnlyInternetGatewaysOutput{
+		EOInternetGateways: EOIGWs,
+		Err:                err,
 	}
-
-	data.EOInternetGateways = EOIGWs
 }
 
-func getVPNGateways(svc *ec2.EC2, data *RecievedData) {
-	defer data.wg.Done()
+func getVPNGateways(svc *ec2.EC2, out chan GetVPNGatewaysOutput) {
+	defer close(out)
 
-	out, err := svc.DescribeVpnGateways(&ec2.DescribeVpnGatewaysInput{})
-
-	if err != nil {
-		data.mu.Lock()
-		data.Error = err
-		data.mu.Unlock()
+	res, err := svc.DescribeVpnGateways(&ec2.DescribeVpnGatewaysInput{})
+	out <- GetVPNGatewaysOutput{
+		VPNGateways: res.VpnGateways,
+		Err:         err,
 	}
-
-	data.VPNGateways = out.VpnGateways
 }
 
 func getTransitGatewayVpcAttachments(svc *ec2.EC2, data *RecievedData) {
@@ -317,9 +275,7 @@ func getVpcEndpoints(svc *ec2.EC2, data *RecievedData) {
 	data.VPCEndpoints = endpoints
 }
 
-func getVolumes(svc *ec2.EC2, data *RecievedData) {
-	defer data.wg.Done()
-
+func getVolumes(svc *ec2.EC2, out chan GetVolumesOutput) {
 	volumes := []*ec2.Volume{}
 
 	err := svc.DescribeVolumesPages(
@@ -329,14 +285,11 @@ func getVolumes(svc *ec2.EC2, data *RecievedData) {
 			return !lastPage
 		},
 	)
-
-	if err != nil {
-		data.mu.Lock()
-		data.Error = err
-		data.mu.Unlock()
+	out <- GetVolumesOutput{
+		Volumes: volumes,
+		Err:     err,
 	}
-
-	data.Volumes = volumes
+	close(out)
 }
 
 func getRegions() []string {

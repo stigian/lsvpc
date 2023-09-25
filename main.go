@@ -44,19 +44,22 @@ func populateVPC(region string) (map[string]*VPC, error) {
 	data := RecievedData{}
 	vpcs := make(map[string]*VPC)
 
-	data.wg.Add(16) //nolint:gomnd // Wait groups increase when requests increase
+	data.wg.Add(5) //nolint:gomnd // Wait groups increase when requests increase
 
-	go getIdentity(stsSvc, &data)
-	go getVpcs(svc, &data)
-	go getSubnets(svc, &data)
-	go getInstances(svc, &data)
-	go getInstanceStatuses(svc, &data)
-	go getVolumes(svc, &data)
-	go getNatGatways(svc, &data)
-	go getRouteTables(svc, &data)
-	go getInternetGateways(svc, &data)
-	go getEgressOnlyInternetGateways(svc, &data)
-	go getVPNGateways(svc, &data)
+	fetch := AWSFetch{}
+	fetch.Make()
+
+	go getIdentity(stsSvc, fetch.Identity)
+	go getVpcs(svc, fetch.Vpcs)
+	go getSubnets(svc, fetch.Subnets)
+	go getInstances(svc, fetch.Instances)
+	go getInstanceStatuses(svc, fetch.InstanceStatuses)
+	go getVolumes(svc, fetch.Volumes)
+	go getNatGatways(svc, fetch.NatGateways)
+	go getRouteTables(svc, fetch.RouteTables)
+	go getInternetGateways(svc, fetch.InternetGateways)
+	go getEgressOnlyInternetGateways(svc, fetch.EOInternetGateways)
+	go getVPNGateways(svc, fetch.VPNGateways)
 	go getTransitGatewayVpcAttachments(svc, &data)
 	go getVpcPeeringConnections(svc, &data)
 	go getNetworkInterfaces(svc, &data)
@@ -69,18 +72,62 @@ func populateVPC(region string) (map[string]*VPC, error) {
 	if data.Error != nil {
 		return map[string]*VPC{}, fmt.Errorf("failed to populate VPCs: %v", data.Error.Error())
 	}
+	identityOut := <-fetch.Identity
+	if identityOut.Err != nil {
+		return map[string]*VPC{}, fmt.Errorf("Failed to fetch identity information: %v", data.Error.Error())
+	}
+	vpcsOut := <-fetch.Vpcs
+	if vpcsOut.Err != nil {
+		return map[string]*VPC{}, fmt.Errorf("Failed to fetch vpc information: %v", data.Error.Error())
+	}
+	subnetsOut := <-fetch.Subnets
+	if subnetsOut.Err != nil {
+		return map[string]*VPC{}, fmt.Errorf("Failed to fetch subnet information: %v", data.Error.Error())
+	}
+	instancesOut := <-fetch.Instances
+	if instancesOut.Err != nil {
+		return map[string]*VPC{}, fmt.Errorf("Failed to fetch instance information: %v", data.Error.Error())
+	}
+	instanceStatusOut := <-fetch.InstanceStatuses
+	if instanceStatusOut.Err != nil {
+		return map[string]*VPC{}, fmt.Errorf("Failed to fetch instance status information: %v", data.Error.Error())
+	}
+	volumesOut := <-fetch.Volumes
+	if volumesOut.Err != nil {
+		return map[string]*VPC{}, fmt.Errorf("Failed to fetch volume information: %v", data.Error.Error())
+	}
+	natGatewaysOut := <-fetch.NatGateways
+	if natGatewaysOut.Err != nil {
+		return map[string]*VPC{}, fmt.Errorf("Failed to fetch NatGateway information: %v", data.Error.Error())
+	}
+	routeTablesOut := <-fetch.RouteTables
+	if routeTablesOut.Err != nil {
+		return map[string]*VPC{}, fmt.Errorf("Failed to fetch route table information: %v", data.Error.Error())
+	}
+	internetGatewaysOut := <-fetch.InternetGateways
+	if internetGatewaysOut.Err != nil {
+		return map[string]*VPC{}, fmt.Errorf("Failed to fetch internet gateway information: %v", data.Error.Error())
+	}
+	eointernetGatewaysOut := <-fetch.EOInternetGateways
+	if eointernetGatewaysOut.Err != nil {
+		return map[string]*VPC{}, fmt.Errorf("Failed to fetch egress-only internet gateway information: %v", data.Error.Error())
+	}
+	vpnGatewaysOut := <-fetch.VPNGateways
+	if vpnGatewaysOut.Err != nil {
+		return map[string]*VPC{}, fmt.Errorf("Failed to fetch vpn gateway information: %v", data.Error.Error())
+	}
 
-	mapVpcs(vpcs, data.Vpcs)
-	mapSubnets(vpcs, data.Subnets)
-	mapInstances(vpcs, data.Instances)
-	mapInstanceStatuses(vpcs, data.InstanceStatuses)
-	mapVolumes(vpcs, data.Volumes)
-	mapNatGateways(vpcs, data.NatGateways)
-	mapRouteTables(vpcs, data.RouteTables)
-	mapInternetGateways(vpcs, data.InternetGateways)
-	mapEgressOnlyInternetGateways(vpcs, data.EOInternetGateways)
-	mapVPNGateways(vpcs, data.VPNGateways)
-	mapTransitGatewayVpcAttachments(vpcs, data.TransitGateways, data.Identity)
+	mapVpcs(vpcs, vpcsOut.Vpcs)
+	mapSubnets(vpcs, subnetsOut.Subnets)
+	mapInstances(vpcs, instancesOut.Instances)
+	mapInstanceStatuses(vpcs, instanceStatusOut.InstanceStatuses)
+	mapVolumes(vpcs, volumesOut.Volumes)
+	mapNatGateways(vpcs, natGatewaysOut.NatGateways)
+	mapRouteTables(vpcs, routeTablesOut.RouteTables)
+	mapInternetGateways(vpcs, internetGatewaysOut.InternetGateways)
+	mapEgressOnlyInternetGateways(vpcs, eointernetGatewaysOut.EOInternetGateways)
+	mapVPNGateways(vpcs, vpnGatewaysOut.VPNGateways)
+	mapTransitGatewayVpcAttachments(vpcs, data.TransitGateways, identityOut.Identity)
 	mapVpcPeeringConnections(vpcs, data.PeeringConnections)
 	mapVpcEndpoints(vpcs, data.VPCEndpoints)
 	mapNetworkInterfaces(vpcs, data.NetworkInterfaces)
