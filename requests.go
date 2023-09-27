@@ -166,8 +166,8 @@ func getVPNGateways(svc *ec2.EC2, out chan GetVPNGatewaysOutput) {
 	}
 }
 
-func getTransitGatewayVpcAttachments(svc *ec2.EC2, data *RecievedData) {
-	defer data.wg.Done()
+func getTransitGatewayVpcAttachments(svc *ec2.EC2, out chan GetTransitGatewaysOutput) {
+	defer close(out)
 
 	TGWatt := []*ec2.TransitGatewayVpcAttachment{}
 
@@ -179,17 +179,14 @@ func getTransitGatewayVpcAttachments(svc *ec2.EC2, data *RecievedData) {
 		},
 	)
 
-	if err != nil {
-		data.mu.Lock()
-		data.Error = err
-		data.mu.Unlock()
+	out <- GetTransitGatewaysOutput{
+		TransitGateways: TGWatt,
+		Err:             err,
 	}
-
-	data.TransitGateways = TGWatt
 }
 
-func getVpcPeeringConnections(svc *ec2.EC2, data *RecievedData) {
-	defer data.wg.Done()
+func getVpcPeeringConnections(svc *ec2.EC2, out chan GetPeeringConnectionsOutput) {
+	defer close(out)
 
 	peers := []*ec2.VpcPeeringConnection{}
 
@@ -200,17 +197,14 @@ func getVpcPeeringConnections(svc *ec2.EC2, data *RecievedData) {
 			return !lastPage
 		},
 	)
-	if err != nil {
-		data.mu.Lock()
-		data.Error = err
-		data.mu.Unlock()
+	out <- GetPeeringConnectionsOutput{
+		PeeringConnections: peers,
+		Err:                err,
 	}
-
-	data.PeeringConnections = peers
 }
 
-func getNetworkInterfaces(svc *ec2.EC2, data *RecievedData) {
-	defer data.wg.Done()
+func getNetworkInterfaces(svc *ec2.EC2, out chan GetNetworkInterfacesOutput) {
+	defer close(out)
 
 	ifaces := []*ec2.NetworkInterface{}
 
@@ -222,18 +216,14 @@ func getNetworkInterfaces(svc *ec2.EC2, data *RecievedData) {
 		},
 	)
 
-	if err != nil {
-		data.mu.Lock()
-		data.Error = err
-		data.mu.Unlock()
+	out <- GetNetworkInterfacesOutput{
+		NetworkInterfaces: ifaces,
+		Err:               err,
 	}
-
-	data.NetworkInterfaces = ifaces
 }
 
-func getSecurityGroups(svc *ec2.EC2, data *RecievedData) {
-	defer data.wg.Done()
-
+func getSecurityGroups(svc *ec2.EC2, out chan GetSecurityGroupsOutput) {
+	defer close(out)
 	sgs := []*ec2.SecurityGroup{}
 
 	err := svc.DescribeSecurityGroupsPages(
@@ -243,18 +233,14 @@ func getSecurityGroups(svc *ec2.EC2, data *RecievedData) {
 			return !lastPage
 		},
 	)
-
-	if err != nil {
-		data.mu.Lock()
-		data.Error = err
-		data.mu.Unlock()
+	out <- GetSecurityGroupsOutput{
+		SecurityGroups: sgs,
+		Err:            err,
 	}
-
-	data.SecurityGroups = sgs
 }
 
-func getVpcEndpoints(svc *ec2.EC2, data *RecievedData) {
-	defer data.wg.Done()
+func getVpcEndpoints(svc *ec2.EC2, out chan GetVPCEndpointsOutput) {
+	defer close(out)
 
 	endpoints := []*ec2.VpcEndpoint{}
 
@@ -266,13 +252,10 @@ func getVpcEndpoints(svc *ec2.EC2, data *RecievedData) {
 		},
 	)
 
-	if err != nil {
-		data.mu.Lock()
-		data.Error = err
-		data.mu.Unlock()
+	out <- GetVPCEndpointsOutput{
+		VPCEndpoints: endpoints,
+		Err:          err,
 	}
-
-	data.VPCEndpoints = endpoints
 }
 
 func getVolumes(svc *ec2.EC2, out chan GetVolumesOutput) {

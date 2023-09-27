@@ -2,8 +2,6 @@
 package main
 
 import (
-	"sync"
-
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/sts"
 )
@@ -221,17 +219,6 @@ type GatewayEndpoint struct {
 	Name        string           `json:"name"`
 }
 
-type RecievedData struct {
-	Error              error
-	TransitGateways    []*ec2.TransitGatewayVpcAttachment
-	PeeringConnections []*ec2.VpcPeeringConnection
-	NetworkInterfaces  []*ec2.NetworkInterface
-	SecurityGroups     []*ec2.SecurityGroup
-	VPCEndpoints       []*ec2.VpcEndpoint
-	wg                 sync.WaitGroup
-	mu                 sync.Mutex
-}
-
 type AWSFetch struct {
 	Identity           chan GetIdentityOutput
 	Vpcs               chan GetVpcsOutput
@@ -244,6 +231,11 @@ type AWSFetch struct {
 	InternetGateways   chan GetInternetGatewaysOutput
 	EOInternetGateways chan GetEgressOnlyInternetGatewaysOutput
 	VPNGateways        chan GetVPNGatewaysOutput
+	TransiGateways     chan GetTransitGatewaysOutput
+	PeeringConnections chan GetPeeringConnectionsOutput
+	NetworkInterfaces  chan GetNetworkInterfacesOutput
+	SecurityGroups     chan GetSecurityGroupsOutput
+	VPCEndpoints       chan GetVPCEndpointsOutput
 }
 
 func (a *AWSFetch) Make() {
@@ -258,6 +250,11 @@ func (a *AWSFetch) Make() {
 	a.InternetGateways = make(chan GetInternetGatewaysOutput)
 	a.EOInternetGateways = make(chan GetEgressOnlyInternetGatewaysOutput)
 	a.VPNGateways = make(chan GetVPNGatewaysOutput)
+	a.TransiGateways = make(chan GetTransitGatewaysOutput)
+	a.PeeringConnections = make(chan GetPeeringConnectionsOutput)
+	a.NetworkInterfaces = make(chan GetNetworkInterfacesOutput)
+	a.SecurityGroups = make(chan GetSecurityGroupsOutput)
+	a.VPCEndpoints = make(chan GetVPCEndpointsOutput)
 }
 
 type GetIdentityOutput struct {
@@ -313,4 +310,29 @@ type GetEgressOnlyInternetGatewaysOutput struct {
 type GetVPNGatewaysOutput struct {
 	VPNGateways []*ec2.VpnGateway
 	Err         error
+}
+
+type GetTransitGatewaysOutput struct {
+	TransitGateways []*ec2.TransitGatewayVpcAttachment
+	Err             error
+}
+
+type GetPeeringConnectionsOutput struct {
+	PeeringConnections []*ec2.VpcPeeringConnection
+	Err                error
+}
+
+type GetNetworkInterfacesOutput struct {
+	NetworkInterfaces []*ec2.NetworkInterface
+	Err               error
+}
+
+type GetSecurityGroupsOutput struct {
+	SecurityGroups []*ec2.SecurityGroup
+	Err            error
+}
+
+type GetVPCEndpointsOutput struct {
+	VPCEndpoints []*ec2.VpcEndpoint
+	Err          error
 }
