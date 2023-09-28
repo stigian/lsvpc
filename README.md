@@ -14,6 +14,8 @@ To produce a live-updating display of the status of your vpcs:
 
 # Installation and running
 
+Binaries are compiled and released in the gihub repository, and simply downloading those for your platform of choice will be enough to get going. These are just executables, there are no install scripts involved. In windows especially, and in linux and OSX, you will need to perform whatever steps are necessary for this binary to be picked up in your command line environment's PATH.
+
 ## Go Install
 
 With [golang](https://go.dev/doc/install) installed, you may simply call:
@@ -23,6 +25,8 @@ go install github.com/stigian/lsvpc@v1.0.8
 ```
 
 ## From Source
+
+Being a Go project, this application can be installed by simply running `go install .` in the project directory, however a makefile is also included for simple build options.
 
 ```
 sudo make install
