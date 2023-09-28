@@ -35,7 +35,7 @@ sudo INSTALL=/usr/bin/ make install
 ```
 
 If **go** has been installed using the [tarball](https://golang.org/doc/install), the **go** binary is
-probably not reachable the sudoers `secure_path`, and the path variable will need to be overridden when invoking sudo:
+probably not reachable from the sudoers `secure_path`, and the path variable will need to be overridden when invoking sudo:
 
 ```
 sudo env "PATH=$PATH" make install
@@ -53,22 +53,23 @@ If sdk library is unable to find a default region from credentials or environmen
 
 Below are all of the SDK actions this tool uses, be sure that your aws credentials have IAM permissions for them:
 ```
-ec2:DescribeEgressOnlyInternetGateways
+ec2:DescribeRegions
+sts:GetCallerIdentity
+ec2:DescribeVpcs
+ec2:DescribeSubnets
 ec2:DescribeInstances
 ec2:DescribeInstanceStatus
-ec2:DescribeInternetGateways
-ec2:DescribeNatGateways
-ec2:DescribeNetworkInterfaces
-ec2:DescribeRegions
-ec2:DescribeRouteTables
-ec2:DescribeSecurityGroups
-ec2:DescribeSubnets
-ec2:DescribeTransitGatewayVpcAttachments
 ec2:DescribeVolumes
-ec2:DescribeVpcEndpoints
-ec2:DescribeVpcPeeringConnections
-ec2:DescribeVpcs
+ec2:DescribeNatGateways
+ec2:DescribeRouteTables
+ec2:DescribeInternetGateways
+ec2:DescribeEgressOnlyInternetGateways
 ec2:DescribeVpnGateways
+ec2:DescribeTransitGatewayVpcAttachments
+ec2:DescribeVpcPeeringConnections
+ec2:DescribeNetworkInterfaces
+ec2:DescribeSecurityGroups
+ec2:DescribeVpcEndpoints
 ```
 
 ## Execution
@@ -89,6 +90,8 @@ Executing **lsvpc** with no arguments produces a colored readout of vpc resource
 
 `-j`          - Output data in JSON
 
-`-t`          - Truncate name tags
+`-n`          - Do not display IP addresses and CIDERS (Does not affect json output)
 
 `-v`          - Output verbose information about assets in vpcs
+
+`-t`          - Truncate name tags
