@@ -7,12 +7,11 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
-	"sync"
+
+	"github.com/stigian/lsvpc/awsfetch"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/aws/aws-sdk-go/service/sts"
 )
 
 type lsvpcConfig struct {
@@ -39,129 +38,44 @@ func populateVPC(region string) (map[string]*VPC, error) {
 		},
 	))
 
-	svc := ec2.New(sess)
-	stsSvc := sts.New(sess)
 	vpcs := make(map[string]*VPC)
+	fetch := awsfetch.New(sess)
 
-	fetch := AWSFetch{}
-	fetch.Make()
-
-	go getIdentity(stsSvc, fetch.Identity)
-	go getVpcs(svc, fetch.Vpcs)
-	go getSubnets(svc, fetch.Subnets)
-	go getInstances(svc, fetch.Instances)
-	go getInstanceStatuses(svc, fetch.InstanceStatuses)
-	go getVolumes(svc, fetch.Volumes)
-	go getNatGatways(svc, fetch.NatGateways)
-	go getRouteTables(svc, fetch.RouteTables)
-	go getInternetGateways(svc, fetch.InternetGateways)
-	go getEgressOnlyInternetGateways(svc, fetch.EOInternetGateways)
-	go getVPNGateways(svc, fetch.VPNGateways)
-	go getTransitGatewayVpcAttachments(svc, fetch.TransiGateways)
-	go getVpcPeeringConnections(svc, fetch.PeeringConnections)
-	go getNetworkInterfaces(svc, fetch.NetworkInterfaces)
-	go getSecurityGroups(svc, fetch.SecurityGroups)
-	go getVpcEndpoints(svc, fetch.VPCEndpoints)
-
-	identityOut := <-fetch.Identity
-	if identityOut.Err != nil {
-		return map[string]*VPC{}, fmt.Errorf("Failed to fetch identity information: %v", identityOut.Err.Error())
-	}
-	vpcsOut := <-fetch.Vpcs
-	if vpcsOut.Err != nil {
-		return map[string]*VPC{}, fmt.Errorf("Failed to fetch vpc information: %v", vpcsOut.Err.Error())
-	}
-	subnetsOut := <-fetch.Subnets
-	if subnetsOut.Err != nil {
-		return map[string]*VPC{}, fmt.Errorf("Failed to fetch subnet information: %v", subnetsOut.Err.Error())
-	}
-	instancesOut := <-fetch.Instances
-	if instancesOut.Err != nil {
-		return map[string]*VPC{}, fmt.Errorf("Failed to fetch instance information: %v", instancesOut.Err.Error())
-	}
-	instanceStatusOut := <-fetch.InstanceStatuses
-	if instanceStatusOut.Err != nil {
-		return map[string]*VPC{}, fmt.Errorf("Failed to fetch instance status information: %v", instanceStatusOut.Err.Error())
-	}
-	volumesOut := <-fetch.Volumes
-	if volumesOut.Err != nil {
-		return map[string]*VPC{}, fmt.Errorf("Failed to fetch volume information: %v", volumesOut.Err.Error())
-	}
-	natGatewaysOut := <-fetch.NatGateways
-	if natGatewaysOut.Err != nil {
-		return map[string]*VPC{}, fmt.Errorf("Failed to fetch NatGateway information: %v", natGatewaysOut.Err.Error())
-	}
-	routeTablesOut := <-fetch.RouteTables
-	if routeTablesOut.Err != nil {
-		return map[string]*VPC{}, fmt.Errorf("Failed to fetch route table information: %v", routeTablesOut.Err.Error())
-	}
-	internetGatewaysOut := <-fetch.InternetGateways
-	if internetGatewaysOut.Err != nil {
-		return map[string]*VPC{}, fmt.Errorf("Failed to fetch internet gateway information: %v", internetGatewaysOut.Err.Error())
-	}
-	eointernetGatewaysOut := <-fetch.EOInternetGateways
-	if eointernetGatewaysOut.Err != nil {
-		return map[string]*VPC{}, fmt.Errorf("Failed to fetch egress-only internet gateway information: %v", eointernetGatewaysOut.Err.Error())
-	}
-	vpnGatewaysOut := <-fetch.VPNGateways
-	if vpnGatewaysOut.Err != nil {
-		return map[string]*VPC{}, fmt.Errorf("Failed to fetch vpn gateway information: %v", vpnGatewaysOut.Err.Error())
-	}
-	transitGatewaysOut := <-fetch.TransiGateways
-	if transitGatewaysOut.Err != nil {
-		return map[string]*VPC{}, fmt.Errorf("Failed to fetch transit gateway information: %v", transitGatewaysOut.Err.Error())
-	}
-	peeringConnectionsOut := <-fetch.PeeringConnections
-	if peeringConnectionsOut.Err != nil {
-		return map[string]*VPC{}, fmt.Errorf("Failed to fetch peering connection information: %v", peeringConnectionsOut.Err.Error())
-	}
-	networkInterfacesOut := <-fetch.NetworkInterfaces
-	if networkInterfacesOut.Err != nil {
-		return map[string]*VPC{}, fmt.Errorf("Failed to fetch network interface information: %v", networkInterfacesOut.Err.Error())
-	}
-	securityGroupsOut := <-fetch.SecurityGroups
-	if securityGroupsOut.Err != nil {
-		return map[string]*VPC{}, fmt.Errorf("Failed to fetch Security Groups information: %v", securityGroupsOut.Err.Error())
-	}
-	vpcEndpointsOut := <-fetch.VPCEndpoints
-	if vpcEndpointsOut.Err != nil {
-		return map[string]*VPC{}, fmt.Errorf("Failed to fetch Security Groups information: %v", vpcEndpointsOut.Err.Error())
+	recieved, err := fetch.GetAll()
+	if err != nil {
+		return map[string]*VPC{}, err
 	}
 
-	mapVpcs(vpcs, vpcsOut.Vpcs)
-	mapSubnets(vpcs, subnetsOut.Subnets)
-	mapInstances(vpcs, instancesOut.Instances)
-	mapInstanceStatuses(vpcs, instanceStatusOut.InstanceStatuses)
-	mapVolumes(vpcs, volumesOut.Volumes)
-	mapNatGateways(vpcs, natGatewaysOut.NatGateways)
-	mapRouteTables(vpcs, routeTablesOut.RouteTables)
-	mapInternetGateways(vpcs, internetGatewaysOut.InternetGateways)
-	mapEgressOnlyInternetGateways(vpcs, eointernetGatewaysOut.EOInternetGateways)
-	mapVPNGateways(vpcs, vpnGatewaysOut.VPNGateways)
-	mapTransitGatewayVpcAttachments(vpcs, transitGatewaysOut.TransitGateways, identityOut.Identity)
-	mapVpcPeeringConnections(vpcs, peeringConnectionsOut.PeeringConnections)
-	mapVpcEndpoints(vpcs, vpcEndpointsOut.VPCEndpoints)
-	mapNetworkInterfaces(vpcs, networkInterfacesOut.NetworkInterfaces)
-	mapSecurityGroups(vpcs, securityGroupsOut.SecurityGroups)
+	mapVpcs(vpcs, recieved.Vpcs.Vpcs)
+	mapSubnets(vpcs, recieved.Subnets.Subnets)
+	mapInstances(vpcs, recieved.Instances.Instances)
+	mapInstanceStatuses(vpcs, recieved.InstanceStatuses.InstanceStatuses)
+	mapVolumes(vpcs, recieved.Volumes.Volumes)
+	mapNatGateways(vpcs, recieved.NatGateways.NatGateways)
+	mapRouteTables(vpcs, recieved.RouteTables.RouteTables)
+	mapInternetGateways(vpcs, recieved.InternetGateways.InternetGateways)
+	mapEgressOnlyInternetGateways(vpcs, recieved.EOInternetGateways.EOInternetGateways)
+	mapVPNGateways(vpcs, recieved.VPNGateways.VPNGateways)
+	mapTransitGatewayVpcAttachments(vpcs, recieved.TransiGateways.TransitGateways, recieved.Identity.Identity)
+	mapVpcPeeringConnections(vpcs, recieved.PeeringConnections.PeeringConnections)
+	mapVpcEndpoints(vpcs, recieved.VPCEndpoints.VPCEndpoints)
+	mapNetworkInterfaces(vpcs, recieved.NetworkInterfaces.NetworkInterfaces)
+	mapSecurityGroups(vpcs, recieved.SecurityGroups.SecurityGroups)
 
 	return vpcs, nil
 }
 
-func getRegionData(fullData map[string]RegionData, region string, wg *sync.WaitGroup, mu *sync.Mutex) {
-	defer wg.Done()
+func getRegionData(region string, out chan RegionData) {
+	defer close(out)
 
 	vpcs, err := populateVPC(region)
 	if err != nil {
-		return
+		out <- RegionData{}
+	} else {
+		out <- RegionData{
+			VPCs: vpcs,
+		}
 	}
-
-	mu.Lock()
-
-	fullData[region] = RegionData{
-		VPCs: vpcs,
-	}
-
-	mu.Unlock()
 }
 
 func doSpecificRegion() {
@@ -180,20 +94,17 @@ func doSpecificRegion() {
 }
 
 func doAllRegions() {
-	var wg sync.WaitGroup
-
 	regions := getRegions()
-
 	fullData := make(map[string]RegionData)
-	mu := sync.Mutex{}
+	channels := make(map[string]chan RegionData)
 
 	for _, region := range regions {
-		wg.Add(1)
-
-		go getRegionData(fullData, region, &wg, &mu)
+		channels[region] = make(chan RegionData)
+		go getRegionData(region, channels[region])
 	}
-
-	wg.Wait()
+	for _, region := range regions {
+		fullData[region] = <-channels[region]
+	}
 
 	regionDataSorted := sortRegionData(fullData)
 
