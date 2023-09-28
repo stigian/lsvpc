@@ -46,6 +46,7 @@ func populateVPC(region string) (map[string]*VPC, error) {
 		return map[string]*VPC{}, err
 	}
 
+	/* These functions must be executed in a specific order here, or else the mappings will fail. */
 	mapVpcs(vpcs, recieved.Vpcs.Vpcs)
 	mapSubnets(vpcs, recieved.Subnets.Subnets)
 	mapInstances(vpcs, recieved.Instances.Instances)
