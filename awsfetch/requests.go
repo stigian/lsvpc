@@ -6,26 +6,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/sts"
 )
 
-func (f *AWSFetch) GetAll() (AWSRecieve, error) {
-	go f.GetIdentity()
-	go f.GetVpcs()
-	go f.GetSubnets()
-	go f.GetInstances()
-	go f.GetInstanceStatuses()
-	go f.GetNatGatways()
-	go f.GetRouteTables()
-	go f.GetInternetGateways()
-	go f.GetEgressOnlyInternetGateways()
-	go f.GetVPNGateways()
-	go f.GetTransitGatewayVpcAttachments()
-	go f.GetVpcPeeringConnections()
-	go f.GetNetworkInterfaces()
-	go f.GetSecurityGroups()
-	go f.GetVpcEndpoints()
-	go f.GetVolumes()
-	return f.Recieve()
-}
-
 func (f *AWSFetch) GetIdentity() {
 	res, err := f.sts.GetCallerIdentity(&sts.GetCallerIdentityInput{})
 
