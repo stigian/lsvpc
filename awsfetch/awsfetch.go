@@ -47,119 +47,6 @@ type AWSRecieve struct {
 	VPCEndpoints       GetVPCEndpointsOutput
 }
 
-func New(sess *session.Session) AWSFetch {
-	a := AWSFetch{}
-	a.sts = sts.New(sess)
-	a.svc = ec2.New(sess)
-	a.Identity = make(chan GetIdentityOutput)
-	a.Vpcs = make(chan GetVpcsOutput)
-	a.Subnets = make(chan GetSubnetsOutput)
-	a.Instances = make(chan GetInstancesOutput)
-	a.InstanceStatuses = make(chan GetInstanceStatusOutput)
-	a.Volumes = make(chan GetVolumesOutput)
-	a.NatGateways = make(chan GetNatGatewaysOutput)
-	a.RouteTables = make(chan GetRouteTablesOutput)
-	a.InternetGateways = make(chan GetInternetGatewaysOutput)
-	a.EOInternetGateways = make(chan GetEgressOnlyInternetGatewaysOutput)
-	a.VPNGateways = make(chan GetVPNGatewaysOutput)
-	a.TransiGateways = make(chan GetTransitGatewaysOutput)
-	a.PeeringConnections = make(chan GetPeeringConnectionsOutput)
-	a.NetworkInterfaces = make(chan GetNetworkInterfacesOutput)
-	a.SecurityGroups = make(chan GetSecurityGroupsOutput)
-	a.VPCEndpoints = make(chan GetVPCEndpointsOutput)
-	return a
-}
-
-func (f *AWSFetch) GetAll() (AWSRecieve, error) {
-	r := AWSRecieve{}
-	go f.GetIdentity()
-	go f.GetVpcs()
-	go f.GetSubnets()
-	go f.GetInstances()
-	go f.GetInstanceStatuses()
-	go f.GetNatGatways()
-	go f.GetRouteTables()
-	go f.GetInternetGateways()
-	go f.GetEgressOnlyInternetGateways()
-	go f.GetVPNGateways()
-	go f.GetTransitGatewayVpcAttachments()
-	go f.GetVpcPeeringConnections()
-	go f.GetNetworkInterfaces()
-	go f.GetSecurityGroups()
-	go f.GetVpcEndpoints()
-	go f.GetVolumes()
-
-	r.Identity = <-f.Identity
-	r.Vpcs = <-f.Vpcs
-	r.Subnets = <-f.Subnets
-	r.Instances = <-f.Instances
-	r.InstanceStatuses = <-f.InstanceStatuses
-	r.Volumes = <-f.Volumes
-	r.NatGateways = <-f.NatGateways
-	r.RouteTables = <-f.RouteTables
-	r.InternetGateways = <-f.InternetGateways
-	r.EOInternetGateways = <-f.EOInternetGateways
-	r.VPNGateways = <-f.VPNGateways
-	r.TransiGateways = <-f.TransiGateways
-	r.PeeringConnections = <-f.PeeringConnections
-	r.NetworkInterfaces = <-f.NetworkInterfaces
-	r.SecurityGroups = <-f.SecurityGroups
-	r.VPCEndpoints = <-f.VPCEndpoints
-	return r, r.Error()
-}
-
-func (a *AWSRecieve) Error() error {
-	if a.Identity.Err != nil {
-		return a.Identity.Err
-	}
-	if a.Vpcs.Err != nil {
-		return a.Vpcs.Err
-	}
-	if a.Subnets.Err != nil {
-		return a.Subnets.Err
-	}
-	if a.Instances.Err != nil {
-		return a.Instances.Err
-	}
-	if a.InstanceStatuses.Err != nil {
-		return a.InstanceStatuses.Err
-	}
-	if a.Volumes.Err != nil {
-		return a.Volumes.Err
-	}
-	if a.NatGateways.Err != nil {
-		return a.NatGateways.Err
-	}
-	if a.RouteTables.Err != nil {
-		return a.RouteTables.Err
-	}
-	if a.InternetGateways.Err != nil {
-		return a.InternetGateways.Err
-	}
-	if a.EOInternetGateways.Err != nil {
-		return a.EOInternetGateways.Err
-	}
-	if a.VPNGateways.Err != nil {
-		return a.VPNGateways.Err
-	}
-	if a.TransiGateways.Err != nil {
-		return a.TransiGateways.Err
-	}
-	if a.PeeringConnections.Err != nil {
-		return a.PeeringConnections.Err
-	}
-	if a.NetworkInterfaces.Err != nil {
-		return a.NetworkInterfaces.Err
-	}
-	if a.SecurityGroups.Err != nil {
-		return a.SecurityGroups.Err
-	}
-	if a.VPCEndpoints.Err != nil {
-		return a.VPCEndpoints.Err
-	}
-	return nil
-}
-
 type GetIdentityOutput struct {
 	Identity *sts.GetCallerIdentityOutput
 	Err      error
@@ -238,4 +125,117 @@ type GetSecurityGroupsOutput struct {
 type GetVPCEndpointsOutput struct {
 	VPCEndpoints []*ec2.VpcEndpoint
 	Err          error
+}
+
+func New(sess *session.Session) AWSFetch {
+	a := AWSFetch{}
+	a.sts = sts.New(sess)
+	a.svc = ec2.New(sess)
+	a.Identity = make(chan GetIdentityOutput)
+	a.Vpcs = make(chan GetVpcsOutput)
+	a.Subnets = make(chan GetSubnetsOutput)
+	a.Instances = make(chan GetInstancesOutput)
+	a.InstanceStatuses = make(chan GetInstanceStatusOutput)
+	a.Volumes = make(chan GetVolumesOutput)
+	a.NatGateways = make(chan GetNatGatewaysOutput)
+	a.RouteTables = make(chan GetRouteTablesOutput)
+	a.InternetGateways = make(chan GetInternetGatewaysOutput)
+	a.EOInternetGateways = make(chan GetEgressOnlyInternetGatewaysOutput)
+	a.VPNGateways = make(chan GetVPNGatewaysOutput)
+	a.TransiGateways = make(chan GetTransitGatewaysOutput)
+	a.PeeringConnections = make(chan GetPeeringConnectionsOutput)
+	a.NetworkInterfaces = make(chan GetNetworkInterfacesOutput)
+	a.SecurityGroups = make(chan GetSecurityGroupsOutput)
+	a.VPCEndpoints = make(chan GetVPCEndpointsOutput)
+	return a
+}
+
+func (f *AWSFetch) GetAll() (AWSRecieve, error) {
+	go f.GetIdentity()
+	go f.GetVpcs()
+	go f.GetSubnets()
+	go f.GetInstances()
+	go f.GetInstanceStatuses()
+	go f.GetNatGatways()
+	go f.GetRouteTables()
+	go f.GetInternetGateways()
+	go f.GetEgressOnlyInternetGateways()
+	go f.GetVPNGateways()
+	go f.GetTransitGatewayVpcAttachments()
+	go f.GetVpcPeeringConnections()
+	go f.GetNetworkInterfaces()
+	go f.GetSecurityGroups()
+	go f.GetVpcEndpoints()
+	go f.GetVolumes()
+
+	r := AWSRecieve{}
+	r.Identity = <-f.Identity
+	r.Vpcs = <-f.Vpcs
+	r.Subnets = <-f.Subnets
+	r.Instances = <-f.Instances
+	r.InstanceStatuses = <-f.InstanceStatuses
+	r.Volumes = <-f.Volumes
+	r.NatGateways = <-f.NatGateways
+	r.RouteTables = <-f.RouteTables
+	r.InternetGateways = <-f.InternetGateways
+	r.EOInternetGateways = <-f.EOInternetGateways
+	r.VPNGateways = <-f.VPNGateways
+	r.TransiGateways = <-f.TransiGateways
+	r.PeeringConnections = <-f.PeeringConnections
+	r.NetworkInterfaces = <-f.NetworkInterfaces
+	r.SecurityGroups = <-f.SecurityGroups
+	r.VPCEndpoints = <-f.VPCEndpoints
+	return r, r.Error()
+}
+
+func (a AWSRecieve) Error() error {
+	if a.Identity.Err != nil {
+		return a.Identity.Err
+	}
+	if a.Vpcs.Err != nil {
+		return a.Vpcs.Err
+	}
+	if a.Subnets.Err != nil {
+		return a.Subnets.Err
+	}
+	if a.Instances.Err != nil {
+		return a.Instances.Err
+	}
+	if a.InstanceStatuses.Err != nil {
+		return a.InstanceStatuses.Err
+	}
+	if a.Volumes.Err != nil {
+		return a.Volumes.Err
+	}
+	if a.NatGateways.Err != nil {
+		return a.NatGateways.Err
+	}
+	if a.RouteTables.Err != nil {
+		return a.RouteTables.Err
+	}
+	if a.InternetGateways.Err != nil {
+		return a.InternetGateways.Err
+	}
+	if a.EOInternetGateways.Err != nil {
+		return a.EOInternetGateways.Err
+	}
+	if a.VPNGateways.Err != nil {
+		return a.VPNGateways.Err
+	}
+	if a.TransiGateways.Err != nil {
+		return a.TransiGateways.Err
+	}
+	if a.PeeringConnections.Err != nil {
+		return a.PeeringConnections.Err
+	}
+	if a.NetworkInterfaces.Err != nil {
+		return a.NetworkInterfaces.Err
+	}
+	if a.SecurityGroups.Err != nil {
+		return a.SecurityGroups.Err
+	}
+	if a.VPCEndpoints.Err != nil {
+		return a.VPCEndpoints.Err
+	}
+	return nil
 }
