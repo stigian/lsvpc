@@ -1,11 +1,8 @@
-// Copyright 2021 Stigian Consulting - reference license in top level of project
+// Copyright 2023 Stigian Consulting - reference license in top level of project
 package main
 
 import (
-	"sync"
-
 	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/aws/aws-sdk-go/service/sts"
 )
 
 type RegionData struct {
@@ -219,26 +216,4 @@ type GatewayEndpoint struct {
 	ID          string           `json:"id"`
 	ServiceName string           `json:"serviceName"`
 	Name        string           `json:"name"`
-}
-
-type RecievedData struct {
-	Error              error
-	Identity           *sts.GetCallerIdentityOutput
-	Vpcs               []*ec2.Vpc
-	Subnets            []*ec2.Subnet
-	Instances          []*ec2.Reservation
-	InstanceStatuses   []*ec2.InstanceStatus
-	NatGateways        []*ec2.NatGateway
-	RouteTables        []*ec2.RouteTable
-	InternetGateways   []*ec2.InternetGateway
-	EOInternetGateways []*ec2.EgressOnlyInternetGateway
-	VPNGateways        []*ec2.VpnGateway
-	TransitGateways    []*ec2.TransitGatewayVpcAttachment
-	PeeringConnections []*ec2.VpcPeeringConnection
-	NetworkInterfaces  []*ec2.NetworkInterface
-	SecurityGroups     []*ec2.SecurityGroup
-	VPCEndpoints       []*ec2.VpcEndpoint
-	Volumes            []*ec2.Volume
-	wg                 sync.WaitGroup
-	mu                 sync.Mutex
 }
