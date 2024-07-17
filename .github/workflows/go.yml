@@ -13,7 +13,6 @@ jobs:
     name: build on all platforms
     strategy:
       matrix:
-        : # still need to monitor 1.18 for amazon linux 2 
         go-version: [1.18, 1.20, 1.21]
         platform: [ubuntu-latest, macos-latest, windows-latest]
     steps:
