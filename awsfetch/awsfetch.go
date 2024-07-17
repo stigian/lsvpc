@@ -1,4 +1,8 @@
-// Copyright 2023 Stigian Consulting - reference license in top level of project
+// Copyright 2024 Stigian Consulting - reference license in top level of project
+
+// package awsfetch is a self-contained simple module to obtain all of the data
+// needed by lsvpc in a parralel fashion. This is achieved through the use of
+// unique channels that are defined for each unique sdk function queried.
 package awsfetch
 
 import (
@@ -7,7 +11,12 @@ import (
 	"github.com/aws/aws-sdk-go/service/sts"
 )
 
-type AWSFetch struct {
+// AWSChan is a module within AWSFetch that contains the channels and services
+// necessary to query and return data to the main AWSFetch struct.
+// This is implemented using channels primarily as a test of the use of
+// channels, but also to make this slightly easier to extend than a
+// series of functions bounded by a wait group.
+type AWSChan struct {
 	Identity           chan GetIdentityOutput
 	Vpcs               chan GetVpcsOutput
 	Subnets            chan GetSubnetsOutput
@@ -28,7 +37,11 @@ type AWSFetch struct {
 	sts                *sts.STS
 }
 
-type AWSRecieve struct {
+// AWSFetch is the primary struct used for obtaining the the data retrieved
+// from the sdk functions. Each of the Output members are simply the sdk return
+// types paired with an error value.
+type AWSFetch struct {
+	c                  AWSChan
 	Identity           GetIdentityOutput
 	Vpcs               GetVpcsOutput
 	Subnets            GetSubnetsOutput
@@ -127,115 +140,121 @@ type GetVPCEndpointsOutput struct {
 	Err          error
 }
 
+// New initializes AWS Fetch and its internal AWSChan structs.
+// channels need to be explicitly allocated with make().
 func New(sess *session.Session) AWSFetch {
-	a := AWSFetch{}
-	a.sts = sts.New(sess)
-	a.svc = ec2.New(sess)
-	a.Identity = make(chan GetIdentityOutput)
-	a.Vpcs = make(chan GetVpcsOutput)
-	a.Subnets = make(chan GetSubnetsOutput)
-	a.Instances = make(chan GetInstancesOutput)
-	a.InstanceStatuses = make(chan GetInstanceStatusOutput)
-	a.Volumes = make(chan GetVolumesOutput)
-	a.NatGateways = make(chan GetNatGatewaysOutput)
-	a.RouteTables = make(chan GetRouteTablesOutput)
-	a.InternetGateways = make(chan GetInternetGatewaysOutput)
-	a.EOInternetGateways = make(chan GetEgressOnlyInternetGatewaysOutput)
-	a.VPNGateways = make(chan GetVPNGatewaysOutput)
-	a.TransiGateways = make(chan GetTransitGatewaysOutput)
-	a.PeeringConnections = make(chan GetPeeringConnectionsOutput)
-	a.NetworkInterfaces = make(chan GetNetworkInterfacesOutput)
-	a.SecurityGroups = make(chan GetSecurityGroupsOutput)
-	a.VPCEndpoints = make(chan GetVPCEndpointsOutput)
-	return a
+	f := AWSFetch{}
+	f.c = AWSChan{}
+	f.c.sts = sts.New(sess)
+	f.c.svc = ec2.New(sess)
+	f.c.Identity = make(chan GetIdentityOutput)
+	f.c.Vpcs = make(chan GetVpcsOutput)
+	f.c.Subnets = make(chan GetSubnetsOutput)
+	f.c.Instances = make(chan GetInstancesOutput)
+	f.c.InstanceStatuses = make(chan GetInstanceStatusOutput)
+	f.c.Volumes = make(chan GetVolumesOutput)
+	f.c.NatGateways = make(chan GetNatGatewaysOutput)
+	f.c.RouteTables = make(chan GetRouteTablesOutput)
+	f.c.InternetGateways = make(chan GetInternetGatewaysOutput)
+	f.c.EOInternetGateways = make(chan GetEgressOnlyInternetGatewaysOutput)
+	f.c.VPNGateways = make(chan GetVPNGatewaysOutput)
+	f.c.TransiGateways = make(chan GetTransitGatewaysOutput)
+	f.c.PeeringConnections = make(chan GetPeeringConnectionsOutput)
+	f.c.NetworkInterfaces = make(chan GetNetworkInterfacesOutput)
+	f.c.SecurityGroups = make(chan GetSecurityGroupsOutput)
+	f.c.VPCEndpoints = make(chan GetVPCEndpointsOutput)
+	return f
 }
 
-func (f *AWSFetch) GetAll() (AWSRecieve, error) {
-	go f.GetIdentity()
-	go f.GetVpcs()
-	go f.GetSubnets()
-	go f.GetInstances()
-	go f.GetInstanceStatuses()
-	go f.GetNatGatways()
-	go f.GetRouteTables()
-	go f.GetInternetGateways()
-	go f.GetEgressOnlyInternetGateways()
-	go f.GetVPNGateways()
-	go f.GetTransitGatewayVpcAttachments()
-	go f.GetVpcPeeringConnections()
-	go f.GetNetworkInterfaces()
-	go f.GetSecurityGroups()
-	go f.GetVpcEndpoints()
-	go f.GetVolumes()
+// GetAll spawns goroutines to concurrently request the aws sdk
+// for all of the information relevant to a vpc. each function
+// returns its results into their specific channel, and those
+// channels are then read into the AWSFetch struct members.
+func (f *AWSFetch) GetAll() (*AWSFetch, error) {
+	go f.c.GetIdentity()
+	go f.c.GetVpcs()
+	go f.c.GetSubnets()
+	go f.c.GetInstances()
+	go f.c.GetInstanceStatuses()
+	go f.c.GetNatGatways()
+	go f.c.GetRouteTables()
+	go f.c.GetInternetGateways()
+	go f.c.GetEgressOnlyInternetGateways()
+	go f.c.GetVPNGateways()
+	go f.c.GetTransitGatewayVpcAttachments()
+	go f.c.GetVpcPeeringConnections()
+	go f.c.GetNetworkInterfaces()
+	go f.c.GetSecurityGroups()
+	go f.c.GetVpcEndpoints()
+	go f.c.GetVolumes()
 
-	r := AWSRecieve{}
-	r.Identity = <-f.Identity
-	r.Vpcs = <-f.Vpcs
-	r.Subnets = <-f.Subnets
-	r.Instances = <-f.Instances
-	r.InstanceStatuses = <-f.InstanceStatuses
-	r.Volumes = <-f.Volumes
-	r.NatGateways = <-f.NatGateways
-	r.RouteTables = <-f.RouteTables
-	r.InternetGateways = <-f.InternetGateways
-	r.EOInternetGateways = <-f.EOInternetGateways
-	r.VPNGateways = <-f.VPNGateways
-	r.TransiGateways = <-f.TransiGateways
-	r.PeeringConnections = <-f.PeeringConnections
-	r.NetworkInterfaces = <-f.NetworkInterfaces
-	r.SecurityGroups = <-f.SecurityGroups
-	r.VPCEndpoints = <-f.VPCEndpoints
-	return r, r.Error()
+	f.Identity = <-f.c.Identity
+	f.Vpcs = <-f.c.Vpcs
+	f.Subnets = <-f.c.Subnets
+	f.Instances = <-f.c.Instances
+	f.InstanceStatuses = <-f.c.InstanceStatuses
+	f.Volumes = <-f.c.Volumes
+	f.NatGateways = <-f.c.NatGateways
+	f.RouteTables = <-f.c.RouteTables
+	f.InternetGateways = <-f.c.InternetGateways
+	f.EOInternetGateways = <-f.c.EOInternetGateways
+	f.VPNGateways = <-f.c.VPNGateways
+	f.TransiGateways = <-f.c.TransiGateways
+	f.PeeringConnections = <-f.c.PeeringConnections
+	f.NetworkInterfaces = <-f.c.NetworkInterfaces
+	f.SecurityGroups = <-f.c.SecurityGroups
+	f.VPCEndpoints = <-f.c.VPCEndpoints
+	return f, f.Error()
 }
 
-func (a AWSRecieve) Error() error {
-	if a.Identity.Err != nil {
-		return a.Identity.Err
+func (f AWSFetch) Error() error {
+	if f.Identity.Err != nil {
+		return f.Identity.Err
 	}
-	if a.Vpcs.Err != nil {
-		return a.Vpcs.Err
+	if f.Vpcs.Err != nil {
+		return f.Vpcs.Err
 	}
-	if a.Subnets.Err != nil {
-		return a.Subnets.Err
+	if f.Subnets.Err != nil {
+		return f.Subnets.Err
 	}
-	if a.Instances.Err != nil {
-		return a.Instances.Err
+	if f.Instances.Err != nil {
+		return f.Instances.Err
 	}
-	if a.InstanceStatuses.Err != nil {
-		return a.InstanceStatuses.Err
+	if f.InstanceStatuses.Err != nil {
+		return f.InstanceStatuses.Err
 	}
-	if a.Volumes.Err != nil {
-		return a.Volumes.Err
+	if f.Volumes.Err != nil {
+		return f.Volumes.Err
 	}
-	if a.NatGateways.Err != nil {
-		return a.NatGateways.Err
+	if f.NatGateways.Err != nil {
+		return f.NatGateways.Err
 	}
-	if a.RouteTables.Err != nil {
-		return a.RouteTables.Err
+	if f.RouteTables.Err != nil {
+		return f.RouteTables.Err
 	}
-	if a.InternetGateways.Err != nil {
-		return a.InternetGateways.Err
+	if f.InternetGateways.Err != nil {
+		return f.InternetGateways.Err
 	}
-	if a.EOInternetGateways.Err != nil {
-		return a.EOInternetGateways.Err
+	if f.EOInternetGateways.Err != nil {
+		return f.EOInternetGateways.Err
 	}
-	if a.VPNGateways.Err != nil {
-		return a.VPNGateways.Err
+	if f.VPNGateways.Err != nil {
+		return f.VPNGateways.Err
 	}
-	if a.TransiGateways.Err != nil {
-		return a.TransiGateways.Err
+	if f.TransiGateways.Err != nil {
+		return f.TransiGateways.Err
 	}
-	if a.PeeringConnections.Err != nil {
-		return a.PeeringConnections.Err
+	if f.PeeringConnections.Err != nil {
+		return f.PeeringConnections.Err
 	}
-	if a.NetworkInterfaces.Err != nil {
-		return a.NetworkInterfaces.Err
+	if f.NetworkInterfaces.Err != nil {
+		return f.NetworkInterfaces.Err
 	}
-	if a.SecurityGroups.Err != nil {
-		return a.SecurityGroups.Err
+	if f.SecurityGroups.Err != nil {
+		return f.SecurityGroups.Err
 	}
-	if a.VPCEndpoints.Err != nil {
-		return a.VPCEndpoints.Err
+	if f.VPCEndpoints.Err != nil {
+		return f.VPCEndpoints.Err
 	}
 	return nil
 }

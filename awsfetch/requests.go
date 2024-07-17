@@ -6,18 +6,18 @@ import (
 	"github.com/aws/aws-sdk-go/service/sts"
 )
 
-func (f *AWSFetch) GetIdentity() {
-	res, err := f.sts.GetCallerIdentity(&sts.GetCallerIdentityInput{})
+func (c *AWSChan) GetIdentity() {
+	res, err := c.sts.GetCallerIdentity(&sts.GetCallerIdentityInput{})
 
-	f.Identity <- GetIdentityOutput{
+	c.Identity <- GetIdentityOutput{
 		Identity: res,
 		Err:      err,
 	}
 }
 
-func (f *AWSFetch) GetVpcs() {
+func (c *AWSChan) GetVpcs() {
 	vpcs := []*ec2.Vpc{}
-	err := f.svc.DescribeVpcsPages(
+	err := c.svc.DescribeVpcsPages(
 		&ec2.DescribeVpcsInput{},
 		func(page *ec2.DescribeVpcsOutput, lastPage bool) bool {
 			vpcs = append(vpcs, page.Vpcs...)
@@ -25,15 +25,15 @@ func (f *AWSFetch) GetVpcs() {
 		},
 	)
 
-	f.Vpcs <- GetVpcsOutput{
+	c.Vpcs <- GetVpcsOutput{
 		Err:  err,
 		Vpcs: vpcs,
 	}
 }
 
-func (f *AWSFetch) GetSubnets() {
+func (c *AWSChan) GetSubnets() {
 	subnets := []*ec2.Subnet{}
-	err := f.svc.DescribeSubnetsPages(
+	err := c.svc.DescribeSubnetsPages(
 		&ec2.DescribeSubnetsInput{},
 		func(page *ec2.DescribeSubnetsOutput, lastPage bool) bool {
 			subnets = append(subnets, page.Subnets...)
@@ -41,30 +41,30 @@ func (f *AWSFetch) GetSubnets() {
 		},
 	)
 
-	f.Subnets <- GetSubnetsOutput{
+	c.Subnets <- GetSubnetsOutput{
 		Subnets: subnets,
 		Err:     err,
 	}
 }
 
-func (f *AWSFetch) GetInstances() {
+func (c *AWSChan) GetInstances() {
 	instances := []*ec2.Reservation{}
-	err := f.svc.DescribeInstancesPages(
+	err := c.svc.DescribeInstancesPages(
 		&ec2.DescribeInstancesInput{},
 		func(page *ec2.DescribeInstancesOutput, lastPage bool) bool {
 			instances = append(instances, page.Reservations...)
 			return !lastPage
 		},
 	)
-	f.Instances <- GetInstancesOutput{
+	c.Instances <- GetInstancesOutput{
 		Instances: instances,
 		Err:       err,
 	}
 }
 
-func (f *AWSFetch) GetInstanceStatuses() {
+func (c *AWSChan) GetInstanceStatuses() {
 	statuses := []*ec2.InstanceStatus{}
-	err := f.svc.DescribeInstanceStatusPages(
+	err := c.svc.DescribeInstanceStatusPages(
 		&ec2.DescribeInstanceStatusInput{},
 		func(page *ec2.DescribeInstanceStatusOutput, lastPage bool) bool {
 			statuses = append(statuses, page.InstanceStatuses...)
@@ -72,47 +72,47 @@ func (f *AWSFetch) GetInstanceStatuses() {
 		},
 	)
 
-	f.InstanceStatuses <- GetInstanceStatusOutput{
+	c.InstanceStatuses <- GetInstanceStatusOutput{
 		InstanceStatuses: statuses,
 		Err:              err,
 	}
 }
 
-func (f *AWSFetch) GetNatGatways() {
+func (c *AWSChan) GetNatGatways() {
 	natGateways := []*ec2.NatGateway{}
 
-	err := f.svc.DescribeNatGatewaysPages(
+	err := c.svc.DescribeNatGatewaysPages(
 		&ec2.DescribeNatGatewaysInput{},
 		func(page *ec2.DescribeNatGatewaysOutput, lastPage bool) bool {
 			natGateways = append(natGateways, page.NatGateways...)
 			return !lastPage
 		},
 	)
-	f.NatGateways <- GetNatGatewaysOutput{
+	c.NatGateways <- GetNatGatewaysOutput{
 		NatGateways: natGateways,
 		Err:         err,
 	}
 }
 
-func (f *AWSFetch) GetRouteTables() {
+func (c *AWSChan) GetRouteTables() {
 	routeTables := []*ec2.RouteTable{}
 
-	err := f.svc.DescribeRouteTablesPages(
+	err := c.svc.DescribeRouteTablesPages(
 		&ec2.DescribeRouteTablesInput{},
 		func(page *ec2.DescribeRouteTablesOutput, lastPage bool) bool {
 			routeTables = append(routeTables, page.RouteTables...)
 			return !lastPage
 		},
 	)
-	f.RouteTables <- GetRouteTablesOutput{
+	c.RouteTables <- GetRouteTablesOutput{
 		RouteTables: routeTables,
 		Err:         err,
 	}
 }
 
-func (f *AWSFetch) GetInternetGateways() {
+func (c *AWSChan) GetInternetGateways() {
 	internetGateways := []*ec2.InternetGateway{}
-	err := f.svc.DescribeInternetGatewaysPages(
+	err := c.svc.DescribeInternetGatewaysPages(
 		&ec2.DescribeInternetGatewaysInput{},
 		func(page *ec2.DescribeInternetGatewaysOutput, lastPage bool) bool {
 			internetGateways = append(internetGateways, page.InternetGateways...)
@@ -120,40 +120,40 @@ func (f *AWSFetch) GetInternetGateways() {
 		},
 	)
 
-	f.InternetGateways <- GetInternetGatewaysOutput{
+	c.InternetGateways <- GetInternetGatewaysOutput{
 		InternetGateways: internetGateways,
 		Err:              err,
 	}
 }
 
-func (f *AWSFetch) GetEgressOnlyInternetGateways() {
+func (c *AWSChan) GetEgressOnlyInternetGateways() {
 	EOIGWs := []*ec2.EgressOnlyInternetGateway{}
 
-	err := f.svc.DescribeEgressOnlyInternetGatewaysPages(
+	err := c.svc.DescribeEgressOnlyInternetGatewaysPages(
 		&ec2.DescribeEgressOnlyInternetGatewaysInput{},
 		func(page *ec2.DescribeEgressOnlyInternetGatewaysOutput, lastPage bool) bool {
 			EOIGWs = append(EOIGWs, page.EgressOnlyInternetGateways...)
 			return !lastPage
 		},
 	)
-	f.EOInternetGateways <- GetEgressOnlyInternetGatewaysOutput{
+	c.EOInternetGateways <- GetEgressOnlyInternetGatewaysOutput{
 		EOInternetGateways: EOIGWs,
 		Err:                err,
 	}
 }
 
-func (f *AWSFetch) GetVPNGateways() {
-	res, err := f.svc.DescribeVpnGateways(&ec2.DescribeVpnGatewaysInput{})
-	f.VPNGateways <- GetVPNGatewaysOutput{
+func (c *AWSChan) GetVPNGateways() {
+	res, err := c.svc.DescribeVpnGateways(&ec2.DescribeVpnGatewaysInput{})
+	c.VPNGateways <- GetVPNGatewaysOutput{
 		VPNGateways: res.VpnGateways,
 		Err:         err,
 	}
 }
 
-func (f *AWSFetch) GetTransitGatewayVpcAttachments() {
+func (c *AWSChan) GetTransitGatewayVpcAttachments() {
 	TGWatt := []*ec2.TransitGatewayVpcAttachment{}
 
-	err := f.svc.DescribeTransitGatewayVpcAttachmentsPages(
+	err := c.svc.DescribeTransitGatewayVpcAttachmentsPages(
 		&ec2.DescribeTransitGatewayVpcAttachmentsInput{},
 		func(page *ec2.DescribeTransitGatewayVpcAttachmentsOutput, lastPage bool) bool {
 			TGWatt = append(TGWatt, page.TransitGatewayVpcAttachments...)
@@ -161,32 +161,32 @@ func (f *AWSFetch) GetTransitGatewayVpcAttachments() {
 		},
 	)
 
-	f.TransiGateways <- GetTransitGatewaysOutput{
+	c.TransiGateways <- GetTransitGatewaysOutput{
 		TransitGateways: TGWatt,
 		Err:             err,
 	}
 }
 
-func (f *AWSFetch) GetVpcPeeringConnections() {
+func (c *AWSChan) GetVpcPeeringConnections() {
 	peers := []*ec2.VpcPeeringConnection{}
 
-	err := f.svc.DescribeVpcPeeringConnectionsPages(
+	err := c.svc.DescribeVpcPeeringConnectionsPages(
 		&ec2.DescribeVpcPeeringConnectionsInput{},
 		func(page *ec2.DescribeVpcPeeringConnectionsOutput, lastPage bool) bool {
 			peers = append(peers, page.VpcPeeringConnections...)
 			return !lastPage
 		},
 	)
-	f.PeeringConnections <- GetPeeringConnectionsOutput{
+	c.PeeringConnections <- GetPeeringConnectionsOutput{
 		PeeringConnections: peers,
 		Err:                err,
 	}
 }
 
-func (f *AWSFetch) GetNetworkInterfaces() {
+func (c *AWSChan) GetNetworkInterfaces() {
 	ifaces := []*ec2.NetworkInterface{}
 
-	err := f.svc.DescribeNetworkInterfacesPages(
+	err := c.svc.DescribeNetworkInterfacesPages(
 		&ec2.DescribeNetworkInterfacesInput{},
 		func(page *ec2.DescribeNetworkInterfacesOutput, lastPage bool) bool {
 			ifaces = append(ifaces, page.NetworkInterfaces...)
@@ -194,32 +194,32 @@ func (f *AWSFetch) GetNetworkInterfaces() {
 		},
 	)
 
-	f.NetworkInterfaces <- GetNetworkInterfacesOutput{
+	c.NetworkInterfaces <- GetNetworkInterfacesOutput{
 		NetworkInterfaces: ifaces,
 		Err:               err,
 	}
 }
 
-func (f *AWSFetch) GetSecurityGroups() {
+func (c *AWSChan) GetSecurityGroups() {
 	sgs := []*ec2.SecurityGroup{}
 
-	err := f.svc.DescribeSecurityGroupsPages(
+	err := c.svc.DescribeSecurityGroupsPages(
 		&ec2.DescribeSecurityGroupsInput{},
 		func(page *ec2.DescribeSecurityGroupsOutput, lastPage bool) bool {
 			sgs = append(sgs, page.SecurityGroups...)
 			return !lastPage
 		},
 	)
-	f.SecurityGroups <- GetSecurityGroupsOutput{
+	c.SecurityGroups <- GetSecurityGroupsOutput{
 		SecurityGroups: sgs,
 		Err:            err,
 	}
 }
 
-func (f *AWSFetch) GetVpcEndpoints() {
+func (c *AWSChan) GetVpcEndpoints() {
 	endpoints := []*ec2.VpcEndpoint{}
 
-	err := f.svc.DescribeVpcEndpointsPages(
+	err := c.svc.DescribeVpcEndpointsPages(
 		&ec2.DescribeVpcEndpointsInput{},
 		func(page *ec2.DescribeVpcEndpointsOutput, lastPage bool) bool {
 			endpoints = append(endpoints, page.VpcEndpoints...)
@@ -227,23 +227,23 @@ func (f *AWSFetch) GetVpcEndpoints() {
 		},
 	)
 
-	f.VPCEndpoints <- GetVPCEndpointsOutput{
+	c.VPCEndpoints <- GetVPCEndpointsOutput{
 		VPCEndpoints: endpoints,
 		Err:          err,
 	}
 }
 
-func (f *AWSFetch) GetVolumes() {
+func (c *AWSChan) GetVolumes() {
 	volumes := []*ec2.Volume{}
 
-	err := f.svc.DescribeVolumesPages(
+	err := c.svc.DescribeVolumesPages(
 		&ec2.DescribeVolumesInput{},
 		func(page *ec2.DescribeVolumesOutput, lastPage bool) bool {
 			volumes = append(volumes, page.Volumes...)
 			return !lastPage
 		},
 	)
-	f.Volumes <- GetVolumesOutput{
+	c.Volumes <- GetVolumesOutput{
 		Volumes: volumes,
 		Err:     err,
 	}
