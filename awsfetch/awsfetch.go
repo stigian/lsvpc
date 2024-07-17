@@ -1,7 +1,7 @@
 // Copyright 2024 Stigian Consulting - reference license in top level of project
 
 // package awsfetch is a self-contained simple module to obtain all of the data
-// needed by lsvpc in a parralel fashion. This is achieved through the use of
+// needed by lsvpc in a parallel fashion. This is achieved through the use of
 // unique channels that are defined for each unique sdk function queried.
 package awsfetch
 
@@ -41,7 +41,6 @@ type AWSChan struct {
 // from the sdk functions. Each of the Output members are simply the sdk return
 // types paired with an error value.
 type AWSFetch struct {
-	c                  AWSChan
 	Identity           GetIdentityOutput
 	Vpcs               GetVpcsOutput
 	Subnets            GetSubnetsOutput
@@ -58,6 +57,7 @@ type AWSFetch struct {
 	NetworkInterfaces  GetNetworkInterfacesOutput
 	SecurityGroups     GetSecurityGroupsOutput
 	VPCEndpoints       GetVPCEndpointsOutput
+	c                  AWSChan
 }
 
 type GetIdentityOutput struct {
@@ -207,7 +207,7 @@ func (f *AWSFetch) GetAll() (*AWSFetch, error) {
 	return f, f.Error()
 }
 
-func (f AWSFetch) Error() error {
+func (f *AWSFetch) Error() error {
 	if f.Identity.Err != nil {
 		return f.Identity.Err
 	}
