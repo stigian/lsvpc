@@ -103,6 +103,7 @@ func doAllRegions() {
 		channels[region] = make(chan RegionData)
 		go getRegionData(region, channels[region])
 	}
+
 	for _, region := range regions {
 		fullData[region] = <-channels[region]
 	}

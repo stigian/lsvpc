@@ -323,7 +323,7 @@ func printInstanceVolume(volume *Volume) {
 			"%s%v %v%s",
 			color.Yellow,
 			"[E]",
-			strings.Split(volume.KMSKeyId, "/")[1],
+			strings.Split(volume.KMSKeyID, "/")[1],
 			color.Reset,
 		)
 	}

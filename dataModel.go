@@ -145,14 +145,14 @@ type IPv6Range struct {
 	Description string `json:"description"`
 }
 type Volume struct {
-	RawVolume  *ec2.Volume `json:"-"`
 	ID         string      `json:"id"`
 	DeviceName string      `json:"deviceName"`
 	VolumeType string      `json:"volumeType"`
 	Name       string      `json:"name"`
-	Encrypted  bool        `json:"encrypted"`
-	KMSKeyId   string      `json:"kmsKeyId"`
+	RawVolume  *ec2.Volume `json:"-"`
+	KMSKeyID   string      `json:"kmsKeyId"`
 	Size       int64       `json:"size"`
+	Encrypted  bool        `json:"encrypted"`
 }
 type NatGatewayData struct {
 	RawNatGateway *ec2.NatGateway `json:"-"`

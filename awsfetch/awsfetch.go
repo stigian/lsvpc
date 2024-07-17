@@ -55,9 +55,9 @@ type AWSFetch struct {
 	TransiGateways     GetTransitGatewaysOutput
 	PeeringConnections GetPeeringConnectionsOutput
 	NetworkInterfaces  GetNetworkInterfacesOutput
+	c                  AWSChan // located here to avoid lint alignment complaints
 	SecurityGroups     GetSecurityGroupsOutput
 	VPCEndpoints       GetVPCEndpointsOutput
-	c                  AWSChan
 }
 
 type GetIdentityOutput struct {
@@ -71,73 +71,73 @@ type GetVpcsOutput struct {
 }
 
 type GetSubnetsOutput struct {
-	Subnets []*ec2.Subnet
 	Err     error
+	Subnets []*ec2.Subnet
 }
 
 type GetInstancesOutput struct {
-	Instances []*ec2.Reservation
 	Err       error
+	Instances []*ec2.Reservation
 }
 
 type GetInstanceStatusOutput struct {
-	InstanceStatuses []*ec2.InstanceStatus
 	Err              error
+	InstanceStatuses []*ec2.InstanceStatus
 }
 
 type GetVolumesOutput struct {
-	Volumes []*ec2.Volume
 	Err     error
+	Volumes []*ec2.Volume
 }
 
 type GetNatGatewaysOutput struct {
-	NatGateways []*ec2.NatGateway
 	Err         error
+	NatGateways []*ec2.NatGateway
 }
 
 type GetRouteTablesOutput struct {
-	RouteTables []*ec2.RouteTable
 	Err         error
+	RouteTables []*ec2.RouteTable
 }
 
 type GetInternetGatewaysOutput struct {
-	InternetGateways []*ec2.InternetGateway
 	Err              error
+	InternetGateways []*ec2.InternetGateway
 }
 
 type GetEgressOnlyInternetGatewaysOutput struct {
-	EOInternetGateways []*ec2.EgressOnlyInternetGateway
 	Err                error
+	EOInternetGateways []*ec2.EgressOnlyInternetGateway
 }
 
 type GetVPNGatewaysOutput struct {
-	VPNGateways []*ec2.VpnGateway
 	Err         error
+	VPNGateways []*ec2.VpnGateway
 }
 
 type GetTransitGatewaysOutput struct {
-	TransitGateways []*ec2.TransitGatewayVpcAttachment
 	Err             error
+	TransitGateways []*ec2.TransitGatewayVpcAttachment
 }
 
 type GetPeeringConnectionsOutput struct {
-	PeeringConnections []*ec2.VpcPeeringConnection
 	Err                error
+	PeeringConnections []*ec2.VpcPeeringConnection
 }
 
 type GetNetworkInterfacesOutput struct {
-	NetworkInterfaces []*ec2.NetworkInterface
 	Err               error
+	NetworkInterfaces []*ec2.NetworkInterface
 }
 
 type GetSecurityGroupsOutput struct {
-	SecurityGroups []*ec2.SecurityGroup
 	Err            error
+	SecurityGroups []*ec2.SecurityGroup
 }
 
 type GetVPCEndpointsOutput struct {
-	VPCEndpoints []*ec2.VpcEndpoint
 	Err          error
+	VPCEndpoints []*ec2.VpcEndpoint
 }
 
 // New initializes AWS Fetch and its internal AWSChan structs.
@@ -163,6 +163,7 @@ func New(sess *session.Session) AWSFetch {
 	f.c.NetworkInterfaces = make(chan GetNetworkInterfacesOutput)
 	f.c.SecurityGroups = make(chan GetSecurityGroupsOutput)
 	f.c.VPCEndpoints = make(chan GetVPCEndpointsOutput)
+
 	return f
 }
 
@@ -204,57 +205,76 @@ func (f *AWSFetch) GetAll() (*AWSFetch, error) {
 	f.NetworkInterfaces = <-f.c.NetworkInterfaces
 	f.SecurityGroups = <-f.c.SecurityGroups
 	f.VPCEndpoints = <-f.c.VPCEndpoints
-	return f, f.Error()
+
+	err := f.Error()
+
+	return f, err
 }
 
 func (f *AWSFetch) Error() error {
 	if f.Identity.Err != nil {
 		return f.Identity.Err
 	}
+
 	if f.Vpcs.Err != nil {
 		return f.Vpcs.Err
 	}
+
 	if f.Subnets.Err != nil {
 		return f.Subnets.Err
 	}
+
 	if f.Instances.Err != nil {
 		return f.Instances.Err
 	}
+
 	if f.InstanceStatuses.Err != nil {
 		return f.InstanceStatuses.Err
 	}
+
 	if f.Volumes.Err != nil {
 		return f.Volumes.Err
 	}
+
 	if f.NatGateways.Err != nil {
 		return f.NatGateways.Err
 	}
+
 	if f.RouteTables.Err != nil {
 		return f.RouteTables.Err
 	}
+
 	if f.InternetGateways.Err != nil {
 		return f.InternetGateways.Err
 	}
+
 	if f.EOInternetGateways.Err != nil {
 		return f.EOInternetGateways.Err
 	}
+
 	if f.VPNGateways.Err != nil {
 		return f.VPNGateways.Err
 	}
+
 	if f.TransiGateways.Err != nil {
 		return f.TransiGateways.Err
 	}
+
 	if f.PeeringConnections.Err != nil {
 		return f.PeeringConnections.Err
 	}
+
 	if f.NetworkInterfaces.Err != nil {
 		return f.NetworkInterfaces.Err
 	}
+
 	if f.SecurityGroups.Err != nil {
 		return f.SecurityGroups.Err
 	}
+
 	if f.VPCEndpoints.Err != nil {
 		return f.VPCEndpoints.Err
 	}
+
 	return nil
 }
