@@ -41,27 +41,27 @@ func populateVPC(region string) (map[string]*VPC, error) {
 	vpcs := make(map[string]*VPC)
 	fetch := awsfetch.New(sess)
 
-	recieved, err := fetch.GetAll()
+	received, err := fetch.GetAll()
 	if err != nil {
 		return map[string]*VPC{}, err
 	}
 
 	/* These functions must be executed in a specific order here, or else the mappings will fail. */
-	mapVpcs(vpcs, recieved.Vpcs.Vpcs)
-	mapSubnets(vpcs, recieved.Subnets.Subnets)
-	mapInstances(vpcs, recieved.Instances.Instances)
-	mapInstanceStatuses(vpcs, recieved.InstanceStatuses.InstanceStatuses)
-	mapVolumes(vpcs, recieved.Volumes.Volumes)
-	mapNatGateways(vpcs, recieved.NatGateways.NatGateways)
-	mapRouteTables(vpcs, recieved.RouteTables.RouteTables)
-	mapInternetGateways(vpcs, recieved.InternetGateways.InternetGateways)
-	mapEgressOnlyInternetGateways(vpcs, recieved.EOInternetGateways.EOInternetGateways)
-	mapVPNGateways(vpcs, recieved.VPNGateways.VPNGateways)
-	mapTransitGatewayVpcAttachments(vpcs, recieved.TransiGateways.TransitGateways, recieved.Identity.Identity)
-	mapVpcPeeringConnections(vpcs, recieved.PeeringConnections.PeeringConnections)
-	mapVpcEndpoints(vpcs, recieved.VPCEndpoints.VPCEndpoints)
-	mapNetworkInterfaces(vpcs, recieved.NetworkInterfaces.NetworkInterfaces)
-	mapSecurityGroups(vpcs, recieved.SecurityGroups.SecurityGroups)
+	mapVpcs(vpcs, received.Vpcs.Vpcs)
+	mapSubnets(vpcs, received.Subnets.Subnets)
+	mapInstances(vpcs, received.Instances.Instances)
+	mapInstanceStatuses(vpcs, received.InstanceStatuses.InstanceStatuses)
+	mapVolumes(vpcs, received.Volumes.Volumes)
+	mapNatGateways(vpcs, received.NatGateways.NatGateways)
+	mapRouteTables(vpcs, received.RouteTables.RouteTables)
+	mapInternetGateways(vpcs, received.InternetGateways.InternetGateways)
+	mapEgressOnlyInternetGateways(vpcs, received.EOInternetGateways.EOInternetGateways)
+	mapVPNGateways(vpcs, received.VPNGateways.VPNGateways)
+	mapTransitGatewayVpcAttachments(vpcs, received.TransiGateways.TransitGateways, received.Identity.Identity)
+	mapVpcPeeringConnections(vpcs, received.PeeringConnections.PeeringConnections)
+	mapVpcEndpoints(vpcs, received.VPCEndpoints.VPCEndpoints)
+	mapNetworkInterfaces(vpcs, received.NetworkInterfaces.NetworkInterfaces)
+	mapSecurityGroups(vpcs, received.SecurityGroups.SecurityGroups)
 
 	return vpcs, nil
 }

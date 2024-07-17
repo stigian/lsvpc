@@ -20,14 +20,14 @@ func sortRegionData(regionData map[string]RegionData) []*RegionDataSorted {
 
 	regionDataInterstitial := make(map[string]chan []*VPCSorted)
 
-	//dispatch parallel sorting
+	// Dispatch parallel sorting
 	for _, region := range regionKeys {
 		regionDataInterstitial[region] = make(chan []*VPCSorted)
 
 		go asyncSortRegion(regionData[region].VPCs, regionDataInterstitial[region])
 	}
 
-	// receive sorting results from goroutines
+	// Receive sorting results from goroutines
 	regionDataIn := make(map[string]*RegionDataSorted)
 	for _, region := range regionKeys {
 		regionDataIn[region] = &RegionDataSorted{
@@ -36,7 +36,7 @@ func sortRegionData(regionData map[string]RegionData) []*RegionDataSorted {
 		}
 	}
 
-	//append to regionDataSorted
+	// Append to regionDataSorted
 	regionDataSorted := []*RegionDataSorted{}
 	for _, region := range regionKeys {
 		regionDataSorted = append(regionDataSorted, regionDataIn[region])

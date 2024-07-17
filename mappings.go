@@ -561,7 +561,7 @@ func mapSecurityGroups(vpcs map[string]*VPC, securityGroups []*ec2.SecurityGroup
 }
 
 func mapVpcEndpoints(vpcs map[string]*VPC, vpcEndpoints []*ec2.VpcEndpoint) {
-	vpcIDs := dumpVpcIds(vpcs)
+	vpcIDs := dumpVpcIDs(vpcs)
 	subnetIDs := dumpSubnetIDs(vpcs)
 
 	for _, endpoint := range vpcEndpoints {
@@ -615,7 +615,7 @@ func mapVpcEndpoints(vpcs map[string]*VPC, vpcEndpoints []*ec2.VpcEndpoint) {
 	}
 }
 
-func dumpVpcIds(vpcs map[string]*VPC) map[string]bool {
+func dumpVpcIDs(vpcs map[string]*VPC) map[string]bool {
 	keys := make(map[string]bool)
 
 	for vpcID := range vpcs {
