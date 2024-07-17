@@ -21,6 +21,6 @@ jobs:
 
       # Runs a single command using the runners shell
       - name: install golangci-lint
-        run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.47.3
+        run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.59.1
       - name: run golangci-lint
         run: GOGC=5 golangci-lint run -v ./... --out-format=github-actions
