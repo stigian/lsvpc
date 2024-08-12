@@ -1,11 +1,8 @@
-// Copyright 2021 Stigian Consulting - reference license in top level of project
+// Copyright 2023 Stigian Consulting - reference license in top level of project
 package main
 
 import (
-	"sync"
-
 	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/aws/aws-sdk-go/service/sts"
 )
 
 type RegionData struct {
@@ -148,14 +145,14 @@ type IPv6Range struct {
 	Description string `json:"description"`
 }
 type Volume struct {
-	RawVolume  *ec2.Volume `json:"-"`
 	ID         string      `json:"id"`
 	DeviceName string      `json:"deviceName"`
 	VolumeType string      `json:"volumeType"`
 	Name       string      `json:"name"`
-	Encrypted  bool        `json:"encrypted"`
-	KMSKeyId   string      `json:"kmsKeyId"`
+	RawVolume  *ec2.Volume `json:"-"`
+	KMSKeyID   string      `json:"kmsKeyId"`
 	Size       int64       `json:"size"`
+	Encrypted  bool        `json:"encrypted"`
 }
 type NatGatewayData struct {
 	RawNatGateway *ec2.NatGateway `json:"-"`
@@ -219,26 +216,4 @@ type GatewayEndpoint struct {
 	ID          string           `json:"id"`
 	ServiceName string           `json:"serviceName"`
 	Name        string           `json:"name"`
-}
-
-type RecievedData struct {
-	Error              error
-	Identity           *sts.GetCallerIdentityOutput
-	Vpcs               []*ec2.Vpc
-	Subnets            []*ec2.Subnet
-	Instances          []*ec2.Reservation
-	InstanceStatuses   []*ec2.InstanceStatus
-	NatGateways        []*ec2.NatGateway
-	RouteTables        []*ec2.RouteTable
-	InternetGateways   []*ec2.InternetGateway
-	EOInternetGateways []*ec2.EgressOnlyInternetGateway
-	VPNGateways        []*ec2.VpnGateway
-	TransitGateways    []*ec2.TransitGatewayVpcAttachment
-	PeeringConnections []*ec2.VpcPeeringConnection
-	NetworkInterfaces  []*ec2.NetworkInterface
-	SecurityGroups     []*ec2.SecurityGroup
-	VPCEndpoints       []*ec2.VpcEndpoint
-	Volumes            []*ec2.Volume
-	wg                 sync.WaitGroup
-	mu                 sync.Mutex
 }

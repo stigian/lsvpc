@@ -1,4 +1,4 @@
-// Copyright 2021 Stigian Consulting - reference license in top level of project
+// Copyright 2023 Stigian Consulting - reference license in top level of project
 package main
 
 import (
@@ -138,7 +138,7 @@ func mapVolumes(vpcs map[string]*VPC, volumes []*ec2.Volume) {
 									Size:       aws.Int64Value(volume.Size),
 									VolumeType: aws.StringValue(volume.VolumeType),
 									Encrypted:  aws.BoolValue(volume.Encrypted),
-									KMSKeyId:   aws.StringValue(volume.KmsKeyId),
+									KMSKeyID:   aws.StringValue(volume.KmsKeyId),
 									RawVolume:  volume,
 									Name:       getNameTag(volume.Tags),
 								}
@@ -561,7 +561,7 @@ func mapSecurityGroups(vpcs map[string]*VPC, securityGroups []*ec2.SecurityGroup
 }
 
 func mapVpcEndpoints(vpcs map[string]*VPC, vpcEndpoints []*ec2.VpcEndpoint) {
-	vpcIDs := dumpVpcIds(vpcs)
+	vpcIDs := dumpVpcIDs(vpcs)
 	subnetIDs := dumpSubnetIDs(vpcs)
 
 	for _, endpoint := range vpcEndpoints {
@@ -615,7 +615,7 @@ func mapVpcEndpoints(vpcs map[string]*VPC, vpcEndpoints []*ec2.VpcEndpoint) {
 	}
 }
 
-func dumpVpcIds(vpcs map[string]*VPC) map[string]bool {
+func dumpVpcIDs(vpcs map[string]*VPC) map[string]bool {
 	keys := make(map[string]bool)
 
 	for vpcID := range vpcs {

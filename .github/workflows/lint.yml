@@ -12,15 +12,13 @@ jobs:
     name: uses golangci-golint on lsvpc
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-go@v2
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
         with:
-          go-version: '^1'
+          go-version: 'stable'
       - run: go version
-      
-      - uses: actions/checkout@v3
-
       # Runs a single command using the runners shell
-      - name: install golangci-lint
-        run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.47.3
-      - name: run golangci-lint
-        run: GOGC=5 golangci-lint run -v ./... --out-format=github-actions
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+            version: v1.59

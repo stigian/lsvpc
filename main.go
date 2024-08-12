@@ -7,12 +7,11 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
-	"sync"
+
+	"github.com/stigian/lsvpc/awsfetch"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/aws/aws-sdk-go/service/sts"
 )
 
 type lsvpcConfig struct {
@@ -39,71 +38,45 @@ func populateVPC(region string) (map[string]*VPC, error) {
 		},
 	))
 
-	svc := ec2.New(sess)
-	stsSvc := sts.New(sess)
-	data := RecievedData{}
 	vpcs := make(map[string]*VPC)
+	fetch := awsfetch.New(sess)
 
-	data.wg.Add(16) //nolint:gomnd // Wait groups increase when requests increase
-
-	go getIdentity(stsSvc, &data)
-	go getVpcs(svc, &data)
-	go getSubnets(svc, &data)
-	go getInstances(svc, &data)
-	go getInstanceStatuses(svc, &data)
-	go getVolumes(svc, &data)
-	go getNatGatways(svc, &data)
-	go getRouteTables(svc, &data)
-	go getInternetGateways(svc, &data)
-	go getEgressOnlyInternetGateways(svc, &data)
-	go getVPNGateways(svc, &data)
-	go getTransitGatewayVpcAttachments(svc, &data)
-	go getVpcPeeringConnections(svc, &data)
-	go getNetworkInterfaces(svc, &data)
-	go getSecurityGroups(svc, &data)
-	go getVpcEndpoints(svc, &data)
-
-	data.wg.Wait()
-
-	// This isn't exhaustive error reporting, but all we really care about is if anything failed at all
-	if data.Error != nil {
-		return map[string]*VPC{}, fmt.Errorf("failed to populate VPCs: %v", data.Error.Error())
+	received, err := fetch.GetAll()
+	if err != nil {
+		return map[string]*VPC{}, err
 	}
 
-	mapVpcs(vpcs, data.Vpcs)
-	mapSubnets(vpcs, data.Subnets)
-	mapInstances(vpcs, data.Instances)
-	mapInstanceStatuses(vpcs, data.InstanceStatuses)
-	mapVolumes(vpcs, data.Volumes)
-	mapNatGateways(vpcs, data.NatGateways)
-	mapRouteTables(vpcs, data.RouteTables)
-	mapInternetGateways(vpcs, data.InternetGateways)
-	mapEgressOnlyInternetGateways(vpcs, data.EOInternetGateways)
-	mapVPNGateways(vpcs, data.VPNGateways)
-	mapTransitGatewayVpcAttachments(vpcs, data.TransitGateways, data.Identity)
-	mapVpcPeeringConnections(vpcs, data.PeeringConnections)
-	mapVpcEndpoints(vpcs, data.VPCEndpoints)
-	mapNetworkInterfaces(vpcs, data.NetworkInterfaces)
-	mapSecurityGroups(vpcs, data.SecurityGroups)
+	/* These functions must be executed in a specific order here, or else the mappings will fail. */
+	mapVpcs(vpcs, received.Vpcs.Vpcs)
+	mapSubnets(vpcs, received.Subnets.Subnets)
+	mapInstances(vpcs, received.Instances.Instances)
+	mapInstanceStatuses(vpcs, received.InstanceStatuses.InstanceStatuses)
+	mapVolumes(vpcs, received.Volumes.Volumes)
+	mapNatGateways(vpcs, received.NatGateways.NatGateways)
+	mapRouteTables(vpcs, received.RouteTables.RouteTables)
+	mapInternetGateways(vpcs, received.InternetGateways.InternetGateways)
+	mapEgressOnlyInternetGateways(vpcs, received.EOInternetGateways.EOInternetGateways)
+	mapVPNGateways(vpcs, received.VPNGateways.VPNGateways)
+	mapTransitGatewayVpcAttachments(vpcs, received.TransiGateways.TransitGateways, received.Identity.Identity)
+	mapVpcPeeringConnections(vpcs, received.PeeringConnections.PeeringConnections)
+	mapVpcEndpoints(vpcs, received.VPCEndpoints.VPCEndpoints)
+	mapNetworkInterfaces(vpcs, received.NetworkInterfaces.NetworkInterfaces)
+	mapSecurityGroups(vpcs, received.SecurityGroups.SecurityGroups)
 
 	return vpcs, nil
 }
 
-func getRegionData(fullData map[string]RegionData, region string, wg *sync.WaitGroup, mu *sync.Mutex) {
-	defer wg.Done()
+func getRegionData(region string, out chan RegionData) {
+	defer close(out)
 
 	vpcs, err := populateVPC(region)
 	if err != nil {
-		return
+		out <- RegionData{}
+	} else {
+		out <- RegionData{
+			VPCs: vpcs,
+		}
 	}
-
-	mu.Lock()
-
-	fullData[region] = RegionData{
-		VPCs: vpcs,
-	}
-
-	mu.Unlock()
 }
 
 func doSpecificRegion() {
@@ -122,20 +95,18 @@ func doSpecificRegion() {
 }
 
 func doAllRegions() {
-	var wg sync.WaitGroup
-
 	regions := getRegions()
-
 	fullData := make(map[string]RegionData)
-	mu := sync.Mutex{}
+	channels := make(map[string]chan RegionData)
 
 	for _, region := range regions {
-		wg.Add(1)
-
-		go getRegionData(fullData, region, &wg, &mu)
+		channels[region] = make(chan RegionData)
+		go getRegionData(region, channels[region])
 	}
 
-	wg.Wait()
+	for _, region := range regions {
+		fullData[region] = <-channels[region]
+	}
 
 	regionDataSorted := sortRegionData(fullData)
 

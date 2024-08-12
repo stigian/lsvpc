@@ -1,27 +1,16 @@
+// Copyright 2023 Stigian Consulting - reference license in top level of project
 package main
 
 import (
 	"sort"
-	"sync"
 )
 
-func asyncSortRegion(vpcs map[string]*VPC, region string, res map[string]*RegionDataSorted, wg *sync.WaitGroup, mu *sync.Mutex) {
-	defer wg.Done()
-
-	regionDataSorted := &RegionDataSorted{
-		VPCs:   sortVPCs(vpcs),
-		Region: region,
-	}
-
-	mu.Lock()
-	res[region] = regionDataSorted
-	mu.Unlock()
+func asyncSortRegion(vpcs map[string]*VPC, out chan []*VPCSorted) {
+	out <- sortVPCs(vpcs)
 }
 
 func sortRegionData(regionData map[string]RegionData) []*RegionDataSorted {
 	regionKeys := []string{}
-	mu := sync.Mutex{}
-	wg := sync.WaitGroup{}
 
 	for k := range regionData {
 		regionKeys = append(regionKeys, k)
@@ -29,19 +18,28 @@ func sortRegionData(regionData map[string]RegionData) []*RegionDataSorted {
 
 	sort.Strings(regionKeys)
 
-	regionDataInterstitial := make(map[string]*RegionDataSorted)
+	regionDataInterstitial := make(map[string]chan []*VPCSorted)
 
+	// Dispatch parallel sorting
 	for _, region := range regionKeys {
-		wg.Add(1)
+		regionDataInterstitial[region] = make(chan []*VPCSorted)
 
-		go asyncSortRegion(regionData[region].VPCs, region, regionDataInterstitial, &wg, &mu)
+		go asyncSortRegion(regionData[region].VPCs, regionDataInterstitial[region])
 	}
 
-	wg.Wait()
+	// Receive sorting results from goroutines
+	regionDataIn := make(map[string]*RegionDataSorted)
+	for _, region := range regionKeys {
+		regionDataIn[region] = &RegionDataSorted{
+			VPCs:   <-regionDataInterstitial[region],
+			Region: region,
+		}
+	}
 
+	// Append to regionDataSorted
 	regionDataSorted := []*RegionDataSorted{}
 	for _, region := range regionKeys {
-		regionDataSorted = append(regionDataSorted, regionDataInterstitial[region])
+		regionDataSorted = append(regionDataSorted, regionDataIn[region])
 	}
 
 	return regionDataSorted
