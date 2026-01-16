@@ -131,6 +131,7 @@ type SecurityGroupRule struct {
 	IPProtocol string       `json:"ipProtocol"`
 	IPRanges   []*IPRange   `json:"ipRanges"`
 	IPv6Ranges []*IPv6Range `json:"ipv6Ranges"`
+	Groups     []*Group     `json:"groups"`
 	FromPort   int64        `json:"fromPort"`
 	ToPort     int64        `json:"toPort"`
 }
@@ -144,6 +145,13 @@ type IPv6Range struct {
 	CidrIPV6    string `json:"cidrIpv6"`
 	Description string `json:"description"`
 }
+
+type Group struct {
+	AccountId   string `json:"accountId"`
+	GroupId     string `json:"groupId"`
+	Description string `json:"description"`
+}
+
 type Volume struct {
 	ID         string      `json:"id"`
 	DeviceName string      `json:"deviceName"`

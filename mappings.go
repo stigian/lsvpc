@@ -464,12 +464,22 @@ func extractRules(rules []*ec2.IpPermission) []*SecurityGroupRule {
 			})
 		}
 
+		GRPS := []*Group{}
+		for _, group := range rule.UserIdGroupPairs {
+			GRPS = append(GRPS, &Group{
+				AccountId:   aws.StringValue(group.UserId),
+				GroupId:     aws.StringValue(group.GroupId),
+				Description: aws.StringValue(group.Description),
+			})
+		}
+
 		rulesOut = append(rulesOut, &SecurityGroupRule{
 			FromPort:   aws.Int64Value(rule.FromPort),
 			ToPort:     aws.Int64Value(rule.ToPort),
 			IPProtocol: aws.StringValue(rule.IpProtocol),
 			IPRanges:   IPR,
 			IPv6Ranges: IPR6,
+			Groups:     GRPS,
 		})
 	}
 
