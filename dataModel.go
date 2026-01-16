@@ -79,6 +79,8 @@ type InstanceData struct {
 	Name           string `json:"name"`
 	InstanceStatus string `json:"instanceStatus"`
 	SystemStatus   string `json:"systemStatus"`
+	PlatformName   string `json:"platformName"`
+	PlatformType   string `json:"platformType"`
 }
 
 type InstanceSorted struct {
