@@ -272,16 +272,21 @@ func printInstance(instance *InstanceSorted) {
 	}
 
 	fmt.Printf(
-		"%s%v%s%v%v %v -- %v (%v/2) -- %v -- %v\n",
+		"%s%v%s%v%v%v %v %v -- %v (%v/2) -- %v%v%v -- %v%v\n",
 		indent(8), //nolint:gomnd // not a magic number, spaces to indent by
 		color.Cyan,
 		instance.ID,
+		color.Green,
 		formatName(instance.Name),
 		color.Reset,
 		instance.Type,
+		instance.PlatformName,
 		instance.State,
 		status,
+		color.Yellow,
 		instance.PublicIP,
+		color.Reset,
+		color.Cyan,
 		instance.PrivateIP,
 	)
 }
@@ -489,11 +494,9 @@ func printVPCs(vpcs []*VPCSorted) {
 			printSubnet(subnet)
 
 			// Print Endpoints
-			if Config.Verbose {
-				for interfaceEndpointIdx := range subnet.InterfaceEndpoints {
-					interfaceEndpoint := subnet.InterfaceEndpoints[interfaceEndpointIdx]
-					printInterfaceEndpoint(interfaceEndpoint, subnet)
-				}
+			for interfaceEndpointIdx := range subnet.InterfaceEndpoints {
+				interfaceEndpoint := subnet.InterfaceEndpoints[interfaceEndpointIdx]
+				printInterfaceEndpoint(interfaceEndpoint, subnet)
 			}
 
 			for gatewayEndpointIdx := range subnet.GatewayEndpoints {

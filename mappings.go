@@ -83,14 +83,16 @@ func mapInstances(vpcs map[string]*VPC, reservations []*ec2.Reservation) {
 				if vpcID != "" && subnetID != "" && instanceID != "" {
 					vpcs[vpcID].Subnets[subnetID].Instances[instanceID] = &Instance{
 						InstanceData: InstanceData{
-							ID:        aws.StringValue(instance.InstanceId),
-							Type:      aws.StringValue(instance.InstanceType),
-							SubnetID:  aws.StringValue(instance.SubnetId),
-							VpcID:     aws.StringValue(instance.VpcId),
-							State:     aws.StringValue(instance.State.Name),
-							PublicIP:  aws.StringValue(instance.PublicIpAddress),
-							PrivateIP: aws.StringValue(instance.PrivateIpAddress),
-							Name:      getNameTag(instance.Tags),
+							ID:           aws.StringValue(instance.InstanceId),
+							Type:         aws.StringValue(instance.InstanceType),
+							SubnetID:     aws.StringValue(instance.SubnetId),
+							VpcID:        aws.StringValue(instance.VpcId),
+							State:        aws.StringValue(instance.State.Name),
+							PublicIP:     aws.StringValue(instance.PublicIpAddress),
+							PrivateIP:    aws.StringValue(instance.PrivateIpAddress),
+							Name:         getNameTag(instance.Tags),
+							PlatformName: aws.StringValue(instance.PlatformDetails),
+							PlatformType: aws.StringValue(instance.Platform),
 						},
 						RawEc2:     instance,
 						Volumes:    make(map[string]*Volume),
@@ -464,12 +466,22 @@ func extractRules(rules []*ec2.IpPermission) []*SecurityGroupRule {
 			})
 		}
 
+		groups := []*Group{}
+		for _, group := range rule.UserIdGroupPairs {
+			groups = append(groups, &Group{
+				AccountId:   aws.StringValue(group.UserId),
+				GroupId:     aws.StringValue(group.GroupId),
+				Description: aws.StringValue(group.Description),
+			})
+		}
+
 		rulesOut = append(rulesOut, &SecurityGroupRule{
 			FromPort:   aws.Int64Value(rule.FromPort),
 			ToPort:     aws.Int64Value(rule.ToPort),
 			IPProtocol: aws.StringValue(rule.IpProtocol),
 			IPRanges:   IPR,
 			IPv6Ranges: IPR6,
+			Groups:     groups,
 		})
 	}
 
