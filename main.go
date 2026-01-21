@@ -3,6 +3,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io/fs"
@@ -10,8 +11,7 @@ import (
 
 	"github.com/stigian/lsvpc/awsfetch"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go-v2/config"
 )
 
 type lsvpcConfig struct {
@@ -29,19 +29,16 @@ type lsvpcConfig struct {
 var Config lsvpcConfig
 
 func populateVPC(region string) (map[string]*VPC, error) {
-	sess := session.Must(session.NewSessionWithOptions(
-		session.Options{
-			SharedConfigState: session.SharedConfigEnable,
-			Config: aws.Config{
-				Region: aws.String(region),
-			},
-		},
-	))
+	ctx := context.Background()
+	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(region))
+	if err != nil {
+		return map[string]*VPC{}, err
+	}
 
 	vpcs := make(map[string]*VPC)
-	fetch := awsfetch.New(sess)
+	fetch := awsfetch.New(cfg)
 
-	received, err := fetch.GetAll()
+	received, err := fetch.GetAll(ctx)
 	if err != nil {
 		return map[string]*VPC{}, err
 	}
@@ -121,11 +118,13 @@ func doAllRegions() {
 }
 
 func doDefaultRegion() {
-	sess := session.Must(session.NewSessionWithOptions(session.Options{
-		SharedConfigState: session.SharedConfigEnable,
-	}))
+	ctx := context.Background()
+	cfg, err := config.LoadDefaultConfig(ctx)
+	if err != nil {
+		panic(fmt.Sprintf("failed to load config: %v", err.Error()))
+	}
 
-	currentRegion := aws.StringValue(sess.Config.Region)
+	currentRegion := cfg.Region
 
 	vpcs, err := populateVPC(currentRegion)
 	if err != nil {
@@ -165,20 +164,22 @@ func stdoutIsPipe() bool {
 }
 
 func credentialsLoaded() bool {
-	sess := session.Must(session.NewSessionWithOptions(session.Options{
-		SharedConfigState: session.SharedConfigEnable,
-	}))
-
-	creds, err := sess.Config.Credentials.Get()
+	ctx := context.Background()
+	cfg, err := config.LoadDefaultConfig(ctx)
 	if err != nil {
 		return false
 	}
 
-	if !creds.HasKeys() {
+	creds, err := cfg.Credentials.Retrieve(ctx)
+	if err != nil {
 		return false
 	}
 
-	if aws.StringValue(sess.Config.Region) == "" {
+	if creds.AccessKeyID == "" {
+		return false
+	}
+
+	if cfg.Region == "" {
 		// No default region in profile/credentials, check that AWS_DEFAULT_REGION exists
 		if os.Getenv("AWS_DEFAULT_REGION") == "" {
 			os.Setenv("AWS_DEFAULT_REGION", "us-east-1")

@@ -6,9 +6,12 @@
 package awsfetch
 
 import (
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/aws/aws-sdk-go/service/sts"
+	"context"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/ec2"
+	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	"github.com/aws/aws-sdk-go-v2/service/sts"
 )
 
 // AWSChan is a module within AWSFetch that contains the channels and services
@@ -33,8 +36,8 @@ type AWSChan struct {
 	NetworkInterfaces  chan GetNetworkInterfacesOutput
 	SecurityGroups     chan GetSecurityGroupsOutput
 	VPCEndpoints       chan GetVPCEndpointsOutput
-	svc                *ec2.EC2
-	sts                *sts.STS
+	svc                *ec2.Client
+	sts                *sts.Client
 }
 
 // AWSFetch is the primary struct used for obtaining the the data retrieved
@@ -67,86 +70,86 @@ type GetIdentityOutput struct {
 
 type GetVpcsOutput struct {
 	Err  error
-	Vpcs []*ec2.Vpc
+	Vpcs []types.Vpc
 }
 
 type GetSubnetsOutput struct {
 	Err     error
-	Subnets []*ec2.Subnet
+	Subnets []types.Subnet
 }
 
 type GetInstancesOutput struct {
 	Err       error
-	Instances []*ec2.Reservation
+	Instances []types.Reservation
 }
 
 type GetInstanceStatusOutput struct {
 	Err              error
-	InstanceStatuses []*ec2.InstanceStatus
+	InstanceStatuses []types.InstanceStatus
 }
 
 type GetVolumesOutput struct {
 	Err     error
-	Volumes []*ec2.Volume
+	Volumes []types.Volume
 }
 
 type GetNatGatewaysOutput struct {
 	Err         error
-	NatGateways []*ec2.NatGateway
+	NatGateways []types.NatGateway
 }
 
 type GetRouteTablesOutput struct {
 	Err         error
-	RouteTables []*ec2.RouteTable
+	RouteTables []types.RouteTable
 }
 
 type GetInternetGatewaysOutput struct {
 	Err              error
-	InternetGateways []*ec2.InternetGateway
+	InternetGateways []types.InternetGateway
 }
 
 type GetEgressOnlyInternetGatewaysOutput struct {
 	Err                error
-	EOInternetGateways []*ec2.EgressOnlyInternetGateway
+	EOInternetGateways []types.EgressOnlyInternetGateway
 }
 
 type GetVPNGatewaysOutput struct {
 	Err         error
-	VPNGateways []*ec2.VpnGateway
+	VPNGateways []types.VpnGateway
 }
 
 type GetTransitGatewaysOutput struct {
 	Err             error
-	TransitGateways []*ec2.TransitGatewayVpcAttachment
+	TransitGateways []types.TransitGatewayVpcAttachment
 }
 
 type GetPeeringConnectionsOutput struct {
 	Err                error
-	PeeringConnections []*ec2.VpcPeeringConnection
+	PeeringConnections []types.VpcPeeringConnection
 }
 
 type GetNetworkInterfacesOutput struct {
 	Err               error
-	NetworkInterfaces []*ec2.NetworkInterface
+	NetworkInterfaces []types.NetworkInterface
 }
 
 type GetSecurityGroupsOutput struct {
 	Err            error
-	SecurityGroups []*ec2.SecurityGroup
+	SecurityGroups []types.SecurityGroup
 }
 
 type GetVPCEndpointsOutput struct {
 	Err          error
-	VPCEndpoints []*ec2.VpcEndpoint
+	VPCEndpoints []types.VpcEndpoint
 }
 
 // New initializes AWS Fetch and its internal AWSChan structs.
 // channels need to be explicitly allocated with make().
-func New(sess *session.Session) AWSFetch {
+func New(cfg aws.Config) AWSFetch {
 	f := AWSFetch{}
 	f.c = AWSChan{}
-	f.c.sts = sts.New(sess)
-	f.c.svc = ec2.New(sess)
+	f.c.sts = sts.NewFromConfig(cfg)
+	f.c.svc = ec2.NewFromConfig(cfg)
 	f.c.Identity = make(chan GetIdentityOutput)
 	f.c.Vpcs = make(chan GetVpcsOutput)
 	f.c.Subnets = make(chan GetSubnetsOutput)
@@ -171,23 +174,23 @@ func New(sess *session.Session) AWSFetch {
 // for all of the information relevant to a vpc. each function
 // returns its results into their specific channel, and those
 // channels are then read into the AWSFetch struct members.
-func (f *AWSFetch) GetAll() (*AWSFetch, error) {
-	go f.c.GetIdentity()
-	go f.c.GetVpcs()
-	go f.c.GetSubnets()
-	go f.c.GetInstances()
-	go f.c.GetInstanceStatuses()
-	go f.c.GetNatGatways()
-	go f.c.GetRouteTables()
-	go f.c.GetInternetGateways()
-	go f.c.GetEgressOnlyInternetGateways()
-	go f.c.GetVPNGateways()
-	go f.c.GetTransitGatewayVpcAttachments()
-	go f.c.GetVpcPeeringConnections()
-	go f.c.GetNetworkInterfaces()
-	go f.c.GetSecurityGroups()
-	go f.c.GetVpcEndpoints()
-	go f.c.GetVolumes()
+func (f *AWSFetch) GetAll(ctx context.Context) (*AWSFetch, error) {
+	go f.c.GetIdentity(ctx)
+	go f.c.GetVpcs(ctx)
+	go f.c.GetSubnets(ctx)
+	go f.c.GetInstances(ctx)
+	go f.c.GetInstanceStatuses(ctx)
+	go f.c.GetNatGatways(ctx)
+	go f.c.GetRouteTables(ctx)
+	go f.c.GetInternetGateways(ctx)
+	go f.c.GetEgressOnlyInternetGateways(ctx)
+	go f.c.GetVPNGateways(ctx)
+	go f.c.GetTransitGatewayVpcAttachments(ctx)
+	go f.c.GetVpcPeeringConnections(ctx)
+	go f.c.GetNetworkInterfaces(ctx)
+	go f.c.GetSecurityGroups(ctx)
+	go f.c.GetVpcEndpoints(ctx)
+	go f.c.GetVolumes(ctx)
 
 	f.Identity = <-f.c.Identity
 	f.Vpcs = <-f.c.Vpcs
