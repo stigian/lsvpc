@@ -1,0 +1,29 @@
+{
+    "name": "ai-dev-min",
+    "image": "stigian/ai-dev-min:latest",
+    "runArgs": [
+    ],
+    "customizations": {
+      "vscode": {
+        "settings": {
+          "terminal.integrated.defaultProfile.linux": "zsh",
+          "python.defaultInterpreterPath": "/home/vscode/venv/bin/python"
+        },
+        "extensions": [
+          "hashicorp.terraform",
+          "amazonwebservices.aws-toolkit-vscode",
+          "ms-azuretools.vscode-docker",
+          "saoudrizwan.claude-dev",
+          "mhutchie.git-graph",
+          "ms-python.python",
+          "ms-python.vscode-pylance",
+          "golang.go",
+          "dbaeumer.vscode-eslint"
+        ]
+      }
+    },
+    "postCreateCommand": {
+        "foobar": "echo lol"
+    },
+    "remoteUser": "vscode"
+}
