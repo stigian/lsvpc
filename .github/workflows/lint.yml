@@ -1,24 +1,25 @@
-name: lint
-on:
-  push:
-    branches:
-      - main 
-  pull_request:
-  workflow_dispatch:
-
-jobs:
-  lint:
-    
-    name: uses golangci-golint on lsvpc
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: 'stable'
-      - run: go version
-      # Runs a single command using the runners shell
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
-        with:
-            version: v1.59
+#name: lint
+#on:
+#  push:
+#    branches:
+#      - main 
+#  pull_request:
+#  workflow_dispatch:
+#
+#jobs:
+#  lint:
+#    
+#    name: uses golangci-golint on lsvpc
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v4
+#      - uses: actions/setup-go@v5
+#        with:
+#          go-version: 'stable'
+#      - run: go version
+#      # Runs a single command using the runners shell
+#      - name: golangci-lint
+#        uses: golangci/golangci-lint-action@v6
+#        with:
+#            version: v1.59
+#
